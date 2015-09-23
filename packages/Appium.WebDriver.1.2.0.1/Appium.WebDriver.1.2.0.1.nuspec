@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2011/08/nuspec.xsd">
+  <metadata>
+    <id>Appium.WebDriver</id>
+    <version>1.2.0.1</version>
+    <title>Appium Webdriver</title>
+    <authors>Appium Commiters</authors>
+    <owners>Appium Commiters</owners>
+    <licenseUrl>https://raw.githubusercontent.com/appium/appium-dotnet-driver/master/LICENSE</licenseUrl>
+    <projectUrl>https://github.com/appium/appium-dotnet-driver</projectUrl>
+    <iconUrl>https://avatars1.githubusercontent.com/u/3221291?s=140</iconUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>Selenium Webdriver extension for Appium.</description>
+    <releaseNotes>Add Pull Folder, Android Input Methods (IME), and Network Connection Methods for use with Appium 1.2</releaseNotes>
+    <copyright>Copyright 2014</copyright>
+    <tags>Appium Webdriver device automation</tags>
+    <dependencies>
+      <dependency id="Newtonsoft.Json" version="6.0.3" />
+      <dependency id="Selenium.WebDriver" version="2.42.0" />
+    </dependencies>
+  </metadata>
+</package>
