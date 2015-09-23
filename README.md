@@ -10,9 +10,11 @@ http://www.thinksys.com/
 
 Krypton is a selenium based open source framework for all your Automation Testing needs.
 
-•	It incorporates the contemporary approaches of any modern automation tool; like Cross Browser compatibility testing, Keyword Driven Testing, Automated Reporting, Parallel Recovery and Keyword Driven Testing. 
-•	What makes it different from other freeware’s available in market, is its highly customizable property which entertains testing on any kind of project of any domain.
-•	It comes with Test Management Tools integration feature by which one can maintain all requirements, test cases and defects in a single place. 
+It incorporates the contemporary approaches of any modern automation tool; like Cross Browser compatibility testing, Keyword Driven Testing, Automated Reporting, Parallel Recovery and Keyword Driven Testing.
+
+What makes it different from other freeware’s available in market, is its highly customizable property which entertains testing on any kind of project of any domain.
+
+It comes with Test Management Tools integration feature by which one can maintain all requirements, test cases and defects in a single place. 
  
 # Prerequisits
 
