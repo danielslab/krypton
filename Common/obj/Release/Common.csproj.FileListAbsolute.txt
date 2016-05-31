@@ -1,0 +1,5 @@
+D:\TFS Krypton Product\KryptonOpenSource\SourceCode\Output\Common.dll
+D:\TFS Krypton Product\KryptonOpenSource\SourceCode\Common\obj\Release\Common.ConsoleMessages.resources
+D:\TFS Krypton Product\KryptonOpenSource\SourceCode\Common\obj\Release\Common.exceptions.resources
+D:\TFS Krypton Product\KryptonOpenSource\SourceCode\Common\obj\Release\Common.csproj.GenerateResource.Cache
+D:\TFS Krypton Product\KryptonOpenSource\SourceCode\Common\obj\Release\Common.dll

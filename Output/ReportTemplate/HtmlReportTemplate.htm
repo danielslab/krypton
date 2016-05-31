@@ -1,0 +1,378 @@
+﻿<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <title>Krypton Automation Report</title>
+    <style type="text/css" title="ReportHeaderStyle">
+        .ReportHeaderMain
+        {
+            font-family: Arial;
+            font-size: 12px;
+        }
+        .ReportTopTitle
+        {
+            width: 100%;
+            height: 36px;
+            border: 1px solid #006699;
+            background-color: #E1EEF4;
+            font-size: 19px;
+            color: #004040;
+            font-weight: bold;
+            font-family: Fantasy;
+        }
+        .ReportDetailHeading
+        {
+            width: 100%;
+            text-align: center;
+            padding-top: 10px;
+            font-size: 16px;
+            font-weight: bold;
+        }
+        .ReportDetailtableInfo
+        {
+            width: 100%;
+            table-layout: fixed;
+            font-weight: bold;
+        }
+        .InfoColumnValue
+        {
+            font-weight: normal;
+            color: #051f3e;
+        }
+        .InfoExecutionStatus
+        {
+            color: Blue;
+            font-weight: bold;
+        }
+        .VersionInfo
+        {
+            font-size: 10px;
+            font-family: @Arial;
+            font-weight: normal;
+        }
+        .Pass, .Pass a
+        {
+            color: Green;
+        }
+        .Fail, .Fail a
+        {
+            color: Red;
+        }
+        .Warning, .Warning a
+        {
+            color: Orange;
+        }
+        .ErrorFont
+        {
+            color: #800000;
+        }
+        .TestCaseId
+        {
+            font-weight:bold;
+        }
+    </style>
+    <style type="text/css">
+        .datagrid table
+        {
+            border-collapse: collapse;
+            text-align: left;
+            width: 100%;
+            table-layout: fixed;
+        }
+        .datagrid
+        {
+            font: normal 12px/150% Arial, Helvetica, sans-serif;
+            background: #fff;
+            overflow: hidden;
+            border: 1px solid #006699;
+            margin-top: 10px;
+        }
+        .datagrid table tbody td, .datagrid table thead th
+        {
+            padding: 3px 5px;
+            word-wrap: break-word;
+        }
+        .datagrid table thead th
+        {
+            /*background: -webkit-gradient( linear, left top, left bottom, color-stop(0.05, #005959), color-stop(1, #00557F) );
+            background: -moz-linear-gradient( center top, #005959 5%, #00557F 100% );
+            filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#005959', endColorstr='#00557F');*/
+            background-color: #E1EEF4;
+            color: #004040;
+            font-size: 12px;
+            font-weight: bold;
+            border-left: 1px solid #9DB0A9;
+            border-bottom: 1px solid #006699;
+            padding-top: 4px;
+            padding-bottom: 4px;
+        }
+        .datagrid table thead th:first-child
+        {
+            border-left: none;
+        }
+        .datagrid table tbody td
+        {
+            color: #00557F;
+            border-left: 1px solid #9DB0A9;
+            font-size: 12px;
+            border-top: 1px solid #678177;
+            font-weight: normal;
+            background: #E7F1E8;
+        }
+        .datagrid table tbody .alt td
+        {
+            background: #E1EEf4;
+            color: #00557F;
+        }
+        
+        .datagrid table tbody .child td
+        {
+            background: #FCFDEC;
+            color: #005566;
+            border-top: 1px solid #9db0a9;
+            padding-top: 1px;
+            padding-bottom: 1px;
+            font-size: 12px;
+        }
+        .datagrid table tbody .child .alt td
+        {
+            background: White;
+        }
+        
+        .datagrid table tbody .child tr:first-child td
+        {
+            border-top: none;
+        }
+        
+        .datagrid table tbody td:first-child
+        {
+            border-left: none;
+        }
+        .datagrid table tbody tr:last-child td
+        {
+            border-bottom: none;
+        }
+        .datagrid table tfoot td div
+        {
+            border-top: 1px solid #006699;
+            background: #E1EEf4;
+        }
+        .datagrid table tfoot td
+        {
+            padding: 0;
+            font-size: 12px;
+        }
+        .datagrid table tfoot td div
+        {
+            padding: 2px;
+        }
+        
+        .datagrid table tfoot tr td
+        {
+            text-decoration: none;
+            border-color: #00557F;
+            color: #006699;
+            background: none;
+            font-size: 11px;
+        }
+        .expandIcon
+        {
+            background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAMAAAAoLQ9TAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAALpQTFRF////P2HkYYPpPF7fQWPpXX/kZYftNFbSQWPpUnTZZYftIkSrI0WvJkisJ0m4LU/FLlC0OVu+QWPpRGbuRWfMZYftdYzpdo3pkqnuzs7O0NDS0dHS0dXy09fz1NTY1tbX1tr52Njb2dng2trh29vh3d3e39/n5OTr5OTv5eXn5+fx5+v46Oj36Oz56urt6u/86+vr7Oz87e3x7u7u8PDw8/Pz9PT09PT89vb29/f3+fn5+vr6+/v7////sMA1ggAAAAt0Uk5TAA8PkJCQkOjo6Og/zjpcAAAAmklEQVQYGQXByUoDQRQAwJrXLyoZohIQveXk//9PvAseBB2y24tVAAAmkTkDjrX2VLavj4Dl67unfNkMwKb+/qX5qeHDO57nc2q9oqkoTRp9UIfPLtZDan3sYWFza1IfpzsuHsjo0nS97djb8ROTFNdyIBxIIU2lYyVgUlitI+Jt2yJiWVrhfsyltFZKWS7HMZlKrgGn2gYAgH8mhkAjaysYVAAAAABJRU5ErkJggg==");
+            width: 16px;
+            height: 16px;
+            cursor:pointer;
+        }
+        .collpaseIcon
+        {
+            background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAB50lEQVQ4T2NkoBAwgvSHlt/lFxDgb/z/nyGCkZFRHJ+Z////f8nIyLDiw4eP9as7lT+CDYipezzBTJs7P8KNj0FUgBmvm15/+MuwYtcnhlNXv05c0iRbADYgsPjmi+mVCuLC/ExEeegN0JCsjocv1/eqS4ANcE0/83/bFH2GP3/+EGUAMzMzg3fuJYbdM02AvgECy+h9/w/Ms2b49esX0QY4p55gOL7UCWKAXsCW/yeWOaEY8Pv3b4avX78yfPv2nQHE/vsX4jpmZhYGHh4eoLevMVza4AMxQM1jzf9zazzABlhE7cPrilUdagxsbKwMAUVXGW7tCIEYoOSy+v/F9R4Mnz59YYhvZMdrwIS8VwwsLMwMXjkXGO7tCYUYoOy6/v/xpXYMHz58YRAWFsBrwJs37xmYmBgZPLLOMdzdHQgxQN1zx/+9s42BfiUuFkB6PLIuMtzc7gExQNf/6P9dM3SAAfWPqFgAKfLMvsZweaM1xACTsEsv5jcqiosKshBlwMu3vxmSGx+8PLNKD5KQrOLuTrDR58lP8BVgEBPCn5RfvfvLMH/TB4ajl75MPLZIGZyUhTj51FR0nGZm8ghpeDEwMonhdcb/f6++vLux7cq+9OnfP926AzKAE4h5gZg49yNMB4X4ZwClrbostJHjqQAAAABJRU5ErkJggg==");
+            width: 16px;
+            height: 16px;
+            cursor:pointer;
+        }
+    </style>
+    <style type="text/css">
+        .TreeIcon
+        {
+            width: 22px;
+        }
+        .ColumnSteps
+        {
+            width: 32%;
+        }
+        .ColumnStatus
+        {
+            width: 6%;
+        }
+        .ColumnBrowser
+        {
+            width: 8%;
+        }
+        .ColumnMachine
+        {
+            width: 10%;
+        }
+        .ColumnExecutionTime
+        {
+            width: 7%;
+        }
+        .ColumnRemarks
+        {
+            /*Do not define width here, This will automatically calculated.*/
+        }
+    </style>
+    <script type="text/javascript">
+        function HideChilds(ParentRow, parent) {
+            if (document.getElementById(ParentRow).style.display == 'none') {
+                document.getElementById(ParentRow).style.display = 'table-row';
+                parent.className = "collpaseIcon"
+            }
+            else {
+                document.getElementById(ParentRow).style.display = 'none'
+                parent.className = "expandIcon"
+            }
+        }
+    </script>
+</head>
+<body style="margin:0px; padding:0px;">
+    <div class="ReportHeaderMain">
+        <div class="ReportTopTitle">
+            <table style="width: 100%">
+                <tr>
+                    <td align="left">
+                        <img alt="http://www.thinksys.com" style="height: 25px" src="data:image/png;base64,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" />
+                    </td>
+                    <td align="center">
+                        $projectname$ Automation Report
+                    </td>
+                    <td align="right" valign="bottom" class="VersionInfo">
+                        <span class="VersionInfo">$KryptonVersion$</span>
+                    </td>
+                </tr>
+            </table>
+        </div>
+        <div class="ReportDetailHeading">
+            Report Details
+            <hr size="2" width="100%;" />
+        </div>
+        <table class="ReportDetailtableInfo">
+            <tr>
+                <td style="width: 40%" valign="top">
+                    <table>
+                        <tr>
+                            <td>
+                                Test Suite Name
+                            </td>
+                            <td>
+                                :
+                            </td>
+                            <td>
+                                <span class="InfoColumnValue">$TestSuitName$</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                Test Environment
+                            </td>
+                            <td>
+                                :
+                            </td>
+                            <td>
+                                <span class="InfoColumnValue">$Environment$</span>
+                            </td>
+                        </tr>
+                    </table>
+                </td>
+                <td style="width: 40%" valign="top">
+                    <table>
+                        <tr>
+                            <td>
+                                Execution Started At
+                            </td>
+                            <td>
+                                :
+                            </td>
+                            <td>
+                                <span class="InfoColumnValue">$ExecutionStartedAt$</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                Execution Finished At
+                            </td>
+                            <td>
+                                :
+                            </td>
+                            <td>
+                                <span class="InfoColumnValue">$ExecutionFinishedAt$</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                Total Duration
+                            </td>
+                            <td>
+                                :
+                            </td>
+                            <td>
+                                <span class="InfoColumnValue">$TotalDuration$</span>
+                            </td>
+                        </tr>
+                    </table>
+                </td>
+                <td style="width: 20%" valign="top" align="right">
+                    <img alt="www.thinksys.com" style="max-height: 100%; max-width: 45%" src="$CompanyLogo$" />
+                </td>
+            </tr>
+            <tr>
+                <td colspan="3">
+                    Test Case(s) Executed: <span class="InfoExecutionStatus">$TestCase(s)Executed$</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                    Total Passed: <span class="InfoExecutionStatus">$TotalPassed$</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                    Total Failed: <span class="InfoExecutionStatus">$TotalFailed$</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                    Total Warning: <span class="InfoExecutionStatus">$TotalWarning$</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                </td>
+            </tr>
+        </table>
+    </div>
+    <hr size="2" width="100%;" />
+    <div class="datagrid">
+        <table>
+            <thead>
+                <tr>
+                    <th class="TreeIcon">
+                        &nbsp;
+                    </th>
+                    <th class="ColumnSteps  ">
+                        Steps
+                    </th>
+                    <th class="ColumnStatus">
+                        Status
+                    </th>
+                    <th class="ColumnBrowser">
+                        Browser
+                    </th>
+                    <th class="ColumnMachine">
+                        Machine
+                    </th>
+                    <th class="ColumnExecutionTime">
+                        Duration
+                    </th>
+                    <th>
+                        Remarks
+                    </th>
+                </tr>
+            </thead>
+            <tfoot>
+                <tr>
+                    <td colspan="7">
+                        <div>
+                            <span>Designed and Developed by ThinkSys Inc.</span>
+                        </div>
+                    </td>
+                </tr>
+            </tfoot>
+            <tbody>
+                $TableBody$
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>

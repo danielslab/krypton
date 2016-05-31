@@ -1,0 +1,31 @@
+﻿<tr id="$RowId$">
+    <td valign="top">
+        <div class="expandIcon" onclick="HideChilds('$Row-Childs-Id$', this)">
+        </div>
+    </td>
+    <td valign="top">
+        <span class="TestCaseId">$TestCaseId$</span>$TestCaseName$
+    </td>
+    <td valign="top">
+        <span class="$FinalStatusClass$" style="font-weight:bold;">$FinalStatus$</span>
+    </td>
+    <td valign="top">
+        $Browser$
+    </td>
+    <td valign="top">
+        $Machine$
+    </td>
+    <td valign="top">
+        $TotalTestcaseDuration$
+    </td>
+    <td valign="top">
+       <span class="ErrorFont"> $Remarks$</span>
+    </td>
+</tr>
+<tr id="$Row-Childs-Id$" class="child" style="display: none">
+    <td colspan="7" style="padding: 0px; border-bottom:none" valign="top">
+        <table>
+           $HTMLChildRows$
+        </table>
+    </td>
+</tr>

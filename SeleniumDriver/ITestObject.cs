@@ -6,27 +6,9 @@
 ** Developed by: ThinkSys Software 
 ** Description: Interface Contain the Method Require for Browser Automation. 
 *****************************************************************************/
-using System;
+
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Linq;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
-using OpenQA.Selenium;
-using OpenQA.Selenium.Firefox;
-using OpenQA.Selenium.IE;
-using OpenQA.Selenium.Chrome;
-using OpenQA.Selenium.Support.PageObjects;
-using OpenQA.Selenium.Support.UI;
-using System.Text.RegularExpressions;
-using OpenQA.Selenium.Remote;
-using OpenQA.Selenium.Interactions;
-using OpenQA.Selenium.Interactions.Internal;
-using OpenQA.Selenium.Appium;
-using OpenQA.Selenium.Appium.Interfaces;
-using OpenQA.Selenium.Appium.MultiTouch;
-using OpenQA.Selenium.Appium.Appium;
+
 namespace Driver
 {
     /// <summary>
@@ -34,19 +16,19 @@ namespace Driver
     /// </summary>
     public interface ITestObject
     {
-        void SetObjDataRow(Dictionary<string, string> objDataRow,string CurrentStepAction="");
-        bool verifySortOrder(string propertyForSorting, string sortOrder = "");
-        void mouseMove();
-        void mouseClick();
-        void mouseOver();
-        void addAction(string actionToAdd = "", string data = "");
-        void performAction();
+        void SetObjDataRow(Dictionary<string, string> objDataRow,string currentStepAction="");
+        bool VerifySortOrder(string propertyForSorting, string sortOrder = "");
+        void MouseMove();
+        void MouseClick();
+        void MouseOver();
+        void AddAction(string actionToAdd = "", string data = "");
+        void PerformAction();
         void ClearText();
         void KeyPress(string key);
         void Click(Dictionary<int, string> keyWordDic = null, string data = null);
-        void clickInThread();
-        void checkMultiple(string[] dataContents);
-        void uncheckMultiple(string[] dataContent);
+        void ClickInThread();
+        void CheckMultiple(string[] dataContents);
+        void UncheckMultiple(string[] dataContent);
         void Check(string checkStatus = "");
         void UnCheck();
         void SendKeys(string text);
@@ -64,12 +46,12 @@ namespace Driver
         bool VerifyListItemNotPresent(string listItemName);
         bool VerifyObjectPresent();
         bool VerifyObjectNotPresent();
-        bool VerifyObjectProperty(string property, string propertyValue, Dictionary<int, string> KeywordDic);
+        bool VerifyObjectProperty(string property, string propertyValue, Dictionary<int, string> keywordDic);
         bool VerifyObjectPropertyNot(string property, string propertyValue, Dictionary<int, string> KeywordDic);
         string ExecuteStatement(string scriptToExecute);
         void SetAttribute(string property, string propertyValue);
         void DragAndDrop(Dictionary<string, string> targetObjDic);
         bool UploadFile(string path,string element);
-        
+        void WaitForPage(string timeOut);
     }
 }

@@ -1,0 +1,11 @@
+D:\TFS Krypton Product\KryptonOpenSource\SourceCode\Output\ReportTemplate\ChildRow.htm
+D:\TFS Krypton Product\KryptonOpenSource\SourceCode\Output\ReportTemplate\HtmlReportTemplate.htm
+D:\TFS Krypton Product\KryptonOpenSource\SourceCode\Output\ReportTemplate\ParentRow.htm
+D:\TFS Krypton Product\KryptonOpenSource\SourceCode\Output\ReportTemplate\ResultsNotAvailable.htm
+D:\TFS Krypton Product\KryptonOpenSource\SourceCode\Output\ReportSettings.ini
+D:\TFS Krypton Product\KryptonOpenSource\SourceCode\Output\KryptonCreateReport.exe.config
+D:\TFS Krypton Product\KryptonOpenSource\SourceCode\Output\KryptonCreateReport.exe
+D:\TFS Krypton Product\KryptonOpenSource\SourceCode\Output\KryptonCreateReport.pdb
+D:\TFS Krypton Product\KryptonOpenSource\SourceCode\KryptonCreateReport\obj\x86\Debug\KryptonCreateReport.csprojResolveAssemblyReference.cache
+D:\TFS Krypton Product\KryptonOpenSource\SourceCode\KryptonCreateReport\obj\x86\Debug\KryptonCreateReport.exe
+D:\TFS Krypton Product\KryptonOpenSource\SourceCode\KryptonCreateReport\obj\x86\Debug\KryptonCreateReport.pdb

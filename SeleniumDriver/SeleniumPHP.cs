@@ -9,26 +9,25 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
-using System.IO;
 using Common;
+using Driver.Browsers;
 
 namespace Driver
 {
     public class SeleniumPHP : IScriptSelenium
     {
-        public static StringBuilder seleniumCodeForPHP;
-        private Dictionary<string, string> objDataRow = new Dictionary<string, string>();
-        private string attribute;
-        private string attributeType;
+        public static StringBuilder SeleniumCodeForPhp;
+        private Dictionary<string, string> _objDataRow = new Dictionary<string, string>();
+        private string _attribute;
+        private string _attributeType;
         public SeleniumPHP()
         {
-            seleniumCodeForPHP = new StringBuilder();
-            seleniumCodeForPHP.AppendLine("<?php");
-            seleniumCodeForPHP.AppendLine("require(\"WebDriver/Driver.php\");");
-            seleniumCodeForPHP.AppendLine("require(\"phpunit/PHPUnit/Framework/Assert.php\");");
-            this.InitDriver();
+            SeleniumCodeForPhp = new StringBuilder();
+            SeleniumCodeForPhp.AppendLine("<?php");
+            SeleniumCodeForPhp.AppendLine("require(\"WebDriver/Driver.php\");");
+            SeleniumCodeForPhp.AppendLine("require(\"phpunit/PHPUnit/Framework/Assert.php\");");
+            InitDriver();
         }
 
         /// <summary>
@@ -41,21 +40,21 @@ namespace Driver
             {
                 if (objDataRow.Count > 0)
                 {
-                    this.objDataRow = objDataRow;
-                    attributeType = this.GetData(KryptonConstants.HOW);
-                    attribute = this.GetData(KryptonConstants.WHAT);
+                    _objDataRow = objDataRow;
+                    _attributeType = GetData(KryptonConstants.HOW);
+                    _attribute = GetData(KryptonConstants.WHAT);
                 }
                 else
                 {
-                    this.objDataRow = objDataRow;
-                    attributeType = string.Empty;
-                    attribute = string.Empty;
+                    _objDataRow = objDataRow;
+                    _attributeType = string.Empty;
+                    _attribute = string.Empty;
                 }
             }
 
             catch (Exception)
             {
-
+                // ignored
             }
         }
 
@@ -72,15 +71,15 @@ namespace Driver
                 switch (dataType)
                 {
                     case "logical_name":
-                        return objDataRow["logical_name"];
+                        return _objDataRow["logical_name"];
                     case KryptonConstants.OBJ_TYPE:
-                        return objDataRow[KryptonConstants.OBJ_TYPE];
+                        return _objDataRow[KryptonConstants.OBJ_TYPE];
                     case KryptonConstants.HOW:
-                        return objDataRow[KryptonConstants.HOW];
+                        return _objDataRow[KryptonConstants.HOW];
                     case KryptonConstants.WHAT:
-                        return objDataRow[KryptonConstants.WHAT];
+                        return _objDataRow[KryptonConstants.WHAT];
                     case KryptonConstants.MAPPING:
-                        return objDataRow[KryptonConstants.MAPPING];
+                        return _objDataRow[KryptonConstants.MAPPING];
                     default:
                         return null;
                 }
@@ -96,38 +95,38 @@ namespace Driver
         /// </summary>
         public void FindElement()
         {
-            attribute = attribute.Replace("\"", "\\\"");
-            switch (attributeType.ToLower())
+            _attribute = _attribute.Replace("\"", "\\\"");
+            switch (_attributeType.ToLower())
             {
                 case "cssselector":
                 case "css":
-                    seleniumCodeForPHP.AppendLine("$webelement=$webdriver->get_element(\"css=" + attribute + "\");");
+                    SeleniumCodeForPhp.AppendLine("$webelement=$webdriver->get_element(\"css=" + _attribute + "\");");
                     break;
                 case "name":
-                    seleniumCodeForPHP.AppendLine("$webelement=$webdriver->get_element(\"name=" + attribute + "\");");
+                    SeleniumCodeForPhp.AppendLine("$webelement=$webdriver->get_element(\"name=" + _attribute + "\");");
                     break;
                 case "id":
-                    seleniumCodeForPHP.AppendLine("$webelement=$webdriver->get_element(\"id=" + attribute + "\");");
+                    SeleniumCodeForPhp.AppendLine("$webelement=$webdriver->get_element(\"id=" + _attribute + "\");");
                     break;
                 case "link":
                 case "linktext":
                 case "text":
-                    seleniumCodeForPHP.AppendLine("$webelement=$webdriver->get_element(\"link text=" + attribute + "\");");
+                    SeleniumCodeForPhp.AppendLine("$webelement=$webdriver->get_element(\"link text=" + _attribute + "\");");
                     break;
                 case "xpath":
-                    seleniumCodeForPHP.AppendLine("$webelement=$webdriver->get_element(\"xpath=" + attribute + "\");");
+                    SeleniumCodeForPhp.AppendLine("$webelement=$webdriver->get_element(\"xpath=" + _attribute + "\");");
                     break;
                 case "partiallinktext":
-                    seleniumCodeForPHP.AppendLine("$webelement=$webdriver->get_element(\"partial link text=" + attribute + "\");");
+                    SeleniumCodeForPhp.AppendLine("$webelement=$webdriver->get_element(\"partial link text=" + _attribute + "\");");
                     break;
                 case "tagname":
                 case "tag":
                 case "html tag":
-                    seleniumCodeForPHP.AppendLine("$webelement=$webdriver->get_element(\"tag name=" + attribute + "\");");
+                    SeleniumCodeForPhp.AppendLine("$webelement=$webdriver->get_element(\"tag name=" + _attribute + "\");");
                     break;
                 case "class":
                 case "classname":
-                    seleniumCodeForPHP.AppendLine("$webelement=$webdriver->get_element(\"class name=" + attribute + "\");");
+                    SeleniumCodeForPhp.AppendLine("$webelement=$webdriver->get_element(\"class name=" + _attribute + "\");");
 
                     break;
             }
@@ -138,15 +137,15 @@ namespace Driver
         /// </summary>
         public void InitDriver()
         {
-            seleniumCodeForPHP.AppendLine("$webdriver=WebDriver_Driver::InitAtLocal( \"4444\",\"" + Common.Utility.GetParameter(Common.Property.BrowserString) + "\");");
+            SeleniumCodeForPhp.AppendLine("$webdriver=WebDriver_Driver::InitAtLocal( \"4444\",\"" + Utility.GetParameter(Property.BrowserString) + "\");");
         }
         /// <summary>
         ///   : Generate PHP to Click on element.
         /// </summary>
         public void Click()
         {
-            this.FindElement();
-            seleniumCodeForPHP.AppendLine("$webelement->click();");
+            FindElement();
+            SeleniumCodeForPhp.AppendLine("$webelement->click();");
         }
         /// <summary>
         ///   : Generate PHP to type in textbox.
@@ -155,16 +154,16 @@ namespace Driver
         public void SendKeys(string text)
         {
             text = text.Replace("$", "\\$");
-            this.FindElement();
-            seleniumCodeForPHP.AppendLine("$webelement->send_keys(\"" + text + "\");");
+            FindElement();
+            SeleniumCodeForPhp.AppendLine("$webelement->send_keys(\"" + text + "\");");
         }
         /// <summary>
         ///   : Generate PHP to check radio-button or checkbox
         /// </summary>
         public void Check()
         {
-            this.FindElement();
-            seleniumCodeForPHP.AppendLine("$webelement->select();");
+            FindElement();
+            SeleniumCodeForPhp.AppendLine("$webelement->select();");
         }
         /// <summary>
         ///   : Generate PHP to Uncheck radio-button or checkbox.
@@ -184,19 +183,19 @@ namespace Driver
         /// </summary>
         public void Close()
         {
-            seleniumCodeForPHP.AppendLine("$webdriver->close_window();");
+            SeleniumCodeForPhp.AppendLine("$webdriver->close_window();");
         }
         /// <summary>
         ///   : Generate PHP to navigate specified URL.
         /// </summary>
-        /// <param name="url">String : URl to navigate</param>
-        public void Navigate(string url)
+        /// <param name="testData">String : URl to navigate</param>
+        public void Navigate(string testData)
         {
-            if (url.IndexOf(':') != 1 && !(url.Contains("http://") || url.Contains("https://"))) //Check for file protocol and http protocol :
+            if (testData.IndexOf(':') != 1 && !(testData.Contains("http://") || testData.Contains("https://"))) //Check for file protocol and http protocol :
             {
-                url = "http://" + url;
+                testData = "http://" + testData;
             }
-            seleniumCodeForPHP.AppendLine("$webdriver->load(\"" + url + "\");");
+            SeleniumCodeForPhp.AppendLine("$webdriver->load(\"" + testData + "\");");
         }
         /// <summary>
         ///   : Generate PHP to fire any event.
@@ -209,80 +208,80 @@ namespace Driver
         /// </summary>
         public void GoBack()
         {
-            seleniumCodeForPHP.AppendLine("$webdriver->go_back();");
+            SeleniumCodeForPhp.AppendLine("$webdriver->go_back();");
         }
         /// <summary>
         ///   : Generate PHP to navigate forward in web page.
         /// </summary>
         public void GoForward()
         {
-            seleniumCodeForPHP.AppendLine("$webdriver->go_forward();");
+            SeleniumCodeForPhp.AppendLine("$webdriver->go_forward();");
         }
         /// <summary>
         ///   : Generate PHP to refresh web page.
         /// </summary>
         public void Refresh()
         {
-            seleniumCodeForPHP.AppendLine("$webdriver->refresh();");
+            SeleniumCodeForPhp.AppendLine("$webdriver->refresh();");
         }
         /// <summary>
         ///   : Generate PHP to clear text form text box.
         /// </summary>
         public void Clear()
         {
-            this.FindElement();
-            seleniumCodeForPHP.AppendLine("$webelement->clear();");
+            FindElement();
+            SeleniumCodeForPhp.AppendLine("$webelement->clear();");
         }
         /// <summary>
         /// Generate PHP to type unique data in text box.
         /// </summary>
         public void EnterUniqueData()
         {
-            this.FindElement();
-            seleniumCodeForPHP.AppendLine("$webelement->type_random();");
+            FindElement();
+            SeleniumCodeForPhp.AppendLine("$webelement->type_random();");
         }
         /// <summary>
         ///   : Generate PHP to enter non alphanumeric key.
         /// </summary>
-        /// <param name="keyName">String : Non alphanumeric key to enter</param>
-        public void KeyPress(string keyName = "")
+        /// <param name="testData">String : Non alphanumeric key to enter</param>
+        public void KeyPress(string testData = "")
         {
-            this.FindElement();
-            switch (keyName.ToLower())
+            FindElement();
+            switch (testData.ToLower())
             {
                 case "enter":
-                    seleniumCodeForPHP.AppendLine("$webelement->send_keys(Keys::ENTER);");
+                    SeleniumCodeForPhp.AppendLine("$webelement->send_keys(Keys::ENTER);");
                     break;
                 case "space":
-                    seleniumCodeForPHP.AppendLine("$webelement->send_keys(Keys::SPACE);");
+                    SeleniumCodeForPhp.AppendLine("$webelement->send_keys(Keys::SPACE);");
                     break;
                 case "tab":
-                    seleniumCodeForPHP.AppendLine("$webelement->send_keys(Keys::TAB);");
+                    SeleniumCodeForPhp.AppendLine("$webelement->send_keys(Keys::TAB);");
                     break;
             }
         }
         /// <summary>
         ///   : Generate PHP to select option from the list
         /// </summary>
-        /// <param name="text">string : option to be select</param>
-        public void SelectItem(string text)
+        /// <param name="testData">string : option to be select</param>
+        public void SelectItem(string testData)
         {
-            this.FindElement();
-            seleniumCodeForPHP.AppendLine("$webelement->select_label(\"" + text + "\");");
-            seleniumCodeForPHP.AppendLine("$option_element=$webelement->get_selected();");
-            seleniumCodeForPHP.AppendLine("$text=$option_element->get_text();");
-            seleniumCodeForPHP.AppendLine("if(strcmp($text," + text + ")!=0){ \n$webelement->select_value(\"" + text + "\");\n}");
+            FindElement();
+            SeleniumCodeForPhp.AppendLine("$webelement->select_label(\"" + testData + "\");");
+            SeleniumCodeForPhp.AppendLine("$option_element=$webelement->get_selected();");
+            SeleniumCodeForPhp.AppendLine("$text=$option_element->get_text();");
+            SeleniumCodeForPhp.AppendLine("if(strcmp($text," + testData + ")!=0){ \n$webelement->select_value(\"" + testData + "\");\n}");
 
         }
         /// <summary>
         ///   : Generate PHP to select option from the list based on index
         /// </summary>
-        /// <param name="index">String : Index number of option (1 based)</param>
-        public void SelectItemByIndex(string index)
+        /// <param name="testData">String : Index number of option (1 based)</param>
+        public void SelectItemByIndex(string testData)
         {
-            index = (Int32.Parse(index) - 1).ToString();
-            this.FindElement();
-            seleniumCodeForPHP.AppendLine("$webelement->select_index(\"" + index + "\");");
+            testData = (Int32.Parse(testData) - 1).ToString();
+            FindElement();
+            SeleniumCodeForPhp.AppendLine("$webelement->select_index(\"" + testData + "\");");
         }
         public void WaitForObject()
         {
@@ -310,16 +309,16 @@ namespace Driver
         public void GetObjectProperty(string property)
         {
 
-            this.FindElement();
+            FindElement();
             string actualPropertyValue = string.Empty;
             string javascript;
             switch (property.ToLower())
             {
                 case "text":
-                    seleniumCodeForPHP.AppendLine("$value=$webelement->get_text();");
+                    SeleniumCodeForPhp.AppendLine("$value=$webelement->get_text();");
                     break;
                 case "style.backgroundimage":
-                    switch (Browser.browserName.ToLower())
+                    switch (Browser.BrowserName.ToLower())
                     {
                         case KryptonConstants.BROWSER_IE:
                             javascript = "return arguments[0].currentStyle.backgroundImage;";
@@ -331,11 +330,11 @@ namespace Driver
                             javascript = "return arguments[0].currentStyle.backgroundImage;";
                             break;
                     }
-                    this.ExecuteScript(javascript, "$webelement");
+                    ExecuteScript(javascript, "$webelement");
                     break;
 
                 case "style.color":
-                    switch (Browser.browserName.ToLower())
+                    switch (Browser.BrowserName.ToLower())
                     {
                         case KryptonConstants.BROWSER_IE:
                             javascript = "var color=arguments[0].currentStyle.color;return color;";
@@ -347,11 +346,11 @@ namespace Driver
                             javascript = "var color=arguments[0].currentStyle.color;return color;"; ;
                             break;
                     }
-                    this.ExecuteScript(javascript, "$webelement");
+                    ExecuteScript(javascript, "$webelement");
                     break;
                 case "style.fontweight":
                 case "style.font-weight":
-                    switch (Browser.browserName.ToLower())
+                    switch (Browser.BrowserName.ToLower())
                     {
                         case KryptonConstants.BROWSER_IE:
                             javascript = "var fontWeight= arguments[0].currentStyle.fontWeight;if(fontWeight==700){return 'bold';}if(fontWeight==400){return 'normal';}return fontWait;";
@@ -363,37 +362,37 @@ namespace Driver
                             javascript = "return arguments[0].currentStyle.fontWeight;";
                             break;
                     }
-                    this.ExecuteScript(javascript, "$webelement");
+                    ExecuteScript(javascript, "$webelement");
 
                     break;
                 case "tooltip":
                 case "title":
                     javascript = "return title=arguments[0].title;";
-                    this.ExecuteScript(javascript, "$webelement");
+                    ExecuteScript(javascript, "$webelement");
                     break;
                 case "scrollheight":
                     javascript = "return arguments[0].scrollHeight;";
-                    this.ExecuteScript(javascript, "$webelement");
+                    ExecuteScript(javascript, "$webelement");
                     break;
                 case "file name":
                 case "filename":
                     javascript = "var src = arguments[0].src; src=src.split(\"/\"); return(src[src.length-1]);";
-                    this.ExecuteScript(javascript, "$webelement");
+                    ExecuteScript(javascript, "$webelement");
                     break;
                 case "height":
                     javascript = "return arguments[0].height;";
-                    this.ExecuteScript(javascript, "$webelement");
+                    ExecuteScript(javascript, "$webelement");
                     break;
                 case "width":
                     javascript = "return arguments[0].width;";
-                    this.ExecuteScript(javascript, "$webelement");
+                    ExecuteScript(javascript, "$webelement");
                     break;
                 case "checked":
                     javascript = "return arguments[0].checked;";
-                    this.ExecuteScript(javascript, "$webelement");
+                    ExecuteScript(javascript, "$webelement");
                     break;
                 default:
-                    seleniumCodeForPHP.AppendLine(" $value=$webelement->get_attribute_value(\"" + property + "\");");
+                    SeleniumCodeForPhp.AppendLine(" $value=$webelement->get_attribute_value(\"" + property + "\");");
                     break;
             }
         }
@@ -403,10 +402,10 @@ namespace Driver
             switch (propertyType.ToLower())
             {
                 case "title":
-                    seleniumCodeForPHP.AppendLine("$propertyval= $webdriver->get_title();");
+                    SeleniumCodeForPhp.AppendLine("$propertyval= $webdriver->get_title();");
                     break;
                 case "url":
-                    seleniumCodeForPHP.AppendLine("$propertyval= $webdriver->get_url();");
+                    SeleniumCodeForPhp.AppendLine("$propertyval= $webdriver->get_url();");
                     break;
             }
         }
@@ -427,7 +426,7 @@ namespace Driver
                     javascript = "return arguments[0]." + property + " = \"" + propertyValue + "\";";
                     break;
             }
-            this.ExecuteScript(javascript);
+            ExecuteScript(javascript);
         }
         /// <summary>
         ///   : Generate PHP to Verify Page Property 
@@ -436,8 +435,8 @@ namespace Driver
         /// <param name="propertyValue">String : Property Value to be verify</param>
         public void VerifyPageProperty(string property, string propertyValue)
         {
-            this.GetPageProperty(property);
-            seleniumCodeForPHP.AppendLine("PHPUnit_Framework_Assert::assertEquals(\"" + propertyValue + "\",propertyval,\"Values mismatched\");");
+            GetPageProperty(property);
+            SeleniumCodeForPhp.AppendLine("PHPUnit_Framework_Assert::assertEquals(\"" + propertyValue + "\",propertyval,\"Values mismatched\");");
 
         }
         /// <summary>
@@ -445,9 +444,9 @@ namespace Driver
         /// </summary>
         public void VerifyPageDisplay()
         {
-            string url = this.GetData(KryptonConstants.WHAT);
-            this.GetPageProperty("url");
-            seleniumCodeForPHP.AppendLine("PHPUnit_Framework_Assert::assertEquals(\"" + url + "\",propertyval,\"Page not display\");");
+            string url = GetData(KryptonConstants.WHAT);
+            GetPageProperty("url");
+            SeleniumCodeForPhp.AppendLine("PHPUnit_Framework_Assert::assertEquals(\"" + url + "\",propertyval,\"Page not display\");");
         }
 
         /// <summary>
@@ -456,7 +455,7 @@ namespace Driver
         /// <param name="text">String : Text to be verify</param>
         public void VerifyTextPresentOnPage(string text)
         {
-            seleniumCodeForPHP.AppendLine("PHPUnit_Framework_Assert::assertContains(\"" + text + "\",$webdriver->get_text(),\"Text mismatched\");");
+            SeleniumCodeForPhp.AppendLine("PHPUnit_Framework_Assert::assertContains(\"" + text + "\",$webdriver->get_text(),\"Text mismatched\");");
         }
         /// <summary>
         ///   : Generate PHP to verify text not present on page.
@@ -464,7 +463,7 @@ namespace Driver
         /// <param name="text">String : text to be verify</param>
         public void VerifyTextNotPresentOnPage(string text)
         {
-            seleniumCodeForPHP.AppendLine("PHPUnit_Framework_Assert::assertNotContains(\"" + text + "\",$webdriver->get_text(),\"Text mismatched\");");
+            SeleniumCodeForPhp.AppendLine("PHPUnit_Framework_Assert::assertNotContains(\"" + text + "\",$webdriver->get_text(),\"Text mismatched\");");
         }
         /// <summary>
         ///   : Generate PHP to verify item present in list.
@@ -472,10 +471,10 @@ namespace Driver
         /// <param name="listItem">String : list item to be verify</param>
         public void VerifyListItemPresent(string listItem)
         {
-            this.FindElement();
-            seleniumCodeForPHP.AppendLine(" $options=$webelement->get_options();\n$status=false;\nforeach($options as &$option)\n{\n	$text=$option->get_text();\n");
-            seleniumCodeForPHP.AppendLine("if(strcmp($text,\"" + listItem + "\")==0)\n	{\n		$status=true;\n		break;\n	}\n	if(!$status)\n	{");
-            seleniumCodeForPHP.AppendLine("PHPUnit_Framework_Assert::assertTrue(false,\"Validation fail\");\n}\n  }");
+            FindElement();
+            SeleniumCodeForPhp.AppendLine(" $options=$webelement->get_options();\n$status=false;\nforeach($options as &$option)\n{\n	$text=$option->get_text();\n");
+            SeleniumCodeForPhp.AppendLine("if(strcmp($text,\"" + listItem + "\")==0)\n	{\n		$status=true;\n		break;\n	}\n	if(!$status)\n	{");
+            SeleniumCodeForPhp.AppendLine("PHPUnit_Framework_Assert::assertTrue(false,\"Validation fail\");\n}\n  }");
         }
         /// <summary>
         ///   : Generate PHP to verify item not present in list.
@@ -483,9 +482,9 @@ namespace Driver
         /// <param name="listItem">String : list item to be verify</param>
         public void VerifyListItemNotPresent(string listItem)
         {
-            this.FindElement();
-            seleniumCodeForPHP.AppendLine(" $options=$webelement->get_options();\n$status=false;\nforeach($options as &$option)\n{\n	$text=$option->get_text();\n");
-            seleniumCodeForPHP.AppendLine("if(strcmp($text,\"" + listItem + "\")==0)\n	{\n		PHPUnit_Framework_Assert::assertTrue(false,\"Validation fail\");		}\n}");
+            FindElement();
+            SeleniumCodeForPhp.AppendLine(" $options=$webelement->get_options();\n$status=false;\nforeach($options as &$option)\n{\n	$text=$option->get_text();\n");
+            SeleniumCodeForPhp.AppendLine("if(strcmp($text,\"" + listItem + "\")==0)\n	{\n		PHPUnit_Framework_Assert::assertTrue(false,\"Validation fail\");		}\n}");
 
         }
         /// <summary>
@@ -493,14 +492,14 @@ namespace Driver
         /// </summary>
         public void VerifyObjectPresent()
         {
-            this.VerifyObjectDisplay();
+            VerifyObjectDisplay();
         }
         /// <summary>
         ///   : Generate PHP to verify test object not display.
         /// </summary>
         public void VerifyObjectNotPresent()
         {
-            this.VerifyObjectNotDisplay();
+            VerifyObjectNotDisplay();
         }
         /// <summary>
         /// Generate PHP to verify object property.
@@ -509,8 +508,8 @@ namespace Driver
         /// <param name="propertyVal">String : property value</param>
         public void VerifyObjectProperty(string property, string propertyVal)
         {
-            this.GetObjectProperty(property);
-            seleniumCodeForPHP.AppendLine("if(strcmp($value,\"" + propertyVal + "\")!=0){PHPUnit_Framework_Assert::assertTrue(false,\"Validation fail\");\n}");
+            GetObjectProperty(property);
+            SeleniumCodeForPhp.AppendLine("if(strcmp($value,\"" + propertyVal + "\")!=0){PHPUnit_Framework_Assert::assertTrue(false,\"Validation fail\");\n}");
 
         }
 
@@ -521,8 +520,8 @@ namespace Driver
         /// <param name="propertyVal">String : property value</param>
         public void VerifyObjectPropertyNot(string property, string propertyVal)
         {
-            this.GetObjectProperty(property);
-            seleniumCodeForPHP.AppendLine("if(strcmp($value,\"" + propertyVal + "\")==0){PHPUnit_Framework_Assert::assertTrue(false,\"Validation fail\");\n}");
+            GetObjectProperty(property);
+            SeleniumCodeForPhp.AppendLine("if(strcmp($value,\"" + propertyVal + "\")==0){PHPUnit_Framework_Assert::assertTrue(false,\"Validation fail\");\n}");
         }
 
         /// <summary>
@@ -531,8 +530,8 @@ namespace Driver
         /// <param name="text">String: text to be verify</param>
         public void VerifyTextInPageSource(string text)
         {
-            seleniumCodeForPHP.AppendLine("$strsource=$webdriver->get_source();");
-            seleniumCodeForPHP.AppendLine("PHPUnit_Framework_Assert::assertContains(\"" + text + "\",$strsource,\"text not contained\",true);");
+            SeleniumCodeForPhp.AppendLine("$strsource=$webdriver->get_source();");
+            SeleniumCodeForPhp.AppendLine("PHPUnit_Framework_Assert::assertContains(\"" + text + "\",$strsource,\"text not contained\",true);");
         }
         /// <summary>
         ///  Boara : Generate PHP to verify text not present on web page view source.
@@ -540,8 +539,8 @@ namespace Driver
         /// <param name="text">String : text to be verify</param>
         public void VerifyTextNotInPageSource(string text)
         {
-            seleniumCodeForPHP.AppendLine("$strsource=$webdriver->get_source();");
-            seleniumCodeForPHP.AppendLine("PHPUnit_Framework_Assert::assertNotContainsContains(\"" + text + "\",$strsource,\"text not contained\",true);");
+            SeleniumCodeForPhp.AppendLine("$strsource=$webdriver->get_source();");
+            SeleniumCodeForPhp.AppendLine("PHPUnit_Framework_Assert::assertNotContainsContains(\"" + text + "\",$strsource,\"text not contained\",true);");
         }
 
         /// <summary>
@@ -549,16 +548,16 @@ namespace Driver
         /// </summary>
         public void VerifyObjectDisplay()
         {
-            this.FindElement();
-            seleniumCodeForPHP.AppendLine("PHPUnit_Framework_Assert::assertTrue($webelement->is_visible(), \"Failed asserting that <{$this->locator}> is visible.\");");
+            FindElement();
+            SeleniumCodeForPhp.AppendLine("PHPUnit_Framework_Assert::assertTrue($webelement->is_visible(), \"Failed asserting that <{$this->locator}> is visible.\");");
         }
         /// <summary>
         ///  :  Generate PHP to verify test object doesn't display on web page.;
         /// </summary>
         public void VerifyObjectNotDisplay()
         {
-            this.FindElement();
-            seleniumCodeForPHP.AppendLine("PHPUnit_Framework_Assert::assertFalse($webelement->is_visible(), \"Failed asserting that <{$this->locator}> is not visible.\");");
+            FindElement();
+            SeleniumCodeForPhp.AppendLine("PHPUnit_Framework_Assert::assertFalse($webelement->is_visible(), \"Failed asserting that <{$this->locator}> is not visible.\");");
         }
         /// <summary>
         ///   : Generate PHP to execute java script.
@@ -568,20 +567,20 @@ namespace Driver
         public void ExecuteScript(string javascript, string testobject = "")
         {
             javascript = javascript.Replace("\"", "\\\"");
-            seleniumCodeForPHP.AppendLine("$javascript=\"" + javascript + "\";");
+            SeleniumCodeForPhp.AppendLine("$javascript=\"" + javascript + "\";");
             if (testobject == string.Empty)
             {
                 testobject = "\"\"";
             }
-            seleniumCodeForPHP.AppendLine("$value=$webdriver->execute_js_sync($javascript," + testobject + ");");
+            SeleniumCodeForPhp.AppendLine("$value=$webdriver->execute_js_sync($javascript," + testobject + ");");
         }
         /// <summary>
         ///   : Generate PHP to delete cookies of current web page.
         /// </summary>
-        /// <param name="url">String : URL of webpage</param>
-        public void DeleteCookies(string url)
+        /// <param name="testData">String : URL of webpage</param>
+        public void DeleteCookies(string testData)
         {
-            seleniumCodeForPHP.AppendLine("$webelement->delete_all_cookies();");
+            SeleniumCodeForPhp.AppendLine("$webelement->delete_all_cookies();");
         }
         /// <summary>
         ///   : Generate PHP to quit web driver.
@@ -589,7 +588,7 @@ namespace Driver
         public void ShutDownDriver()
         {
 
-            seleniumCodeForPHP.AppendLine("$webdriver->quit();");
+            SeleniumCodeForPhp.AppendLine("$webdriver->quit();");
         }
         /// <summary>
         ///   :Methods to save PHP script on file system.

@@ -8,79 +8,77 @@
 *****************************************************************************/
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Data;
 using Common;
+using Driver.Browsers;
 
 namespace Driver
 {
     public class RecoveryScenarios
     {
-        private static DataSet recoverData = new DataSet();
-        private static DataSet datasetRecoverBrowser = new DataSet();
-        private static DataSet datasetOR = new DataSet();
-        private static int[] noOfTimes;
-        private static Dictionary<string, string> objDataRow = new Dictionary<string, string>();
-        private static ITestObject objTestObject = null;
-        private static string cachedAttribute = String.Empty;
-        private static string cachedAttributeType = String.Empty;
+        private static DataSet _recoverData = new DataSet();
+        private static DataSet _datasetRecoverBrowser = new DataSet();
+        private static DataSet _datasetOr = new DataSet();
+        private static int[] _noOfTimes;
+        private static Dictionary<string, string> _objDataRow = new Dictionary<string, string>();
+        private static ITestObject _objTestObject = null;
+        private static string _cachedAttribute = String.Empty;
+        private static string _cachedAttributeType = String.Empty;
         //Constructor for collecting all data.
-        public RecoveryScenarios(DataSet recoverDataset, DataSet recoverData, DataSet ORData, ITestObject objTest)
+        public RecoveryScenarios(DataSet recoverDataset, DataSet recoverData, DataSet orData, ITestObject objTest)
         {
-            RecoveryScenarios.recoverData = recoverDataset;
-            RecoveryScenarios.datasetRecoverBrowser = recoverData;
-            RecoveryScenarios.datasetOR = ORData;
-            objTestObject = objTest;
+            _recoverData = recoverDataset;
+            _datasetRecoverBrowser = recoverData;
+            _datasetOr = orData;
+            _objTestObject = objTest;
             try
             {
                 if(recoverData.Tables.Count>0)
-                RecoveryScenarios.noOfTimes = new int[recoverData.Tables[0].Rows.Count];
+                _noOfTimes = new int[recoverData.Tables[0].Rows.Count];
             }
-            catch (System.IndexOutOfRangeException)
+            catch (IndexOutOfRangeException)
             {
 
             }
         }
 
 
-        public static void cacheAttribute(string attributeType, string attribute)
+        public static void CacheAttribute(string attributeType, string attribute)
         {
-            cachedAttribute = attribute;
-            cachedAttributeType = attributeType;
+            _cachedAttribute = attribute;
+            _cachedAttributeType = attributeType;
         }
         //Recover all win32 alerts ,ie. Accept or Dismiss.
-        public void recoverFromPopUps()
+        public void RecoverFromPopUps()
         {
             bool handled = false;
-            string actualPopupText = string.Empty;
             try
             {
-                actualPopupText = Browser.driver.SwitchTo().Alert().Text;
-                for (int i = 0; i < recoverData.Tables[0].Rows.Count; i++)
+                var actualPopupText = Browser.Driver.SwitchTo().Alert().Text;
+                for (int i = 0; i < _recoverData.Tables[0].Rows.Count; i++)
                 {
-                    string expectedPopupText = recoverData.Tables[0].Rows[i]["PopUpText"].ToString().Trim();
+                    string expectedPopupText = _recoverData.Tables[0].Rows[i]["PopUpText"].ToString().Trim();
                     if (actualPopupText.Contains(expectedPopupText))
                     {
-                        switch (recoverData.Tables[0].Rows[i]["Action"].ToString().ToLower().Trim())
+                        switch (_recoverData.Tables[0].Rows[i]["Action"].ToString().ToLower().Trim())
                         {
                             case "accept":
-                                Browser.driver.SwitchTo().Alert().Accept();
+                                Browser.Driver.SwitchTo().Alert().Accept();
                                 break;
                             case "dismiss":
-                                Browser.driver.SwitchTo().Alert().Dismiss();
+                                Browser.Driver.SwitchTo().Alert().Dismiss();
                                 break;
                             default:
-                                Exception e = new Exception(Common.Utility.GetCommonMsgVariable("KRYPTONERRCODE0017"));
+                                Exception e = new Exception(Utility.GetCommonMsgVariable("KRYPTONERRCODE0017"));
                                 throw e;
                         }
                         handled = true;
-                        recoverFromPopUps();
+                        RecoverFromPopUps();
                     }
                 }
                 if (!handled)
                 {
-                    Exception popupEx = new Exception(Common.Utility.GetCommonMsgVariable("KRYPTONERRCODE0018").Replace("{MSG}", actualPopupText));
+                    Exception popupEx = new Exception(Utility.GetCommonMsgVariable("KRYPTONERRCODE0018").Replace("{MSG}", actualPopupText));
                     throw popupEx;
 
                 }
@@ -97,74 +95,77 @@ namespace Driver
         /// <summary>
         /// RecoverFromBrowsers handles browser level recovery.
         /// </summary>
-        public static void recoverFromBrowsers(DataSet recoverDataset = null, DataSet brRecoverData = null, DataSet orDataSet = null, TestObject tObject = null)
+        public static void RecoverFromBrowsers(DataSet recoverDataset = null, DataSet brRecoverData = null, DataSet orDataSet = null, TestObject tObject = null)
         {
             //This indicates if an actual recovery was performed
             if (recoverDataset != null && brRecoverData != null && orDataSet != null && tObject != null)
             {
-                recoverData = recoverDataset;
-                datasetRecoverBrowser = brRecoverData;
-                datasetOR = orDataSet;
-                objTestObject = tObject;
-                RecoveryScenarios.noOfTimes = new int[brRecoverData.Tables[0].Rows.Count];
+                _recoverData = recoverDataset;
+                _datasetRecoverBrowser = brRecoverData;
+                _datasetOr = orDataSet;
+                _objTestObject = tObject;
+                _noOfTimes = new int[brRecoverData.Tables[0].Rows.Count];
             }
            
             try
             {
  				 
-                for (int i = 0; i < datasetRecoverBrowser.Tables[0].Rows.Count; i++)
+                for (int i = 0; i < _datasetRecoverBrowser.Tables[0].Rows.Count; i++)
                 {
-                    Common.Property.isRecoveryRunning = true;
-                    if (noOfTimes[i].Equals(Common.Property.RECOVERY_COUNT))
+                    Property.IsRecoveryRunning = true;
+                    if (_noOfTimes[i].Equals(Property.RecoveryCount))
                     {
                         break;
                     }
-                    string keyword = datasetRecoverBrowser.Tables[0].Rows[i]["Recovery_Keyword"].ToString().Trim();
-                    string action = datasetRecoverBrowser.Tables[0].Rows[i]["Action"].ToString().Trim();
-                    string recoverDetails = datasetRecoverBrowser.Tables[0].Rows[i]["Recovery_Details"].ToString().Trim();
+                    string keyword = _datasetRecoverBrowser.Tables[0].Rows[i]["Recovery_Keyword"].ToString().Trim();
+                    string action = _datasetRecoverBrowser.Tables[0].Rows[i]["Action"].ToString().Trim();
+                    string recoverDetails = _datasetRecoverBrowser.Tables[0].Rows[i]["Recovery_Details"].ToString().Trim();
                     string data = string.Empty;
                     try
                     {
-                        data = datasetRecoverBrowser.Tables[0].Rows[i]["Data"].ToString().Trim();
+                        data = _datasetRecoverBrowser.Tables[0].Rows[i]["Data"].ToString().Trim();
                     }
-                    catch (Exception) { }
+                    catch (Exception)
+                    {
+                        // ignored
+                    }
 
                     switch (keyword.ToLower())
                     {
                         case "object_presence":
-                            string[] recover_Contents = recoverDetails.Split('|');
-                            string parent = recover_Contents[0].Trim();
-                            string testObject = recover_Contents[1].Trim();
-                            objDataRow = Common.Utility.GetTestOrData(parent, testObject, datasetOR);
-                            if (objDataRow.Count.Equals(0))
+                            string[] recoverContents = recoverDetails.Split('|');
+                            string parent = recoverContents[0].Trim();
+                            string testObject = recoverContents[1].Trim();
+                            _objDataRow = Utility.GetTestOrData(parent, testObject, _datasetOr);
+                            if (_objDataRow.Count.Equals(0))
                             {
                                 continue;
                             }
                             try
                             {
-                                TestObject.attribute = objDataRow[KryptonConstants.WHAT];
-                                TestObject.attributeType = objDataRow[KryptonConstants.HOW];
+                                TestObject.Attribute = _objDataRow[KryptonConstants.WHAT];
+                                TestObject.AttributeType = _objDataRow[KryptonConstants.HOW];
                                 //Will Add more actions later, for now click is in demand.
                                 switch (action.ToLower())
                                 {
                                     case "click":
-                                        objTestObject.Click();
+                                        _objTestObject.Click();
                                         Console.WriteLine("Recovery Active: Click on " + parent + " | " + testObject);
                                         break;
                                     case "fireevent":
-                                        objTestObject.FireEvent(data);
+                                        _objTestObject.FireEvent(data);
                                         Console.WriteLine("Recovery Active: FireEvent: " + data + " on " + parent + " | " + testObject);
                                         break;
                                     default:
                                         break;
                                 }
                                 //KRYPTON0419.
-                                Browser.driver.Manage().Timeouts().ImplicitlyWait(TimeSpan.FromSeconds(3.0));
-                                noOfTimes[i]++;
+                                Browser.Driver.Manage().Timeouts().ImplicitlyWait(TimeSpan.FromSeconds(3.0));
+                                _noOfTimes[i]++;
                             }
                             catch (Exception)
                             {
-                                noOfTimes[i] = 0;
+                                _noOfTimes[i] = 0;
                                 continue;
                             }
                             break;
@@ -175,13 +176,13 @@ namespace Driver
                     }
                 }
                 //Resetting attribute and attributeType.
-                TestObject.attribute = cachedAttribute;
-                TestObject.attributeType = cachedAttributeType;
-                Common.Property.isRecoveryRunning = false;
+                TestObject.Attribute = _cachedAttribute;
+                TestObject.AttributeType = _cachedAttributeType;
+                Property.IsRecoveryRunning = false;
             }
             catch (Exception e)
             {
-                Common.Property.isRecoveryRunning = false;
+                Property.IsRecoveryRunning = false;
             }
         }
         #endregion

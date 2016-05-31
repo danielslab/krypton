@@ -1,0 +1,15 @@
+D:\TFS Krypton Product\KryptonOpenSource\SourceCode\Output\Common.dll
+D:\TFS Krypton Product\KryptonOpenSource\SourceCode\Output\Common.pdb
+D:\TFS Krypton Product\KryptonOpenSource\SourceCode\Common\obj\Debug\Common.ConsoleMessages.resources
+D:\TFS Krypton Product\KryptonOpenSource\SourceCode\Common\obj\Debug\Common.Exceptions.resources
+D:\TFS Krypton Product\KryptonOpenSource\SourceCode\Common\obj\Debug\Common.csproj.GenerateResource.Cache
+D:\TFS Krypton Product\KryptonOpenSource\SourceCode\Common\obj\Debug\Common.dll
+D:\TFS Krypton Product\KryptonOpenSource\SourceCode\Common\obj\Debug\Common.pdb
+D:\Krypton Product\KryptonOpenSource\SourceCode\Output\Common.dll
+D:\Krypton Product\KryptonOpenSource\SourceCode\Output\Common.pdb
+D:\Krypton Product\KryptonOpenSource\SourceCode\Common\obj\Debug\Common.csprojResolveAssemblyReference.cache
+D:\Krypton Product\KryptonOpenSource\SourceCode\Common\obj\Debug\Common.ConsoleMessages.resources
+D:\Krypton Product\KryptonOpenSource\SourceCode\Common\obj\Debug\Common.Exceptions.resources
+D:\Krypton Product\KryptonOpenSource\SourceCode\Common\obj\Debug\Common.csproj.GenerateResource.Cache
+D:\Krypton Product\KryptonOpenSource\SourceCode\Common\obj\Debug\Common.dll
+D:\Krypton Product\KryptonOpenSource\SourceCode\Common\obj\Debug\Common.pdb

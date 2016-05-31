@@ -15,9 +15,10 @@ namespace Common
     [Serializable]
     public sealed class KryptonException : Exception
     {
-        private string stringInfo;
+        private readonly string stringInfo;
 
-        public KryptonException() : base() { }
+        public KryptonException()
+        { }
         public KryptonException(string message) : base(message) { }
 
         private KryptonException(SerializationInfo info, StreamingContext context)
@@ -60,18 +61,32 @@ namespace Common
 
         // for Logging exceptions thrown in a Text File 
         // Add "Common.KryptonException.writeexception(e);" in each catch case
-        public static void writeexception(Exception e)
+        public static void Writeexception(Exception e)
         {
-                string s =Common.Utility.GetParameter("TestCaseId");
-                string folderPath = Path.Combine(Common.Property.IniPath, Common.Property.logFolder);
+                string s =Utility.GetParameter("TestCaseId");
+                string folderPath = Path.Combine(Property.IniPath, Property.LogFolder);
                 if (!Directory.Exists(folderPath))
                 {
                     Directory.CreateDirectory(folderPath);
                 }
-                string filepath = Path.Combine(folderPath, Common.Property.CURRENTTIME);
+                string filepath = Path.Combine(folderPath, Property.CurrentTime);
                 StreamWriter obj = File.AppendText(filepath);
-                obj.WriteLine("TestCaseId: " + s + "Exception : " + e.StackTrace.ToString() + "Message: " + e.Message);
+                obj.WriteLine("TestCaseId: " + s + "Exception : " + e.StackTrace + "Message: " + e.Message);
                 obj.Close();
+        }
+
+
+        /// <summary>
+        /// Log the exception message in the seprate file..
+        /// </summary>
+        /// <param name="ex">String message</param>
+        public static void ReportException(string ex)
+        {
+            string folderPath = Path.Combine(Property.IniPath, Property.LogFolder);
+            string filepath = Path.Combine(folderPath, "ReportException"+Property.CurrentTime);
+            StreamWriter obj = File.AppendText(filepath);
+            obj.WriteLine(ex);
+            obj.Close();
         }
 
     }

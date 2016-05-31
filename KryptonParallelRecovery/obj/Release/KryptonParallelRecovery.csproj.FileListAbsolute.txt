@@ -1,0 +1,4 @@
+D:\TFS Krypton Product\KryptonOpenSource\SourceCode\Output\KryptonParallelRecovery.exe.config
+D:\TFS Krypton Product\KryptonOpenSource\SourceCode\Output\KryptonParallelRecovery.exe
+D:\TFS Krypton Product\KryptonOpenSource\SourceCode\KryptonParallelRecovery\obj\Release\KryptonParallelRecovery.csprojResolveAssemblyReference.cache
+D:\TFS Krypton Product\KryptonOpenSource\SourceCode\KryptonParallelRecovery\obj\Release\KryptonParallelRecovery.exe

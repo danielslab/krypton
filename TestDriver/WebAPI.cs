@@ -8,8 +8,6 @@
 *****************************************************************************/
 
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 using System.Xml;
 using System.Net;
@@ -31,29 +29,29 @@ namespace TestDriver
         /// <param name="requestUrl"></param>
         /// <param name="requestBody"></param>
         /// <returns></returns>
-        public static bool requestWebService(string requestHeader, string responseFormat, string requestMethod, string requestUrl, string requestBody)
+        public static bool RequestWebService(string requestHeader, string responseFormat, string requestMethod, string requestUrl, string requestBody)
         {
             //name of the file, which would contain exact response returned by api call
-            string apiResponseFileName = Property.ApiXmlFile + Common.Property.StepNumber + "." + responseFormat;
+            string apiResponseFileName = Property.ApiXmlFile + Property.StepNumber + "." + responseFormat;
 
             //name of the file, which would contain xml equivalent of the api response, may not be converted always
-            string xmlFileName = Property.ApiXmlFile + Common.Property.StepNumber + ".xml";
+            string xmlFileName = Property.ApiXmlFile + Property.StepNumber + ".xml";
 
             //Final location where API resonse will be saved
-            string XmlFilePath = Property.ResultsSourcePath + "\\" + apiResponseFileName;
+            string xmlFilePath = Property.ResultsSourcePath + "\\" + apiResponseFileName;
 
             try
             {
-                if (File.Exists(XmlFilePath))
+                if (File.Exists(xmlFilePath))
                 {
-                    File.Delete(XmlFilePath);
+                    File.Delete(xmlFilePath);
                 }
 
                 //Create an object to request webservice
                 HttpWebRequest webServiceRequest = (HttpWebRequest)WebRequest.Create(requestUrl);
 
                 //Assign headers to webservice object
-                string[] arrHeaderList = requestHeader.Split(Property.SEPERATOR);
+                string[] arrHeaderList = requestHeader.Split(Property.Seprator);
                 for (int i = 0; i < arrHeaderList.Length; i++)
                 {
                     string[] arrHeader = arrHeaderList[i].Trim().Split(':');
@@ -67,10 +65,13 @@ namespace TestDriver
                         case "authorization":
                             webServiceRequest.Headers.Add(HttpRequestHeader.Authorization, strHeaderValue);
                             break;
+                        case "user-agent":
+                            webServiceRequest.UserAgent  = strHeaderValue;// .Headers.Add(HttpRequestHeader.UserAgent,strHeaderValue);
+                            break;
                         default:
-                            if(!WebHeaderCollection.IsRestricted(strHeaderName))
+                            if (!WebHeaderCollection.IsRestricted(strHeaderName))
                             {
-                            webServiceRequest.Headers.Add(arrHeaderList[i].Trim());
+                                webServiceRequest.Headers.Add(arrHeaderList[i].Trim());
                             }
                             break;
                     }
@@ -89,38 +90,32 @@ namespace TestDriver
                     Stream requestStream = webServiceRequest.GetRequestStream();
                     requestStream.Write(byteRequestBody, 0, byteRequestBody.Length);
                     requestStream.Close();
-                    Common.Property.Remarks = requestBody;
+                    Property.Remarks = requestBody;
                 }
                 WebResponse responseXml = webServiceRequest.GetResponse();
-
+                //var headers = responseXml.Headers;
                 //Collect returns from webservice
                 string statusCode = ((HttpWebResponse)responseXml).StatusCode.ToString();
                 string statusDescription = ((HttpWebResponse)responseXml).StatusDescription;
                 Console.WriteLine("API call response: " + statusCode + "\t" + statusDescription);
-                               
-                Stream responseData = responseXml.GetResponseStream();
-                StreamReader reader = new StreamReader(responseData, true);
-                String responseFromServer = reader.ReadToEnd();
-                responseFromServer.Replace('\\',' ');
+                String responseFromServer = null;
+                using(Stream responseData = responseXml.GetResponseStream())
+                    if (responseData != null)
+                        using (StreamReader reader = new StreamReader(responseData, true)) 
+                        {
+                            responseFromServer = reader.ReadToEnd();
+                            responseFromServer.Replace('\\', ' ');
+                        }
 
                 //Parse API response
                 //Store return data to a file and created a variable also
-                try
-                {
-                        File.WriteAllText(XmlFilePath, responseFromServer);
-                    
-                }
-                catch
-                {
-                   
-                }
+                File.WriteAllText(xmlFilePath, responseFromServer);
 
-               
-                Utility.SetVariable("APIFilePath", XmlFilePath);
+                Utility.SetVariable("APIFilePath", xmlFilePath);
 
                 Property.Attachments = apiResponseFileName;
 
-                // for Bug# 186 (To handle Json which is returned without object and the url having "api")
+                //To handle Json which is returned without object and the url having "api"
                 #region Converting json to xml in case json was the original format
                 if (responseFormat.ToLower().Equals("json") || requestUrl.ToLower().Contains("json") || requestUrl.ToLower().Contains("api"))
                 {
@@ -128,19 +123,26 @@ namespace TestDriver
                     {
                         //Converting json to xml
                         XmlNode jsonToXml = null;
-                        string jsonString = File.ReadAllText(XmlFilePath);
-                        jsonToXml = JsonConvert.DeserializeXmlNode("{\"root\":" + jsonString + "}", Property.ProductName);
-                        //New path exclusively for xml file, 
-                        //this is achieved by replacing json file name with xml file name in full length path
-                        XmlFilePath = XmlFilePath.Replace(apiResponseFileName, xmlFileName);
-                        //Write converted xml to the document
-                        XmlDocument convertedXmlDoc = new XmlDocument();
-                        convertedXmlDoc.CreateXmlDeclaration("1.0", string.Empty, string.Empty);
-                        convertedXmlDoc.LoadXml(jsonToXml.OuterXml);
-                        convertedXmlDoc.Save(XmlFilePath);
-                        //Going forward xml will be used to validate and read attributes
-                        Utility.SetVariable("APIFilePath", XmlFilePath);
-
+                        string jsonString = File.ReadAllText(xmlFilePath);
+                        if (jsonString==string.Empty)
+                        {
+                            StoreResponseHeader(responseXml);
+                        }
+                        else
+                        {
+                            jsonToXml = JsonConvert.DeserializeXmlNode("{\"root\":" + jsonString + "}", Property.ProductName);
+                            //New path exclusively for xml file, 
+                            //this is achieved by replacing json file name with xml file name in full length path.
+                            xmlFilePath = xmlFilePath.Replace(apiResponseFileName, xmlFileName);
+                            //Write converted xml to the document
+                            XmlDocument convertedXmlDoc = new XmlDocument();
+                            convertedXmlDoc.CreateXmlDeclaration("1.0", string.Empty, string.Empty);
+                            convertedXmlDoc.LoadXml(jsonToXml.OuterXml);
+                            convertedXmlDoc.Save(xmlFilePath);
+                            //Going forward xml will be used to validate and read attributes
+                            Utility.SetVariable("APIFilePath", xmlFilePath);
+                            StoreResponseHeader(responseXml);
+                        }
                     }
                     catch (Exception exJsonToXml)
                     {
@@ -150,18 +152,72 @@ namespace TestDriver
                 #endregion
 
                 return true;
-                }
+            }
             catch (Exception e)
             {
                 if (Property.SnapshotOption.Equals("on failure", StringComparison.OrdinalIgnoreCase) && Property.DebugMode.Equals("false", StringComparison.OrdinalIgnoreCase))
                 {
                     Property.Attachments = xmlFileName;
                 }
-                throw e;
+                throw;
             }
         }
 
-        private static bool IsXMLConvertable(string responseFromServer)
+
+        public static bool VerifyXmlHeader(string headerField, string expectedValue)
+        {
+            try
+            {
+                string headerFilePath = Property.ResultsSourcePath + "\\" + Property.ApiXmlHeaderFile;
+                using (StreamReader sr = new StreamReader(headerFilePath))
+                {
+                    string line = string.Empty;
+                    while ((line=sr.ReadLine()) != null)
+                    {
+                        string[] headerInfo = line.Split(':');
+                        if (headerInfo[0].Trim().Equals(headerField.Trim(),StringComparison.OrdinalIgnoreCase))
+                        {
+                            if (expectedValue.Trim() == headerInfo[1].ToString().Trim())
+                                return true;
+                        }
+                    }
+                }
+            }
+            catch (FileNotFoundException e)
+            {
+                Console.WriteLine("ResponseHeader Not Found.");
+                return false;
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// This method use to store the response header to the file.
+        /// </summary>
+        private static void StoreResponseHeader(WebResponse response)
+        {
+            HttpWebResponse responseheader = (HttpWebResponse)response;
+            string xmlFilePath = Property.ResultsSourcePath + "\\" + Property.ApiXmlHeaderFile;
+            using (StreamWriter sw = new StreamWriter(xmlFilePath))
+            {
+                sw.WriteLine("ResponseHeader : Found");
+                sw.WriteLine("protocolversion: {0}", responseheader.ProtocolVersion);
+                int iStatusCode = (int)responseheader.StatusCode;
+                sw.WriteLine("statuscode: {0}", iStatusCode.ToString());
+                sw.WriteLine("statusdescription: {0}", responseheader.StatusDescription);
+                sw.WriteLine("contentencoding: {0}", responseheader.ContentEncoding);
+                sw.WriteLine("contentlength: {0}", responseheader.ContentLength);
+                sw.WriteLine("contenttype: {0}", responseheader.ContentType);
+                sw.WriteLine("lastmodified: {0}", responseheader.LastModified);
+                sw.WriteLine("server: {0}", responseheader.Server);
+            }
+        }
+
+        private static bool IsXmlConvertable(string responseFromServer)
         {
             bool isLoadSuccessful = false;
             try
@@ -171,9 +227,9 @@ namespace TestDriver
                 convertedXmlDoc.LoadXml(responseFromServer);
                 isLoadSuccessful = true;
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
-            
+                // ignored
             }
             return isLoadSuccessful;
         }
@@ -189,33 +245,33 @@ namespace TestDriver
         /// File name to be used after file has been downloaded, if same file already exists, it will be overwritten
         /// </param>
         /// <returns></returns>
-        public static bool downloadFile(string webLocation, string localFileName = "FileDownload.file")
+        public static bool DownloadFile(string webLocation, string localFileName = "FileDownload.file")
         {
-            localFileName = localFileName.Trim().Replace(".", Common.Property.StepNumber + ".");
+            localFileName = localFileName.Trim().Replace(".", Property.StepNumber + ".");
 
             try
             {
                 //Delete any existing file with same name
-                string XmlFilePath = Property.ResultsSourcePath + "\\" + localFileName;
+                string xmlFilePath = Property.ResultsSourcePath + "\\" + localFileName;
                 string locationVariable = "DownloadedFile";
 
-                if (File.Exists(XmlFilePath))
+                if (File.Exists(xmlFilePath))
                 {
-                    File.Delete(XmlFilePath);
+                    File.Delete(xmlFilePath);
                 }
                 //Download file from web resources and store on local disk
                 try
                 {
                     WebClient wc = new WebClient();
-                    wc.DownloadFile(webLocation, XmlFilePath);
-                    Utility.SetVariable(locationVariable, XmlFilePath);
+                    wc.DownloadFile(webLocation, xmlFilePath);
+                    Utility.SetVariable(locationVariable, xmlFilePath);
 
-                    Common.Property.Remarks = "File has been downloaded and its location has been store in variable '" +
+                    Property.Remarks = "File has been downloaded and its location has been store in variable '" +
                                               locationVariable + "'.";
                 }
                 catch (Exception fileDownloadError)
                 {
-                    Common.Property.Remarks = "Unable to download file: " + fileDownloadError.Message;
+                    Property.Remarks = "Unable to download file: " + fileDownloadError.Message;
                     return false;
                 }
 
@@ -224,12 +280,12 @@ namespace TestDriver
             }
             catch (Exception e)
             {
-                Common.Property.Remarks = "Unable to download file: " + e.Message;
+                Property.Remarks = "Unable to download file: " + e.Message;
                 return false;
             }
         }
 
-        public static bool uploadFiletoFTP(string fileName, Uri uploadUrl, string user, string pswd)
+        public static bool UploadFiletoFtp(string fileName, Uri uploadUrl, string user, string pswd)
         {
             Stream requestStream = null;
             FileStream fileStream = null;
@@ -245,10 +301,9 @@ namespace TestDriver
                 requestStream = uploadRequest.GetRequestStream();
                 fileStream = File.Open(fileName, FileMode.Open);
                 byte[] buffer = new byte[1024];
-                int bytesRead;
                 while (true)
                 {
-                    bytesRead = fileStream.Read(buffer, 0, buffer.Length);
+                    var bytesRead = fileStream.Read(buffer, 0, buffer.Length);
                     if (bytesRead == 0)
                         break;
                     requestStream.Write(buffer, 0, bytesRead);
@@ -256,21 +311,21 @@ namespace TestDriver
 
                 requestStream.Close();
                 uploadResponse = (FtpWebResponse)uploadRequest.GetResponse();
-                Common.Property.Remarks = "File :'" + fileName + "' has been uploaded to '" + uploadUrl + "'.";
+                Property.Remarks = "File :'" + fileName + "' has been uploaded to '" + uploadUrl + "'.";
             }
             catch (UriFormatException ex)
             {
-                Common.Property.Remarks = "Error: " + ex.Message;
+                Property.Remarks = "Error: " + ex.Message;
                 return false;
             }
             catch (IOException ex)
             {
-                Common.Property.Remarks = "Error: " + ex.Message;
+                Property.Remarks = "Error: " + ex.Message;
                 return false;
             }
             catch (WebException ex)
             {
-                Common.Property.Remarks = "Error: " + ex.Message;
+                Property.Remarks = "Error: " + ex.Message;
                 return false;
             }
             finally
@@ -291,8 +346,9 @@ namespace TestDriver
         /// </summary>
         /// <param name="attributeName">String : Name of Attribute (node) to verify</param>
         /// <param name="expectedValue">String : Expected Value against which verification will be done</param>
+        /// <param name="nodeIndex"></param>
         /// <returns>bool value true OR false</returns>
-        public static bool verifyXmlAttribute(string attributeName, string expectedValue, int nodeIndex = 1)
+        public static bool VerifyXmlAttribute(string attributeName, string expectedValue, int nodeIndex = 1)
         {
 
             FileInfo fileInfo = new FileInfo(Utility.GetVariable("APIFilePath"));
@@ -302,7 +358,7 @@ namespace TestDriver
                 //replacing variable in case variable is used instead of value.
                 expectedValue = Utility.ReplaceVariablesInString(expectedValue);
                 //Read the value for specified node.
-                bool readAttribute = readXmlAttribute(attributeName, nodeIndex);
+                bool readAttribute = ReadXmlAttribute(attributeName, nodeIndex);
                 if (!readAttribute)
                 {
                     return false;
@@ -317,20 +373,17 @@ namespace TestDriver
                     Property.Attachments = fileInfo.Name;
                 }
 
-                if (Utility.doKeywordMatch(expectedValue, actualValue))
+                if (Utility.DoKeywordMatch(expectedValue, actualValue))
                 {
                     return true;
                 }
-                else
+                if (Property.SnapshotOption.Equals("on failure", StringComparison.OrdinalIgnoreCase) && Property.DebugMode.Equals("false", StringComparison.OrdinalIgnoreCase))
                 {
-                    if (Property.SnapshotOption.Equals("on failure", StringComparison.OrdinalIgnoreCase) && Property.DebugMode.Equals("false", StringComparison.OrdinalIgnoreCase))
-                    {
-                        Property.Attachments = fileInfo.Name;
-                    }
-                    Property.Remarks = "Actual value '" +
-                        actualValue + "' of attribute '" + attributeName + "' does not match its expected value '" + expectedValue + "'.";
-                    return false;
+                    Property.Attachments = fileInfo.Name;
                 }
+                Property.Remarks = "Actual value '" +
+                                   actualValue + "' of attribute '" + attributeName + "' does not match its expected value '" + expectedValue + "'.";
+                return false;
             }
             catch (Exception e)
             {
@@ -370,7 +423,7 @@ namespace TestDriver
         /// <returns>string value of specified attribute(node).</returns>
         /// Added different handlings and cleaned code
         /// Added Return CountXmlNodes function to return the count of Xml Nodes.
-        public static bool readXmlAttribute(string attributeName, int nodeIndex = 1, string valueLookingFor = "")
+        public static bool ReadXmlAttribute(string attributeName, int nodeIndex = 1, string valueLookingFor = "")
         {
             try
             {
@@ -403,7 +456,9 @@ namespace TestDriver
                 if (valueLookingFor.Equals(string.Empty))
                 {
                     blnNodeFound = true;
-                    Utility.SetVariable(attributeName, list.Item(nodeIndex - 1).InnerText.ToString().Trim());
+                    var xmlNode = list.Item(nodeIndex - 1);
+                    if (xmlNode != null)
+                        Utility.SetVariable(attributeName, xmlNode.InnerText.ToString().Trim());
                 }
                 //else loop will be hit only when we are looking for a specific value of attribute anywhere in the document
                 else
@@ -411,7 +466,8 @@ namespace TestDriver
                     //Iterate through each node and check if expected value is found
                     for (int i = 0; i < cnt; i++)
                     {
-                        if (list.Item(i).InnerText.ToLower().Trim().Equals(valueLookingFor.ToLower().Trim()))
+                        var xmlNode = list.Item(i);
+                        if (xmlNode != null && xmlNode.InnerText.ToLower().Trim().Equals(valueLookingFor.ToLower().Trim()))
                         {
                             blnNodeFound = true;
                             nodeIndex = i + 1;
@@ -428,12 +484,9 @@ namespace TestDriver
                                            "This position was saved to variable " + varNameForAttributeLocation + ".";
                         return true;
                     }
-                    else
-                    {
-                        Property.Remarks = "Value '" + valueLookingFor + "' of attribute '" + attributeName +
-                                           "' was NOT found anywhere in api response";
-                        return false;
-                    }
+                    Property.Remarks = "Value '" + valueLookingFor + "' of attribute '" + attributeName +
+                                       "' was NOT found anywhere in api response";
+                    return false;
                 }
 
                 Property.Remarks = Property.Remarks + "Stored value:= " + Utility.GetVariable(attributeName);
@@ -445,17 +498,11 @@ namespace TestDriver
             }
         }
 
-        
+
         /// <summary>
         /// Web Api calls goes here.
         /// </summary>
-        /// <param name="Header">string: string containing pipe seperated value for content type and authorization.</param>
-        /// <param name="Format">string: format in which response would be saved.</param>
-        /// <param name="Method">string: defines the type of reuest.</param>
-        /// <param name="url">string: API url</param>
-        /// <param name="Body">string: Body to be send with request.</param>
         /// <returns>bool: true OR false</returns>
-
         /// <summary>
         /// Count number of nodes present in XML response with specified node name 
         /// and store the value in runtimedic dictionary with key=nodecount.
@@ -463,45 +510,36 @@ namespace TestDriver
         /// <param name="attributeNodeName">string : Node name to count. </param>
         /// <returns>bool with true OR false</returns>
         /// Reused ReadXmlAttribute to count nodes also
-        public static bool CountXMLNodes(string attributeNodeName)
-        { 
-            try
+        public static bool CountXmlNodes(string attributeNodeName)
+        {
+            int cnt = ReturnCountofXmlNodes(attributeNodeName);
+            if (cnt == 0)
             {
-                int cnt = ReturnCountofXmlNodes(attributeNodeName);
-                if (cnt == 0)
-                {
-                    Property.Remarks = "Count of the "+attributeNodeName+ "is found to be 0";
-                    return true;
-                }
-                if (readXmlAttribute(attributeNodeName))
-                {
-                    
-                    Property.Remarks= "Total " + Utility.GetVariable(attributeNodeName + "Count") + " instances of attribute named '" +
-                                        attributeNodeName + " were found and stored to variable '" + attributeNodeName + "Count'";  //  Kafaltiya: Updated Remark to display the Variable name on which the node count will be stored.
-                    return true;
-                }
-                else
-                {
-                    //Property.Remarks is being set in readXmlAttribute method itself when attribute could not be located
-                    return false;
-                }
+                Property.Remarks = "Count of the " + attributeNodeName + "is found to be 0";
+                return true;
             }
-            catch (Exception e)
+            if (ReadXmlAttribute(attributeNodeName))
             {
-                throw e;
+
+                Property.Remarks = "Total " + Utility.GetVariable(attributeNodeName + "Count") + " instances of attribute named '" +
+                                   attributeNodeName + " were found and stored to variable '" + attributeNodeName + "Count'";
+                return true;
             }
+            //Property.Remarks is being set in readXmlAttribute method itself when attribute could not be located
+            return false;
         }
 
         /// <summary>
         /// verify XMLnode count for specified node.
         /// </summary>
-        /// <param name="data">String : Combination of node and count to verify</param>
+        /// <param name="attributeName"></param>
+        /// <param name="expectedCount"></param>
         /// <returns>bool : true OR false</returns>
-        public static bool verifyxmlnodecount(string attributeName, string expectedCount)
+        public static bool Verifyxmlnodecount(string attributeName, string expectedCount)
         {
             try
             {
-                if (CountXMLNodes(attributeName))
+                if (CountXmlNodes(attributeName))
                 {
                     string actualCount = Utility.GetVariable(attributeName + "Count").Trim();
                     if (actualCount.Equals(expectedCount))
@@ -509,19 +547,13 @@ namespace TestDriver
                         Property.Remarks = string.Empty;
                         return true;
                     }
-                    else
-                    {
-                        Property.Remarks = "Actual instance count '" +
-                        actualCount + "' of attribute '" + attributeName + "' does not match its expected count '" + expectedCount + "'.";
-                        return false;
-                    }
+                    Property.Remarks = "Actual instance count '" +
+                                       actualCount + "' of attribute '" + attributeName + "' does not match its expected count '" + expectedCount + "'.";
+                    return false;
                 }
-                else
-                {
-                    Property.Remarks = "Count of attribute " + attributeName + "" + "is" + "0";
-                    //Property.Remarks is being set in readXmlAttribute method itself when attribute could not be located
-                    return true;
-                }
+                Property.Remarks = "Count of attribute " + attributeName + "" + "is" + "0";
+                //Property.Remarks is being set in readXmlAttribute method itself when attribute could not be located
+                return true;
             }
             catch (Exception e)
             {

@@ -7,9 +7,6 @@
 ** Description: Custom Extension Methods
 *****************************************************************************/
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 
 namespace Krypton
 {

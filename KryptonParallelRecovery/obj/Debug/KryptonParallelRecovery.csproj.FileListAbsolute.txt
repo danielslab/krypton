@@ -1,0 +1,12 @@
+D:\TFS Krypton Product\KryptonOpenSource\SourceCode\Output\KryptonParallelRecovery.exe.config
+D:\TFS Krypton Product\KryptonOpenSource\SourceCode\Output\KryptonParallelRecovery.exe
+D:\TFS Krypton Product\KryptonOpenSource\SourceCode\Output\KryptonParallelRecovery.pdb
+D:\TFS Krypton Product\KryptonOpenSource\SourceCode\KryptonParallelRecovery\obj\Debug\KryptonParallelRecovery.csprojResolveAssemblyReference.cache
+D:\TFS Krypton Product\KryptonOpenSource\SourceCode\KryptonParallelRecovery\obj\Debug\KryptonParallelRecovery.exe
+D:\TFS Krypton Product\KryptonOpenSource\SourceCode\KryptonParallelRecovery\obj\Debug\KryptonParallelRecovery.pdb
+D:\Krypton Product\KryptonOpenSource\SourceCode\Output\KryptonParallelRecovery.exe.config
+D:\Krypton Product\KryptonOpenSource\SourceCode\Output\KryptonParallelRecovery.exe
+D:\Krypton Product\KryptonOpenSource\SourceCode\Output\KryptonParallelRecovery.pdb
+D:\Krypton Product\KryptonOpenSource\SourceCode\KryptonParallelRecovery\obj\Debug\KryptonParallelRecovery.csprojResolveAssemblyReference.cache
+D:\Krypton Product\KryptonOpenSource\SourceCode\KryptonParallelRecovery\obj\Debug\KryptonParallelRecovery.exe
+D:\Krypton Product\KryptonOpenSource\SourceCode\KryptonParallelRecovery\obj\Debug\KryptonParallelRecovery.pdb

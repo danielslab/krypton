@@ -1,0 +1,3 @@
+[6024:1912:1201/172239:WARNING:pref_notifier_impl.cc(27)] pref observer found at shutdown printing.enabled
+[6024:1912:1201/172239:WARNING:pref_notifier_impl.cc(27)] pref observer found at shutdown plugins.allow_outdated
+[6024:1912:1201/172239:WARNING:pref_notifier_impl.cc(27)] pref observer found at shutdown plugins.always_authorize

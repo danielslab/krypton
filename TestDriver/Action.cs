@@ -8,19 +8,16 @@
 *****************************************************************************/
 
 using System;
-using System.Text;
 using System.Collections.Generic;
 using System.Data;
 using System.IO;
 using Common;
 using System.Reflection;
-using System.Diagnostics;
 using Microsoft.Win32;
 using System.Runtime.InteropServices;
-using System.Threading;
-using OpenQA.Selenium;
 using AutoItX3Lib;
 using System.Text.RegularExpressions;
+using Driver.Browsers;
 
 namespace TestDriver
 {
@@ -28,27 +25,27 @@ namespace TestDriver
     public class Action
     {
         [DllImport("AutoItX3.dll", SetLastError = true, CharSet = CharSet.Auto)]
-        static public extern int AU3_MouseUp([MarshalAs(UnmanagedType.LPStr)] string Button);
-        private string stepAction = string.Empty;
-        private string parent = string.Empty;
-        private string testObject = string.Empty;
-        private string TestData = string.Empty;
-        public static string browserVersion = string.Empty;
-        private Dictionary<int, string> keywordDic = new Dictionary<int, string>();
-        public static Dictionary<string, string> objDataRow = new Dictionary<string, string>();
-        public static Dictionary<string, string> objSecondDataRow = new Dictionary<string, string>();
-        private Driver.Browser objBrowser = null;
-        private Driver.ITestObject objTestObject = null;
-        private Driver.RecoveryScenarios objRecovery = null;
-        private DialogHandler objHandler = null;
-        private IProjectMethods pluginProject = null;
-        private string verificationMessage = string.Empty;
-        private string snapShotOption = Common.Property.SnapshotOption.ToLower();
-        private string globalTimeout = Common.Property.GlobalTimeOut;
-        private string debugMode = Common.Property.DebugMode;
-        private DataSet datasetRecoverBrowser = new DataSet();
-        private DataSet datasetRecoverPopup = new DataSet();
-        private DataSet datasetOR = new DataSet();
+        static public extern int AU3_MouseUp([MarshalAs(UnmanagedType.LPStr)] string button);
+        private string _stepAction = string.Empty;
+        private string _parent = string.Empty;
+        private string _testObject = string.Empty;
+        private string _testData = string.Empty;
+        public static string BrowserVersion = string.Empty;
+        private readonly Dictionary<int, string> _keywordDic = new Dictionary<int, string>();
+        public static Dictionary<string, string> ObjDataRow = new Dictionary<string, string>();
+        public static Dictionary<string, string> ObjSecondDataRow = new Dictionary<string, string>();
+        private Browser _objBrowser = null;
+        private Driver.ITestObject _objTestObject = null;
+        private Driver.RecoveryScenarios _objRecovery = null;
+        private DialogHandler _objHandler = null;
+        private IProjectMethods _pluginProject = null;
+        private string _verificationMessage = string.Empty;
+        private string _snapShotOption = Property.SnapshotOption.ToLower();
+        private readonly string _globalTimeout = Property.GlobalTimeOut;
+        private string _debugMode = Property.DebugMode;
+        private readonly DataSet _datasetRecoverBrowser;
+        private readonly DataSet _datasetRecoverPopup;
+        private readonly DataSet _datasetOr;
 
         // Declared a Win32 function to control other processes' window.
         [DllImport("user32.dll")]
@@ -57,30 +54,30 @@ namespace TestDriver
         /// <summary>
         ///Default constructor initialize TestObject and Browser class
         /// </summary>
-        public Action(DataSet recoverPopupData, DataSet recoverBrowserData, DataSet ORData)
+        public Action(DataSet recoverPopupData, DataSet recoverBrowserData, DataSet orData)
         {
-            this.datasetRecoverPopup = recoverPopupData;
-            this.datasetRecoverBrowser = recoverBrowserData;
-            this.datasetOR = ORData;
-            string browserName = Common.Utility.GetParameter(Common.Property.BrowserString).ToLower();
-           
-            objBrowser = new Driver.Browser(Common.Property.ErrorCaptureAs);
-            objTestObject = new Driver.TestObject(Utility.GetParameter("ObjectTimeout"));
+            _datasetRecoverPopup = recoverPopupData;
+            _datasetRecoverBrowser = recoverBrowserData;
+            _datasetOr = orData;
+            string browserName = Utility.GetParameter(Property.BrowserString).ToLower();
 
-            string[] availablePlugins = Directory.GetFiles(Common.Property.ApplicationPath, "*ProjectPlugin.dll");
+            _objBrowser = new Browser(Property.ErrorCaptureAs);
+            _objTestObject = new Driver.TestObject(Utility.GetParameter("ObjectTimeout"));
+
+            string[] availablePlugins = Directory.GetFiles(Property.ApplicationPath, "*ProjectPlugin.dll");
             if (availablePlugins.Length > 0)
             {
                 foreach (string availablePlugin in availablePlugins)
                 {
                     Assembly asm = Assembly.LoadFrom(availablePlugin);
-                    System.Type myType = asm.GetType(asm.GetName().Name + ".MatchProjectPlugin");
-                    pluginProject = (IProjectMethods)Activator.CreateInstance(myType);
+                    Type myType = asm.GetType(asm.GetName().Name + ".MatchProjectPlugin");
+                    _pluginProject = (IProjectMethods)Activator.CreateInstance(myType);
 
                 }
 
             }
             //Initialize Object for specified language to create Selenium script.        
-            switch (Common.Property.ScriptLanguage.ToLower()) 
+            switch (Property.ScriptLanguage.ToLower())
             {
                 case "java":
                     break;
@@ -95,60 +92,63 @@ namespace TestDriver
         /// </summary>
         public static void SaveScript()
         {
-            
         }
 
         #region Call to action in driver according to action step
-        /// <summary>
-        ///This method will call action from Driver Class. 
-        /// </summary>
-        /// <param name="action">Step action to perfrom by driver</param>
-        /// <param name="parent=">Parent Object</param>
-        /// <param name="child">Test object on which operation to be perform</param>
-        /// <param name="data">Test Data</param>
-        /// <param name="modifier"></param>
-        /// <returns></returns>
 
+        ///  <summary>
+        /// This method will call action from Driver Class. 
+        ///  </summary>
+        ///  <param name="action">Step action to perfrom by driver</param>
+        ///  <param name="parent=">Parent Object</param>
+        /// <param name="parent"></param>
+        /// <param name="child">Test object on which operation to be perform</param>
+        ///  <param name="data">Test Data</param>
+        ///  <param name="modifier"></param>
+        ///  <returns></returns>
         public void Do(string action, string parent = null, string child = null, string data = null, string modifier = "")
         {
-            snapShotOption = Common.Property.SnapshotOption.ToLower();
+            _snapShotOption = Property.SnapshotOption.ToLower();
             //check for locator directly in test case.
-            if (child.Contains("="))
+            try
             {
-                string how = child.Split('=')[0].ToLower().Trim();
-                string what = child.Replace(child.Split('=')[0] + "=", string.Empty);
-                objDataRow[KryptonConstants.HOW] = how;
-                objDataRow[KryptonConstants.WHAT] = what.Trim();
-                objDataRow[KryptonConstants.LOGICAL_NAME] = string.Empty;
-                objDataRow[KryptonConstants.OBJ_TYPE] = string.Empty;
-                objDataRow[KryptonConstants.MAPPING] = string.Empty;
+                if (child != null && child.Contains("="))
+                {
+                    string how = child.Split('=')[0].ToLower().Trim();
+                    string what = child.Replace(child.Split('=')[0] + "=", string.Empty);
+                    ObjDataRow[KryptonConstants.HOW] = how;
+                    ObjDataRow[KryptonConstants.WHAT] = what.Trim();
+                    ObjDataRow[KryptonConstants.LOGICAL_NAME] = string.Empty;
+                    ObjDataRow[KryptonConstants.OBJ_TYPE] = string.Empty;
+                    ObjDataRow[KryptonConstants.MAPPING] = string.Empty;
+                }
             }
-            stepAction = action;
-            testObject = child;
-            TestData = data;
-            int stindex;
-            int endindex;
+            catch (Exception e)
+            {
+                Console.WriteLine(e.Message);
+            }
+            _stepAction = action;
+            _testObject = child;
+            _testData = data;
             //parse modifier
             modifier = modifier.ToLower().Trim();
             int i = 1;
-            keywordDic.Clear();//clearing previous keyword.
+            _keywordDic.Clear();//clearing previous keyword.
 
             string browserDimension = null; //browser dimensions
             for (int v = 0; ; v++)
             {
                 if (modifier.Contains("{"))
                 {
-                    stindex = modifier.IndexOf("{");
+                    var stindex = modifier.IndexOf("{", StringComparison.Ordinal);
                     modifier = modifier.Remove(stindex, 1);
-                    endindex = modifier.IndexOf("}");
-                    string KeyVariable = modifier.Substring(stindex, (endindex - stindex));
-                    if (KeyVariable.ToLower().Contains("windowsize") || KeyVariable.ToLower().Contains("window"))
-                        browserDimension = KeyVariable;
-
-
-                    keywordDic.Add(i, KeyVariable);
+                    var endindex = modifier.IndexOf("}", StringComparison.Ordinal);
+                    string keyVariable = modifier.Substring(stindex, (endindex - stindex));
+                    if (keyVariable.ToLower().Contains("windowsize") || keyVariable.ToLower().Contains("window"))
+                        browserDimension = keyVariable;
+                    _keywordDic.Add(i, keyVariable);
                     i++;
-                    stindex = modifier.IndexOf("}");
+                    stindex = modifier.IndexOf("}", StringComparison.Ordinal);
                     modifier = modifier.Remove(stindex, 1);
                 }
                 else
@@ -157,21 +157,20 @@ namespace TestDriver
                 }
             }
 
-            if (keywordDic.ContainsValue("nowait"))
-                Common.Property.NoWait = true;
+            if (_keywordDic.ContainsValue("nowait"))
+                Property.NoWait = true;
             else
-                Common.Property.NoWait = false;
+                Property.NoWait = false;
 
             string stepStatus = string.Empty;
             bool verification = true;
-        
-            Common.Utility.driverKeydic = null;
-            Common.Utility.driverKeydic = keywordDic;
+
+            Utility.DriverKeydic = null;
+            Utility.DriverKeydic = _keywordDic;
 
             // Initializing Step Description to empty, this will allow individual cases to write description
             if (!modifier.Contains("recovery"))   // Consume last Step Description during recovery.
                 Property.StepDescription = string.Empty;
-
             #region  Simplifying the parameters before passed to Actual actions.
             string[] dataContent = null;
             string contentFirst = string.Empty;
@@ -182,7 +181,7 @@ namespace TestDriver
 
             if (data != null)
             {
-                dataContent = data.Split(Property.SEPERATOR);
+                dataContent = data.Split(Property.Seprator);
                 switch (dataContent.Length)
                 {
                     case 1:
@@ -210,8 +209,6 @@ namespace TestDriver
                         contentFourth = dataContent[3];
                         contentFifth = dataContent[4];
                         break;
-                    default:
-                        break;
                 }
                 contentFirst = Utility.ReplaceSpecialCharactersInString(contentFirst.Trim());
                 contentSecond = Utility.ReplaceSpecialCharactersInString(contentSecond.Trim());
@@ -220,204 +217,205 @@ namespace TestDriver
                 contentFifth = Utility.ReplaceSpecialCharactersInString(contentFifth.Trim());
             }
             #endregion
-
-           
             try
             {
-                objBrowser.SetObjDataRow(objDataRow);
-                objTestObject.SetObjDataRow(objDataRow, stepAction);          
-                objHandler = new DialogHandler();
-                switch (stepAction.ToLower())
+                _objBrowser.SetObjDataRow(ObjDataRow);
+                _objTestObject.SetObjDataRow(ObjDataRow, _stepAction);
+                _objHandler = new DialogHandler();
+                switch (_stepAction.ToLower())
                 {
-                    //action are performed accoding to below action steps.+
+                    case "waitforpage":
+                        _objTestObject.WaitForPage(contentFirst);
+                        break;
+                    //action are performed accoding to below action steps.
                     #region Action-> settestmode
                     case "settestmode":
                         // Assuming page object is given and Mode is paased as a data field. 
-                        Common.Property.NoWait = true;
-                        string TestModeVariable = Property.TESTMODE;
+                        Property.NoWait = true;
+                        string testModeVariable = Property.TestMode;
                         if (!string.IsNullOrWhiteSpace(contentSecond))
                         {
-                            TestModeVariable = Property.TESTMODE + "[" + contentFirst + "]";
+                            testModeVariable = Property.TestMode + "[" + contentFirst + "]";
                         }
 
                         //Update test mode only if object could be located
-                        if (objTestObject.VerifyObjectPresent())
+                        if (_objTestObject.VerifyObjectPresent())
                         {
-                            Utility.SetVariable(TestModeVariable, contentSecond.ToLower().Trim());
+                            Utility.SetVariable(testModeVariable, contentSecond.ToLower().Trim());
                         }
 
                         //Display test mode on console if debug mode is true
                         if (Utility.GetParameter("debugmode").ToLower().Equals("true"))
-                            Property.Remarks = "Current Execution Test Mode =" + "'" + Utility.GetVariable(TestModeVariable) + "'";
+                            Property.Remarks = "Current Execution Test Mode =" + "'" + Utility.GetVariable(testModeVariable) + "'";
                         break;
                     #endregion
                     #region Action-> ShutDownDriver
                     case "shutdowndriver":
-                        objBrowser.Shutdown();
+                        _objBrowser.Shutdown();
                         break;
                     #endregion
                     //Delete all internet temporery file.
                     #region Action-> ClearBrowserCache
                     case "clearbrowsercache":
                         Property.StepDescription = "Clear Browser Cache";
-                        BrowserManager.browser.clearCache();
+                        BrowserManager.Browser.ClearCache();
                         break;
                     #endregion
                     //Close most recent tab of browser associated with driver. 
                     #region Action-> CloseBrowser
                     case "closebrowser":
                         Property.StepDescription = "Close Browser";
-                        objBrowser.CloseBrowser();
+                        _objBrowser.CloseBrowser();
                         break;
                     #endregion
                     //Close All Browsers
                     #region Action-> CloseAllBrowsers
                     case "closeallbrowsers":
-                        if (Common.Utility.GetParameter(Common.Property.BrowserString).ToLower() != "android" && Common.Utility.GetParameter(Common.Property.BrowserString).ToLower() != "iphone" && Common.Utility.GetParameter(Common.Property.BrowserString).ToLower() != "selendroid")
+                        if (Utility.GetParameter(Property.BrowserString).ToLower() != "android" && Utility.GetParameter(Property.BrowserString).ToLower() != "iphone" && Utility.GetParameter(Property.BrowserString).ToLower() != "selendroid")
                         {
                             Property.StepDescription = "Close all opened browsers.";
-                            objBrowser.CloseAllBrowser();
+                            _objBrowser.CloseAllBrowser();
                         }
                         break;
                     #endregion
                     //Fire specified event on test object, eg.Click event.  
                     #region Action-> FireEvent
                     case "fireevent":
-                        Common.Property.NoWait = true;
-                        Property.StepDescription = "Fire '" + contentFirst + "' event on " + testObject;
-                        objTestObject.FireEvent(contentFirst);
+                        Property.NoWait = true;
+                        Property.StepDescription = "Fire '" + contentFirst + "' event on " + _testObject;
+                        _objTestObject.FireEvent(contentFirst);
                         break;
                     #endregion
                     //Start new instance of driver and open browser with specified url 
                     #region Action->OpenBrowser
                     case "openbrowser":
-                        string browserName = Common.Utility.GetParameter(Common.Property.BrowserString).ToLower();
+                        string browserName = Utility.GetParameter(Property.BrowserString).ToLower();
                         bool deleteCookie = !modifier.ToLower().Contains("keepcookies");
-                            Property.StepDescription = "Open a new browser and navigate to url '" + contentFirst;
-                            string remoteUrl = Common.Property.RemoteUrl;
-                            string isRemoteExecution = Common.Property.IsRemoteExecution;
-                            string ProfilePath = string.Empty;
-                            // firefoxProfilePath parameter determines whether to use Firefox Profile or not.
-                            switch (browserName)
+                        Property.StepDescription = "Open a new browser and navigate to url '" + contentFirst;
+                        string remoteUrl = Property.RemoteUrl;
+                        string isRemoteExecution = Property.IsRemoteExecution;
+                        string profilePath = string.Empty;
+                        // firefoxProfilePath parameter determines whether to use Firefox Profile or not.
+                        switch (browserName)
+                        {
+                            case KryptonConstants.BROWSER_CHROME: profilePath = Utility.GetVariable("ChromeProfilePath");
+                                break;
+                            case KryptonConstants.BROWSER_FIREFOX: profilePath = Utility.GetVariable("FirefoxProfilePath");
+                                break;
+                            default: break;
+                        }
+
+                        //addonsPath parameter determines whether to load firefox addons or not.
+                        string addonsPath = Utility.GetParameter("AddonsPath");
+
+                        if (contentFirst.Equals(string.Empty))
+                        {
+                            contentFirst = Property.ApplicationUrl;
+                        }
+
+                        Exception openBrowserEx = null;
+                        try
+                        {
+
+                            _objBrowser = Browser.OpenBrowser(browserName, deleteCookie, contentFirst,
+                                                                        isRemoteExecution, remoteUrl, profilePath,
+                                                                        addonsPath, _datasetRecoverPopup, _datasetRecoverBrowser, _datasetOr, browserDimension);
+                        }
+                        catch (Exception ex)
+                        {
+                            openBrowserEx = ex;
+                            if (Property.IsRemoteExecution.ToLower().Equals("true"))
+                                throw ex;
+
+                        }
+
+                        _objTestObject = new Driver.TestObject(Utility.GetParameter("ObjectTimeout"));
+                        _objRecovery = new Driver.RecoveryScenarios(_datasetRecoverPopup, _datasetRecoverBrowser, _datasetOr, _objTestObject);
+
+                        #region  Region containing JavaScript to maximize window and get Browser version string.
+                        string browserVer;
+                        Utility.SetVariable("BrowserVersion", BrowserVersion);
+                        try
+                        {
+                            browserVer = _objTestObject.ExecuteStatement("return navigator.userAgent;");
+                        }
+                        catch (Exception)
+                        {
+                            throw openBrowserEx;
+                        }
+                        if (!browserVer.Equals(string.Empty))
+                        {
+                            switch (browserName.ToLower())
                             {
-                                case KryptonConstants.BROWSER_CHROME: ProfilePath = Utility.GetVariable("ChromeProfilePath");
+                                case KryptonConstants.BROWSER_FIREFOX:
+                                    browserVer = browserVer.Substring(browserVer.IndexOf("Firefox/", StringComparison.Ordinal) + 8);
+                                    if (browserVer.IndexOf('.') != browserVer.LastIndexOf('.'))
+                                        browserVer = browserVer.Split('.')[0] + '.' + browserVer.Split('.')[1];
+                                    BrowserVersion = browserVer;
                                     break;
-                                case KryptonConstants.BROWSER_FIREFOX: ProfilePath = Utility.GetVariable("FirefoxProfilePath");
-                                    break;
-                                default: break;
-                            }
-
-                            //addonsPath parameter determines whether to load firefox addons or not.
-                            string addonsPath = Utility.GetParameter("AddonsPath");
-
-                            if (contentFirst.Equals(string.Empty))
-                            {
-                                contentFirst = Common.Property.ApplicationURL;
-                            }
-                            
-                            Exception openBrowserEx = null;
-                            try
-                            {
-                               
-                                objBrowser = Driver.Browser.OpenBrowser(browserName, deleteCookie, contentFirst,
-                                                                            isRemoteExecution, remoteUrl, ProfilePath,
-                                                                            addonsPath, datasetRecoverPopup, datasetRecoverBrowser, datasetOR, browserDimension);
-                            }
-                            catch (Exception ex)
-                            {
-                                openBrowserEx = ex;
-                                if(Property.IsRemoteExecution.ToLower().Equals("true"))
-                                  throw ex;
-
-                            }
-
-                            objTestObject = new Driver.TestObject(Utility.GetParameter("ObjectTimeout"));
-                            objRecovery = new Driver.RecoveryScenarios(datasetRecoverPopup, datasetRecoverBrowser, datasetOR, objTestObject);
-
-                            #region  Region containing JavaScript to maximize window and get Browser version string.
-                            string browserVer = string.Empty;
-                            Common.Utility.SetVariable("BrowserVersion", browserVersion);
-                            try
-                            {
-                                browserVer = objTestObject.ExecuteStatement("return navigator.userAgent;");
-                            }
-                            catch (Exception)
-                            {
-                                throw openBrowserEx;
-                            }
-                            if (!browserVer.Equals(string.Empty))
-                            {
-                                switch (browserName.ToLower())
-                                {
-                                    case KryptonConstants.BROWSER_FIREFOX:
-                                        browserVer = browserVer.Substring(browserVer.IndexOf("Firefox/") + 8);
-                                        if (browserVer.IndexOf('.') != browserVer.LastIndexOf('.'))
-                                            browserVer = browserVer.Split('.')[0] + '.' + browserVer.Split('.')[1];
-                                        browserVersion = browserVer;
-                                        break;
-                                    case "ie":
-                                    case "iexplore":
-                                    case "internetexplorer":
-                                    case "internet explorer":
-                                        browserVersion = browserVer.Substring(browserVer.IndexOf("MSIE ") + 5).Split(';')[0];
-                                        string keyName = null;
-                                        // Read the system registry to get the IE version in case tests are running locally
-                                        if (!Utility.GetParameter("RunRemoteExecution").Equals("true", StringComparison.OrdinalIgnoreCase))
+                                case "ie":
+                                case "iexplore":
+                                case "internetexplorer":
+                                case "internet explorer":
+                                    BrowserVersion = browserVer.Substring(browserVer.IndexOf("MSIE ", StringComparison.Ordinal) + 5).Split(';')[0];
+                                    string keyName = null;
+                                    // Read the system registry to get the IE version in case tests are running locally
+                                    if (!Utility.GetParameter("RunRemoteExecution").Equals("true", StringComparison.OrdinalIgnoreCase))
+                                    {
+                                        keyName = @"HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Internet Explorer";
+                                        BrowserVersion = (string)Registry.GetValue(keyName, "svcVersion", "key not found in Registry");
+                                        if (BrowserVersion.Equals("key not found in Registry"))
                                         {
-                                            keyName = @"HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Internet Explorer";
-                                           browserVersion = (string)Registry.GetValue(keyName, "svcVersion", "key not found in Registry");
-                                            if (browserVersion.Equals("key not found in Registry"))
+                                            BrowserVersion = (string)Registry.GetValue(keyName, "Version", "key not found in Registry");
+                                            if (BrowserVersion.Equals("key not found in Registry")) // chek if version key is also not available in registry.
                                             {
-                                                browserVersion = (string)Registry.GetValue(keyName, "Version", "key not found in Registry");
-                                                if (browserVersion.Equals("key not found in Registry")) // chek if version key is also not available in registry.
-                                                {
-                                                    browserVersion = string.Empty;
-                                                }
-                                                else
-                                                    browserVersion = browserVersion.Split('.')[0] + "." + browserVersion.Split('.')[1];
+                                                BrowserVersion = string.Empty;
                                             }
                                             else
-                                            {
-                                                browserVersion = browserVersion.Split('.')[0] + "." + browserVersion.Split('.')[1];
-                                            }
+                                                BrowserVersion = BrowserVersion.Split('.')[0] + "." + BrowserVersion.Split('.')[1];
                                         }
-                                        break;
-                                    case KryptonConstants.BROWSER_CHROME:                                    
-
-                                        browserVer = browserVer.Substring(browserVer.IndexOf("Chrome/") + 7).Split(' ')[0];
-                                        if (browserVer.IndexOf('.') != browserVer.LastIndexOf('.'))
-                                            browserVer = browserVer.Split('.')[0] + '.' + browserVer.Split('.')[1];
-                                        browserVersion = browserVer;
-                                        break;
-                                    case KryptonConstants.BROWSER_OPERA:
-                                        if (browserVer.Contains("Version/"))
-                                            browserVer = browserVer.Substring(browserVer.IndexOf("Version/") + 8);
                                         else
-                                            browserVer = browserVer.Substring(browserVer.IndexOf("Opera") + 6).Split(' ')[0];
-                                        if (browserVer.IndexOf('.') != browserVer.LastIndexOf('.'))
-                                            browserVer = browserVer.Split('.')[0] + '.' + browserVer.Split('.')[1];
-                                        browserVersion = browserVer;
-                                        break;
-                                    case KryptonConstants.BROWSER_SAFARI:
-                                        browserVer = browserVer.Substring(browserVer.IndexOf("Version/") + 8).Split(' ')[0];
-                                        if (browserVer.IndexOf('.') != browserVer.LastIndexOf('.'))
-                                            browserVer = browserVer.Split('.')[0] + '.' + browserVer.Split('.')[1];
-                                        browserVersion = browserVer;
-                                        break;
-                                }
+                                        {
+                                            BrowserVersion = BrowserVersion.Split('.')[0] + "." + BrowserVersion.Split('.')[1];
+                                        }
+                                    }
+                                    break;
+                                case KryptonConstants.BROWSER_CHROME:
+
+                                    browserVer = browserVer.Substring(browserVer.IndexOf("Chrome/", StringComparison.Ordinal) + 7).Split(' ')[0];
+                                    if (browserVer.IndexOf('.') != browserVer.LastIndexOf('.'))
+                                        browserVer = browserVer.Split('.')[0] + '.' + browserVer.Split('.')[1];
+                                    BrowserVersion = browserVer;
+                                    break;
+                                case KryptonConstants.BROWSER_OPERA:
+                                    if (browserVer.Contains("Version/"))
+                                        browserVer = browserVer.Substring(browserVer.IndexOf("Version/", StringComparison.Ordinal) + 8);
+                                    else
+                                        browserVer = browserVer.Substring(browserVer.IndexOf("Opera", StringComparison.Ordinal) + 6).Split(' ')[0];
+                                    if (browserVer.IndexOf('.') != browserVer.LastIndexOf('.'))
+                                        browserVer = browserVer.Split('.')[0] + '.' + browserVer.Split('.')[1];
+                                    BrowserVersion = browserVer;
+                                    break;
+                                case KryptonConstants.BROWSER_SAFARI:
+                                    browserVer = browserVer.Substring(browserVer.IndexOf("Version/", StringComparison.Ordinal) + 8).Split(' ')[0];
+                                    if (browserVer.IndexOf('.') != browserVer.LastIndexOf('.'))
+                                        browserVer = browserVer.Split('.')[0] + '.' + browserVer.Split('.')[1];
+                                    BrowserVersion = browserVer;
+                                    break;
                             }
-                            #endregion
+                        }
+                        #endregion
 
-                            Common.Utility.SetVariable("BrowserVersion", browserVersion);
+                        Utility.SetVariable("BrowserVersion", BrowserVersion);
 
-                            objBrowser.SetObjDataRow(objDataRow);
-                            Utility.SetVariable(Common.Property.BrowserVersion, browserVersion);
+                        _objBrowser.SetObjDataRow(ObjDataRow);
+                        Utility.SetVariable(Property.BrowserVersion, BrowserVersion);
                         break;
                     #endregion
                     //Navigate to back on current web page
                     #region Action->GoBack
                     case "goback":
-                        objBrowser.GoBack();
+                        _objBrowser.GoBack();
                         Property.StepDescription = "Go backwards in the browser";
                         break;
                     #endregion
@@ -425,117 +423,105 @@ namespace TestDriver
                     #region Action->GoForward
                     case "goforward":
                         Property.StepDescription = "Go forward in the browser";
-                        objBrowser.GoForward();
+                        _objBrowser.GoForward();
                         break;
                     #endregion
                     //Refresh current web page. :
                     #region Action->RefreshBrowser
                     case "refreshbrowser":
                         Property.StepDescription = "Refresh browser";
-                        objBrowser.Refresh();
+                        _objBrowser.Refresh();
                         break;
                     #endregion
                     case "switchtorecentbrowser":
                     case "switchtonewbrowser":
                         Property.StepDescription = "Set focus to most recently opened window";
-                        objBrowser.setBrowserFocus();
+                        _objBrowser.SetBrowserFocus();
                         break;
 
                     //Navigate to new specified url in current web page.
                     #region Action->NavigateURL
                     case "navigateurl":
                         Property.StepDescription = "Navigate to url '" + contentFirst + "' in currently opened browser";
-                        try
-                        {
-                            if (!contentFirst.StartsWith(@"http://"))
-                                contentFirst = @"http://" + contentFirst;
-                        }
-                        catch { }
-                        objBrowser.NavigationUrl(contentFirst);
+                        if (!contentFirst.StartsWith(@"http://"))
+                            contentFirst = @"http://" + contentFirst;
+                        _objBrowser.NavigationUrl(contentFirst);
                         break;
                     #endregion
                     //Clear existing data from test object. 
                     case "clear":
-                    case "cleartext":          
-                        Property.StepDescription = "Clear object '" + testObject + "'";
-                        objTestObject.ClearText();
+                    case "cleartext":
+                        Property.StepDescription = "Clear object '" + _testObject + "'";
+                        _objTestObject.ClearText();
                         break;
-                    //Check radio button and check box. :
+                    //Check radio button and check box.
                     case "check":
-                        Property.StepDescription = "Check '" + contentFirst + "' checkbox '" + testObject + "'";
-                        objTestObject.Check(contentFirst);
+                        Property.StepDescription = "Check '" + contentFirst + "' checkbox '" + _testObject + "'";
+                        _objTestObject.Check(contentFirst);
                         break;
                     //Uncheck radio button and check box. :
                     case "uncheck":
-                        Property.StepDescription = "Uncheck checkbox '" + testObject + "'";
-                        objTestObject.UnCheck();
+                        Property.StepDescription = "Uncheck checkbox '" + _testObject + "'";
+                        _objTestObject.UnCheck();
                         break;
                     case "checkmultiple":
-                        Property.StepDescription = "Check multiple checkboxes of '" + testObject + "'";
-                        string[] data_Content = data.Split(Property.SEPERATOR);
-                        objTestObject.checkMultiple(data_Content);
+                        Property.StepDescription = "Check multiple checkboxes of '" + _testObject + "'";
+                        _objTestObject.CheckMultiple(dataContent);
                         break;
                     case "uncheckmultiple":
-                        Property.StepDescription = "Uncheck multiple checkboxes of '" + testObject + "'";
-                        string[] dataC = data.Split(Property.SEPERATOR);
-                        objTestObject.uncheckMultiple(dataC);
+                        Property.StepDescription = "Uncheck multiple checkboxes of '" + _testObject + "'";
+                        string[] dataC = data.Split(Property.Seprator);
+                        _objTestObject.UncheckMultiple(dataC);
                         break;
                     case "swipeobject":
-                        Property.StepDescription = "swipe object in " + contentFirst + " direction " + testObject;
-                        Utility.SetVariable(testObject, contentFirst);
+                        Property.StepDescription = "swipe object in " + contentFirst + " direction " + _testObject;
+                        Utility.SetVariable(_testObject, contentFirst);
                         break;
                     //Perform click action on associated test object. :
                     #region Action->Click
                     case "click":
-                        Property.StepDescription = "Click on '" + testObject + "'";
-                                               
+                        Property.StepDescription = "Click on '" + _testObject + "'";
+
                         DateTime dtbefore = new DateTime();
-                        if (objDataRow.ContainsKey(KryptonConstants.OBJ_TYPE) && objDataRow[KryptonConstants.OBJ_TYPE].ToLower().Contains("winbutton"))
+                        if (ObjDataRow.ContainsKey(KryptonConstants.OBJ_TYPE) && ObjDataRow[KryptonConstants.OBJ_TYPE].ToLower().Contains("winbutton"))
                         {
 
                             dtbefore = DateTime.Now;
-                            if (objDataRow.ContainsKey(KryptonConstants.OBJ_TYPE) && objDataRow[KryptonConstants.OBJ_TYPE].ToLower().Contains("winbutton") && Property.IsRemoteExecution.ToLower().Equals("true"))
+                            if (ObjDataRow.ContainsKey(KryptonConstants.OBJ_TYPE) && ObjDataRow[KryptonConstants.OBJ_TYPE].ToLower().Contains("winbutton") && Property.IsRemoteExecution.ToLower().Equals("true"))
                             {
                                 // do nothing
                             }
                             else
                             {
-                                var Autoit = new AutoItX3();
-                                string[] windowDetail = Regex.Split(objDataRow[KryptonConstants.WHAT], "//");
+                                var autoit = new AutoItX3();
+                                string[] windowDetail = Regex.Split(ObjDataRow[KryptonConstants.WHAT], "//");
 
-                                Autoit.WinActivate(windowDetail[0], string.Empty);
+                                autoit.WinActivate(windowDetail[0], string.Empty);
 
-                                Autoit.ControlClick(windowDetail[0], string.Empty, windowDetail[1]);
+                                autoit.ControlClick(windowDetail[0], string.Empty, windowDetail[1]);
                             }
                         }
                         else
                         {
-                            objTestObject.Click(keywordDic, data);
-                        }
-                        try
-                        {
-                        }
-                        catch (Exception e)
-                        {
-                            if (e.Message.Contains("Popup_Text") && !(e.Message.ToLower().Contains("false")))
-                                Property.Remarks = Property.Remarks + "  " + e.Message;
+                            _objTestObject.Click(_keywordDic, data);
                         }
                         break;
 
                     #endregion
                     case "doubleclick":
-                        Property.StepDescription = "Double click on '" + testObject + "'";
-                        objTestObject.DoubleClick();
+                        Property.StepDescription = "Double click on '" + _testObject + "'";
+                        _objTestObject.DoubleClick();
                         break;
-                    #endregion
-                    //Enter unique data in test object. :
+        #endregion
+                    //Enter unique data in test object. 
                     #region Action-> EnterUniqueData
                     case "enteruniquedata":
-                        Property.StepDescription = "Enter unique string of " + contentFirst + " characters in " + testObject;
-                        int length = System.Convert.ToInt16(contentFirst);
-                        string strUnique = Utility.GenerateUniqueString(length);//passing length value if mentioned in test case.
-                        Utility.SetVariable(testObject, strUnique);
-                        objTestObject.SendKeys(strUnique);
+                        Property.StepDescription = "Enter unique string of " + contentFirst + " characters in " + _testObject;
+                        int length = Convert.ToInt16(contentFirst);
+                        //passing length value if mentioned in test case.
+                        string strUnique = Utility.GenerateUniqueString(length);
+                        Utility.SetVariable(_testObject, strUnique);
+                        _objTestObject.SendKeys(strUnique);
                         break;
                     #endregion
                     //Enter specified data in test object. :
@@ -544,27 +530,27 @@ namespace TestDriver
 
                     #region Action->TypeString
                     case "typestring":
-                        if(contentFirst.Equals("ON", StringComparison.CurrentCultureIgnoreCase))
-                            stepAction="Check";
-                        if(contentFirst.Equals("OFF", StringComparison.CurrentCultureIgnoreCase))
-                             stepAction="Unchek";
+                        if (contentFirst.Equals("ON", StringComparison.CurrentCultureIgnoreCase))
+                            _stepAction = "Check";
+                        if (contentFirst.Equals("OFF", StringComparison.CurrentCultureIgnoreCase))
+                            _stepAction = "Unchek";
 
-                            Property.StepDescription = "Enter text " + contentFirst + " in " + testObject;
-                        
-                        Utility.SetVariable(testObject, contentFirst);//implicitely set key/Value to runtimedic dictionary before enter any data.
-                        if (objDataRow.ContainsKey(KryptonConstants.OBJ_TYPE) && objDataRow[KryptonConstants.OBJ_TYPE].ToLower().Equals("winedit"))
+                        Property.StepDescription = "Enter text " + contentFirst + " in " + _testObject;
+
+                        Utility.SetVariable(_testObject, contentFirst);//implicitely set key/Value to runtimedic dictionary before enter any data.
+                        if (ObjDataRow.ContainsKey(KryptonConstants.OBJ_TYPE) && ObjDataRow[KryptonConstants.OBJ_TYPE].ToLower().Equals("winedit"))
                         {
-                            if (objDataRow.ContainsKey(KryptonConstants.OBJ_TYPE) && objDataRow[KryptonConstants.OBJ_TYPE].ToLower().Contains("winedit") && Property.IsRemoteExecution.ToLower().Equals("true"))
+                            if (ObjDataRow.ContainsKey(KryptonConstants.OBJ_TYPE) && ObjDataRow[KryptonConstants.OBJ_TYPE].ToLower().Contains("winedit") && Property.IsRemoteExecution.ToLower().Equals("true"))
                             {
                                 UploadFileOnRemote oUploadFileOnRemote = new UploadFileOnRemote(Utility.GetParameter("browser"), Property.RemoteMachineIP, contentFirst.Trim());
                                 oUploadFileOnRemote.UploadFileWithAutoIt();
                             }
                             else
-                            objHandler.enterdataInDialog(contentFirst);
+                                _objHandler.EnterdataInDialog(contentFirst);
                         }
                         else
                         {
-                            objTestObject.SendKeys(contentFirst);
+                            _objTestObject.SendKeys(contentFirst);
                         }
                         break;
                     #endregion
@@ -584,15 +570,15 @@ namespace TestDriver
                     //Press non alphabetic key.
                     #region Action->KeyPress
                     case "keypress":
-                        Property.StepDescription = "Press key " + contentFirst + " on " + testObject;
-                        objTestObject.KeyPress(contentFirst);
+                        Property.StepDescription = "Press key " + contentFirst + " on " + _testObject;
+                        _objTestObject.KeyPress(contentFirst);
                         break;
                     #endregion
                     //Adding submit in case this helps when clicks are missing.
                     #region Action->Submit
                     case "submit":
-                        Property.StepDescription = "Submit " + testObject;
-                        objTestObject.Submit();
+                        Property.StepDescription = "Submit " + _testObject;
+                        _objTestObject.Submit();
                         break;
                     #endregion
                     //Perform wait action for specified time duration.
@@ -600,16 +586,16 @@ namespace TestDriver
                     #region Action->Wait
                     case "wait":
                         Property.StepDescription = "Pause execution for " + contentFirst + " seconds";
-                        browserName = Common.Utility.GetParameter(Common.Property.BrowserString).ToLower();
-                        objBrowser.Wait(contentFirst);
+                        browserName = Utility.GetParameter(Property.BrowserString).ToLower();
+                        _objBrowser.Wait(contentFirst);
                         break;
                     #endregion
                     //Select option form List. 
                     #region Action->SelectItem
                     case "selectitem":
-                        Property.StepDescription = "Select '" + contentFirst + "' from " + testObject;
-                        Utility.SetVariable(testObject, contentFirst);
-                        objTestObject.SelectItem(dataContent);
+                        Property.StepDescription = "Select '" + contentFirst + "' from " + _testObject;
+                        Utility.SetVariable(_testObject, contentFirst);
+                        _objTestObject.SelectItem(dataContent);
                         break;
                     #endregion
                     //Select multiple options form List.
@@ -617,58 +603,58 @@ namespace TestDriver
                     case "selectmultipleitem":
                     #region Action->SelectItems
                     case "selectitems":
-                        Property.StepDescription = "Select multiple items '" + data + "' from " + testObject;
-                        Utility.SetVariable(testObject, data);
-                        objTestObject.SelectItem(dataContent, true);
+                        Property.StepDescription = "Select multiple items '" + data + "' from " + _testObject;
+                        Utility.SetVariable(_testObject, data);
+                        _objTestObject.SelectItem(dataContent, true);
                         break;
                     #endregion
                     //Select option from List on the besis of index. 
                     #region Action-> SelectItemByIndex
                     case "selectitembyindex":
-                        Property.StepDescription = "Select " + contentFirst + "th item from " + testObject;
-                        string optionValue = objTestObject.SelectItemByIndex(contentFirst);
-                        Utility.SetVariable(testObject, optionValue);
+                        Property.StepDescription = "Select " + contentFirst + "th item from " + _testObject;
+                        string optionValue = _objTestObject.SelectItemByIndex(contentFirst);
+                        Utility.SetVariable(_testObject, optionValue);
                         break;
                     #endregion
                     //Wait for a specified condition to be happened on test object. 
                     #region Action->WaitForObject
                     case "waitforobject":
-                        Property.StepDescription = "Wait until " + testObject + " becomes available";
-                        string actualwaitTime = objTestObject.WaitForObject(contentFirst, globalTimeout, keywordDic, modifier.ToLower());
+                        Property.StepDescription = "Wait until " + _testObject + " becomes available";
+                        string actualwaitTime = _objTestObject.WaitForObject(contentFirst, _globalTimeout, _keywordDic, modifier.ToLower());
                         break;
                     #endregion
                     //Wait for a specified condition to be happened on test object. 
                     #region Action->WaitForObjectNotPresent
                     case "waitforobjectnotpresent":
-                        Property.StepDescription = "Wait until " + testObject + " disappears";
-                        objTestObject.WaitForObjectNotPresent(contentFirst, globalTimeout, keywordDic);
+                        Property.StepDescription = "Wait until " + _testObject + " disappears";
+                        _objTestObject.WaitForObjectNotPresent(contentFirst, _globalTimeout, _keywordDic);
                         break;
                     #endregion
                     //Wait for specified property to enable. :
                     #region Action->WaitForProperty
                     case "waitforproperty":
-                        Property.StepDescription = "Wait for " + testObject + " to achieve value '" + contentSecond +
+                        Property.StepDescription = "Wait for " + _testObject + " to achieve value '" + contentSecond +
                                                     "' for '" + contentFirst + "' property";
-                        objTestObject.WaitForObjectProperty(contentFirst, contentSecond, globalTimeout, keywordDic);
+                        _objTestObject.WaitForObjectProperty(contentFirst, contentSecond, _globalTimeout, _keywordDic);
                         break;
                     #endregion
                     //Accept alert :
                     #region Action->AcceptAlert
                     case "acceptalert":
                         Property.StepDescription = "Accept alert";
-                        objBrowser.AlertAccept();
+                        _objBrowser.AlertAccept();
                         break;
                     #endregion
                     #region Action->DismissAlert
                     case "dismissalert":
-                        objBrowser.AlertDismiss();
+                        _objBrowser.AlertDismiss();
                         break;
                     #endregion
                     //Verify text on alert page. :
                     #region Action->VerifyAlertText
                     case "verifyalerttext":
                         Property.StepDescription = "Verify alert contains text '" + contentFirst + "'";
-                        verification = objBrowser.VerifyAlertText(contentFirst, keywordDic);
+                        verification = _objBrowser.VerifyAlertText(contentFirst, _keywordDic);
                         break;
                     #endregion
                     //Get value of specified property of test object. :
@@ -676,10 +662,10 @@ namespace TestDriver
                     #region Action->GetObjectProperty
                     case "getobjectproperty":
                         string property = contentFirst.Trim();
-                        string propertyVariable = testObject + "." + property;
+                        string propertyVariable = _testObject + "." + property;
                         if (!contentSecond.Equals(String.Empty))
                             propertyVariable = contentSecond.Trim();
-                        string propertyValue = objTestObject.GetObjectProperty(property);
+                        string propertyValue = _objTestObject.GetObjectProperty(property);
                         Utility.SetVariable(propertyVariable, propertyValue);
                         break;
                     #endregion
@@ -689,14 +675,14 @@ namespace TestDriver
 
                         property = contentFirst.Trim();
                         propertyValue = contentSecond.Trim();
-                        objTestObject.SetAttribute(property, propertyValue);
+                        _objTestObject.SetAttribute(property, propertyValue);
                         break;
                     #endregion
                     //Get value of specified property of current web page. :
-                    
+
                     #region Action->GetPageProperty
                     case "getpageproperty":
-                        propertyValue = objBrowser.GetPageProperty(contentFirst.Trim());
+                        propertyValue = _objBrowser.GetPageProperty(contentFirst.Trim());
                         propertyVariable = parent + "." + contentFirst.Trim();
                         if (!contentSecond.Equals(String.Empty))
                             propertyVariable = contentSecond.Trim();
@@ -708,13 +694,13 @@ namespace TestDriver
                     #region Action->VerifyTextPresent
                     case "verifytextpresent":
                         //- In case of text on page, Dictionary will be empty ie- count= 0.
-                        if (objDataRow.Count == 0)
+                        if (ObjDataRow.Count == 0)
                         {
-                            verification = objBrowser.VerifyTextPresentOnPage(contentFirst, keywordDic);
+                            verification = _objBrowser.VerifyTextPresentOnPage(contentFirst, _keywordDic);
                         }
                         else
                         {
-                            verification = objTestObject.VerifyObjectProperty("text", contentFirst, keywordDic);
+                            verification = _objTestObject.VerifyObjectProperty("text", contentFirst, _keywordDic);
                         }
                         break;
                     #endregion
@@ -724,20 +710,20 @@ namespace TestDriver
                     #region Action->VerifyTextNotPresent
                     case "verifytextnotpresent":
 
-                        if (objDataRow[KryptonConstants.HOW].Equals(string.Empty) || objDataRow[KryptonConstants.WHAT].Equals(string.Empty) || objDataRow[KryptonConstants.HOW] == null || objDataRow[KryptonConstants.WHAT] == null || objDataRow[KryptonConstants.HOW].ToLower().Equals("url"))
+                        if (ObjDataRow[KryptonConstants.HOW].Equals(string.Empty) || ObjDataRow[KryptonConstants.WHAT].Equals(string.Empty) || ObjDataRow[KryptonConstants.HOW] == null || ObjDataRow[KryptonConstants.WHAT] == null || ObjDataRow[KryptonConstants.HOW].ToLower().Equals("url"))
                         {
-                            verification = !objBrowser.VerifyTextPresentOnPage(contentFirst, keywordDic);
+                            verification = !_objBrowser.VerifyTextPresentOnPage(contentFirst, _keywordDic);
                         }
                         else
                         {
-                            verification = objTestObject.VerifyObjectPropertyNot("text", contentFirst, keywordDic);
+                            verification = _objTestObject.VerifyObjectPropertyNot("text", contentFirst, _keywordDic);
                         }
                         break;
                     #endregion
                     //Verify that specified text is present on current web page. :
                     #region Action->VerifyTextOnPage
                     case "verifytextonpage":
-                        verification = objBrowser.VerifyTextPresentOnPage(contentFirst, keywordDic);
+                        verification = _objBrowser.VerifyTextPresentOnPage(contentFirst, _keywordDic);
                         if (verification)
                             Property.StepDescription = "The Text : " + contentFirst + " was present on the page";
                         else
@@ -747,44 +733,44 @@ namespace TestDriver
                     //Verify that specified text is not present on current web page. :
                     #region Action-> VerifyTextNotOnPage
                     case "verifytextnotonpage":
-                        verification = !objBrowser.VerifyTextPresentOnPage(contentFirst, keywordDic);
+                        verification = !_objBrowser.VerifyTextPresentOnPage(contentFirst, _keywordDic);
                         if (verification)
                         {
                             stepStatus = ExecutionStatus.Pass;
-                            Common.Property.Remarks = "Text  : \"" + contentFirst + "\" is not found on current Page.";
+                            Property.Remarks = "Text  : \"" + contentFirst + "\" is not found on current Page.";
                         }
                         else
                         {
                             stepStatus = ExecutionStatus.Fail;
-                            Common.Property.Remarks = "Text  : \"" + contentFirst + "\" is found on current Page.";
+                            Property.Remarks = "Text  : \"" + contentFirst + "\" is found on current Page.";
                         }
                         break;
                     #endregion
                     //Verify that List option is persent in focused List. :
                     case "verifylistitempresent":
-                        verification = objTestObject.VerifyListItemPresent(contentFirst);
+                        verification = _objTestObject.VerifyListItemPresent(contentFirst);
                         break;
                     //Verify that List option is not persent in focused List. :
                     case "verifylistitemnotpresent":
-                        verification = objTestObject.VerifyListItemNotPresent(contentFirst);
+                        verification = _objTestObject.VerifyListItemNotPresent(contentFirst);
                         break;
                     //Verify that specified test object is present on current web page. :
                     #region Action->VerifyObjectPresent
                     case "verifyobjectpresent":
-                        verification = objTestObject.VerifyObjectPresent();
+                        verification = _objTestObject.VerifyObjectPresent();
                         break;
                     #endregion
                     //Verify that specified test object is present on current web page. :
                     case "verifyobjectnotpresent":
-                        verification = objTestObject.VerifyObjectNotPresent();
+                        verification = _objTestObject.VerifyObjectNotPresent();
                         break;
                     //Verify test object property. :
                     #region Action-> VerifyObjectProperty
                     case "verifyobjectproperty":
                         property = contentFirst.Trim();
                         propertyValue = contentSecond.Trim();
-                        verification = objTestObject.VerifyObjectProperty(property, propertyValue, keywordDic);
-                                                                   
+                        verification = _objTestObject.VerifyObjectProperty(property, propertyValue, _keywordDic);
+
                         break;
                     #endregion
                     //Verify test object property not present. :
@@ -792,54 +778,54 @@ namespace TestDriver
                     case "verifyobjectpropertynot":
                         property = contentFirst.Trim();
                         propertyValue = contentSecond.Trim();
-                        verification = objTestObject.VerifyObjectPropertyNot(property, propertyValue, keywordDic);
+                        verification = _objTestObject.VerifyObjectPropertyNot(property, propertyValue, _keywordDic);
                         break;
                     #endregion
                     //Verify current web page property. :
                     #region Action->VerifyPageProperty
                     case "verifypageproperty":
-                        property = TestData.Substring(0, TestData.IndexOf('|')).Trim();
-                        propertyValue = TestData.Substring(TestData.IndexOf('|') + 1).Trim();
+                        property = _testData.Substring(0, _testData.IndexOf('|')).Trim();
+                        propertyValue = _testData.Substring(_testData.IndexOf('|') + 1).Trim();
                         // Replace special characters after trimming off white spaces.
                         property = Utility.ReplaceSpecialCharactersInString(property);
                         propertyValue = Utility.ReplaceSpecialCharactersInString(propertyValue);
-                        verification = objBrowser.VerifyPageProperty(property, propertyValue, keywordDic);
+                        verification = _objBrowser.VerifyPageProperty(property, propertyValue, _keywordDic);
                         break;
                     #endregion
                     //Verify that specified text is present in web page view source. :
                     #region Action-> VerifyTextInPageSource
                     case "verifytextinpagesource":
-                        verification = objBrowser.VerifyTextInPageSource(contentFirst, keywordDic);
+                        verification = _objBrowser.VerifyTextInPageSource(contentFirst, _keywordDic);
                         break;
                     #endregion
                     //Verify specified text not in webpage view-source. 
                     #region Action->VerifyTextNotPageSource
                     case "verifytextnotinpagesource":
-                        verification = !objBrowser.VerifyTextInPageSource(contentFirst, keywordDic);
+                        verification = !_objBrowser.VerifyTextInPageSource(contentFirst, _keywordDic);
                         break;
                     #endregion
                     //Verify that current web page is display properly.
                     case "verifypagedisplayed":
-                        verification = objBrowser.VerifyPageDisplayed(keywordDic);
+                        verification = _objBrowser.VerifyPageDisplayed(_keywordDic);
                         break;
                     //Synchronize object with specified condition.
                     case "syncobject":
-                        objTestObject.WaitForObject(contentFirst, globalTimeout, keywordDic, modifier);
+                        _objTestObject.WaitForObject(contentFirst, _globalTimeout, _keywordDic, modifier);
                         break;
                     //Verify that object is dispaly properly.
                     case "verifyobjectdisplayed":
-                        verification = objTestObject.VerifyObjectDisplayed();
+                        verification = _objTestObject.VerifyObjectDisplayed();
                         break;
                     //Execute specified script language.    
                     #region Action->ExecuteStatement | ExecuteScript
                     case "executescript":
                     case "executestatement":
-                        Common.Property.NoWait = true;
-                        string scriptResult = objTestObject.ExecuteStatement(contentFirst);
+                        Property.NoWait = true;
+                        string scriptResult = _objTestObject.ExecuteStatement(contentFirst);
                         if (scriptResult.ToLower().Equals("false"))
                             verification = false;
-                        else if (!scriptResult.ToLower().Equals("true"))                           
-                            Utility.SetVariable(testObject, scriptResult);
+                        else if (!scriptResult.ToLower().Equals("true"))
+                            Utility.SetVariable(_testObject, scriptResult);
                         break;
                     #endregion
                     //Retrieve all numbers from text.
@@ -861,7 +847,7 @@ namespace TestDriver
                         break;
                     #endregion
                     #region Action->SetParameter
-                    case "setparameter": 
+                    case "setparameter":
 
                         string varName1 = contentFirst.Trim();
                         string varValue1 = contentSecond.Trim();
@@ -882,37 +868,37 @@ namespace TestDriver
                     #endregion
                     case "getdatafromdatabase":
                         verification = DBRelatedMethods.GetDataFromDatabase(contentFirst, child);
-                        verificationMessage = Property.Remarks;
+                        _verificationMessage = Property.Remarks;
                         break;
                     #region Action-> GetUserTesting
                     case "getuserfortesting": //it will work same as method "GetDataFromDatabase". If GetUserForTesting returns false, test case execution will be stopped.
                         try
                         {
                             verification = DBRelatedMethods.GetDataFromDatabase(contentFirst, child);
-                            verificationMessage = Property.Remarks;
+                            _verificationMessage = Property.Remarks;
 
                             //Try once again in case this fails
                             if (verification == false)
                             {
                                 verification = DBRelatedMethods.GetDataFromDatabase(contentFirst, child);
-                                verificationMessage = Property.Remarks;
+                                _verificationMessage = Property.Remarks;
                             }
 
-                            if (verification == false) Common.Property.EndExecutionFlag = true;
+                            if (verification == false) Property.EndExecutionFlag = true;
                         }
                         catch
                         {
-                            Common.Property.EndExecutionFlag = true;
+                            Property.EndExecutionFlag = true;
                         }
                         break;
                     #endregion
                     case "executedatabasequery":
                         verification = DBRelatedMethods.ExecuteDatabaseQuery(contentFirst, child);
-                        verificationMessage = Property.Remarks;
+                        _verificationMessage = Property.Remarks;
                         break;
                     case "verifydatabase":
-                        verification = DBRelatedMethods.verifyDatabase(contentFirst, child);
-                        verificationMessage = Property.Remarks;
+                        verification = DBRelatedMethods.VerifyDatabase(contentFirst, child);
+                        _verificationMessage = Property.Remarks;
                         break;
                     #region Action->RequestWebService
                     case "requestwebservice":
@@ -923,8 +909,8 @@ namespace TestDriver
                         string requestBody = Utility.ReplaceVariablesInString(Utility.GetVariable("[TD]Body"));
 
                         Property.StepDescription = "Request web service using method '" + requestMethod + "' and url '" + requestUrl + "'.";
-                        verification = WebAPI.requestWebService(requestHeader, responseFormat, requestMethod, requestUrl, requestBody);
-                        verificationMessage = Property.Remarks;
+                        verification = WebAPI.RequestWebService(requestHeader, responseFormat, requestMethod, requestUrl, requestBody);
+                        _verificationMessage = Property.Remarks;
                         break;
                     #endregion
                     case "downloadfile":
@@ -932,35 +918,35 @@ namespace TestDriver
                     #region Action->Download
                     case "download":
                         Property.StepDescription = "Download file from url: " + contentFirst;
-                        verification = WebAPI.downloadFile(contentFirst, contentSecond);
-                        verificationMessage = Property.Remarks;
+                        verification = WebAPI.DownloadFile(contentFirst, contentSecond);
+                        _verificationMessage = Property.Remarks;
                         break;
                     #endregion
                     #region Action-> FTPFileUpload
                     case "ftpfileupload":
                         Property.StepDescription = "Upload file: " + contentFourth + "to ftp server: " + contentFirst;
 
-                        string HostName = contentFirst;
-                        string UserName = contentSecond;
-                        string Password = contentThird;
-                        string FilePath = contentFourth;
-                        string UploadedFileName = contentFifth;
+                        string hostName = contentFirst;
+                        string userName = contentSecond;
+                        string password = contentThird;
+                        string filePath = contentFourth;
+                        string uploadedFileName = contentFifth;
 
                         string url = string.Empty;
 
-                        if (String.IsNullOrEmpty(UploadedFileName))
+                        if (String.IsNullOrEmpty(uploadedFileName))
                         {
-                            url = "ftp://" + HostName + "/" + Path.GetFileName(FilePath);
+                            url = "ftp://" + hostName + "/" + Path.GetFileName(filePath);
                         }
                         else
                         {
-                            url = "ftp://" + HostName + "/" + UploadedFileName;
+                            url = "ftp://" + hostName + "/" + uploadedFileName;
                         }
 
                         Uri uploadUrl = new Uri(url);
 
-                        verification = WebAPI.uploadFiletoFTP(FilePath, uploadUrl, UserName, Password);
-                        verificationMessage = Property.Remarks;
+                        verification = WebAPI.UploadFiletoFtp(filePath, uploadUrl, userName, password);
+                        _verificationMessage = Property.Remarks;
                         break;
                     #endregion
                     #region Action-> ReadXMLAttribute
@@ -973,20 +959,20 @@ namespace TestDriver
                         {
                             try
                             {
-                                verification = WebAPI.readXmlAttribute(contentFirst.Trim(),
+                                verification = WebAPI.ReadXmlAttribute(contentFirst.Trim(),
                                                                        Convert.ToInt16(contentSecond.Trim()));
                             }
                             catch (Exception)
                             {
-                                verification = WebAPI.readXmlAttribute(contentFirst.Trim());
+                                verification = WebAPI.ReadXmlAttribute(contentFirst.Trim());
                             }
                         }
                         else
                         {
-                            verification = WebAPI.readXmlAttribute(contentFirst.Trim());
+                            verification = WebAPI.ReadXmlAttribute(contentFirst.Trim());
                         }
 
-                        verificationMessage = Property.Remarks;
+                        _verificationMessage = Property.Remarks;
                         break;
                     #endregion
                     case "findxmlattribute":
@@ -996,22 +982,21 @@ namespace TestDriver
                         Property.StepDescription = "Find relative location (index) of attribute '" + contentFirst.Trim() +
                             "' where value of attribute should be '" + contentSecond.Trim() + "'.";
 
-                        verification = WebAPI.readXmlAttribute(contentFirst.Trim(), 1, contentSecond.Trim());
-                        verificationMessage = Property.Remarks;
+                        verification = WebAPI.ReadXmlAttribute(contentFirst.Trim(), 1, contentSecond.Trim());
+                        _verificationMessage = Property.Remarks;
                         break;
                     #endregion
-                    //: new step action added as per the need of G3 API automation testing team  
+                    // New step action added as per the need of G3 API automation testing team  
                     case "verifyxmlattributenotpresent":
-                        verification = !WebAPI.readXmlAttribute(contentFirst.Trim(), 1, contentSecond.Trim());
+                        verification = !WebAPI.ReadXmlAttribute(contentFirst.Trim(), 1, contentSecond.Trim());
                         if (!verification)
                             Property.Remarks = "Value '" + contentSecond.Trim() + "' of attribute '" + contentFirst.Trim() + "' found  in api response. ";
                         else
                             Property.Remarks = "Value '" + contentSecond.Trim() + "' of attribute '" + contentFirst.Trim() + "' was not present in api response. "; ;
-                        verificationMessage = Property.Remarks;
+                        _verificationMessage = Property.Remarks;
                         break;
                     #region Action-> VerifyXMLAttribute
                     case "verifyxmlattribute":
-                        
                         Property.StepDescription = "Verify value of attribute '" +
                             contentFirst.Trim() + "' equals to '" +
                             contentSecond.Trim() + "'.";
@@ -1021,15 +1006,29 @@ namespace TestDriver
                             contentThird = "1";
                         }
 
-                        verification = WebAPI.verifyXmlAttribute(contentFirst.Trim(), contentSecond.Trim(), int.Parse(contentThird));
-                        verificationMessage = Property.Remarks;
+                        verification = WebAPI.VerifyXmlAttribute(contentFirst.Trim(), contentSecond.Trim(), int.Parse(contentThird));
+                        _verificationMessage = Property.Remarks;
                         break;
+                    #endregion
+
+                    #region Action->VerifyXMLHeader
+                    case "verifyxmlheader":
+                        verification = WebAPI.VerifyXmlHeader(contentFirst.Trim(), contentSecond.Trim());
+                        if (verification)
+                        {
+                            Property.Remarks = contentFirst.Trim()  +" "+contentSecond.Trim() + " Found in the Request Header.";
+                        } 
+                        else
+                            Property.Remarks = contentFirst.Trim()  +" "+contentSecond.Trim() + " Not found in the Request Header.";
+                                _verificationMessage = Property.Remarks;
+                        break;
+
                     #endregion
                     #region Action-> CountXMLNodes
                     case "countxmlnodes":
                         Property.StepDescription = "Count all instances of attribute '" + contentFirst + "' and store to variable '" + contentFirst.Trim() + "Count'";
-                        verification = WebAPI.CountXMLNodes(contentFirst.Trim());
-                        verificationMessage = Property.Remarks;
+                        verification = WebAPI.CountXmlNodes(contentFirst.Trim());
+                        _verificationMessage = Property.Remarks;
                         break;
                     #endregion
                     #region Action-> VerifyXMLNodeCount
@@ -1038,36 +1037,34 @@ namespace TestDriver
                                 contentFirst.ToString().Trim() +
                                 "' equals to '" + contentSecond.ToString().Trim() + "'.";
 
-                        verification = WebAPI.verifyxmlnodecount(contentFirst.ToString().Trim(),
+                        verification = WebAPI.Verifyxmlnodecount(contentFirst.ToString().Trim(),
                                                                     contentSecond.ToString().Trim());
-                        verificationMessage = Property.Remarks;
+                        _verificationMessage = Property.Remarks;
                         break;
                     #endregion
                     // this method will split data column, generate random number on the basis of start index and end index and assign to variable
                     // 
                     #region Action-> GenerateRandomNumber
                     case "generaterandomnumber":
-                        int startIntValue = int.Parse(Common.Utility.ReplaceVariablesInString(contentFirst.Trim()));
-                        int endIntValue = int.Parse(Common.Utility.ReplaceVariablesInString(contentSecond.Trim()));
+                        int startIntValue = int.Parse(Utility.ReplaceVariablesInString(contentFirst.Trim()));
+                        int endIntValue = int.Parse(Utility.ReplaceVariablesInString(contentSecond.Trim()));
                         string generateParamName = string.Empty;
                         if (!contentThird.Equals(String.Empty))
-                            generateParamName = Common.Utility.ReplaceVariablesInString(contentThird.Trim());
+                            generateParamName = Utility.ReplaceVariablesInString(contentThird.Trim());
                         else
                             generateParamName = Property.GenerateRandomNumberParamName; //by default harcoded variable
 
                         int rndVal = Utility.RandomNumber(startIntValue, endIntValue + 1);
-
                         //set variable
-                        Common.Utility.SetVariable(generateParamName, rndVal.ToString());
-
+                        Utility.SetVariable(generateParamName, rndVal.ToString());
                         break;
                     #endregion
                     //this method will split data column, generate random number on the basis of start index and end index and assign to variable
                     // 
                     #region Action-> GenerateUniqueString
                     case "generateuniquestring":
-                        int startIntValue1 = int.Parse(Common.Utility.ReplaceVariablesInString(contentFirst.Trim()));
-                        string endIntValue1 = Common.Utility.ReplaceVariablesInString(contentSecond.Trim());
+                        int startIntValue1 = int.Parse(Utility.ReplaceVariablesInString(contentFirst.Trim()));
+                        string endIntValue1 = Utility.ReplaceVariablesInString(contentSecond.Trim());
                         string generateParamName1 = string.Empty;
                         if (string.IsNullOrWhiteSpace(endIntValue1) == false)
                             generateParamName1 = endIntValue1;
@@ -1077,10 +1074,10 @@ namespace TestDriver
                         string rndVal1 = Utility.RandomString(startIntValue1);
 
                         //set variable
-                        Common.Utility.SetVariable(generateParamName1, rndVal1.ToString());
+                        Utility.SetVariable(generateParamName1, rndVal1.ToString());
 
-                        Common.Property.StepDescription = "Generate unique string of length " + startIntValue1;
-                        Common.Property.Remarks = "Generated string:= " + rndVal1.ToString();
+                        Property.StepDescription = "Generate unique string of length " + startIntValue1;
+                        Property.Remarks = "Generated string:= " + rndVal1.ToString();
 
                         break;
                     #endregion
@@ -1088,7 +1085,7 @@ namespace TestDriver
                     //Also stores each digit in ten different variables named as: Char1, Char2, ... , Char10
                     #region Action-> GenerateUniqueMobileNo.
                     case "generateuniquemobileno":
-                        string uniqueMobile = Common.Utility.GenerateUniqueNumeral(10);
+                        string uniqueMobile = Utility.GenerateUniqueNumeral(10);
                         // Check if first digit is '1' then replace it with '4'
                         if (uniqueMobile[0] == '0' || uniqueMobile[0] == '1')
                             uniqueMobile = uniqueMobile.Replace(uniqueMobile[0], '4');
@@ -1100,23 +1097,23 @@ namespace TestDriver
                         for (int j = 1; j <= uniqueMobile.Length; j++)
                             Utility.SetVariable("Char" + j.ToString(), uniqueMobile[j - 1].ToString());
 
-                        Common.Property.StepDescription = "Generate unique mobile number and store to variable: 'MobileNo'";
-                        Common.Property.Remarks = "Generated mobile no:= " + uniqueMobile.ToString();
+                        Property.StepDescription = "Generate unique mobile number and store to variable: 'MobileNo'";
+                        Property.Remarks = "Generated mobile no:= " + uniqueMobile.ToString();
 
                         break;
                     #endregion
                     case "mousemove":
-                        objTestObject.mouseMove();
+                        _objTestObject.MouseMove();
                         break;
 
                     //Performs click using advanced user interaction API
                     case "mouseclick":
-                        objTestObject.mouseClick();
+                        _objTestObject.MouseClick();
                         break;
 
                     //Performs mouseover using advanced user interaction API
                     case "mouseover":
-                        objTestObject.mouseOver();
+                        _objTestObject.MouseOver();
                         break;
                     case "{ignore}":
                     case "{IGNORE}":
@@ -1129,56 +1126,57 @@ namespace TestDriver
                     //            Multiple addAction statements can be clubbed one after another, and they will be executed in a chain fashion
                     #region Action-> AddAction
                     case "addaction":
-                        objTestObject.addAction(contentFirst, contentSecond);
+                        _objTestObject.AddAction(contentFirst, contentSecond);
                         break;
                     #endregion
                     //Performs actions build using "addAction" keyword using advanced user interaction API
                     #region Action-> PerformAction
                     case "performaction":
-                        objTestObject.performAction();
+                        _objTestObject.PerformAction();
                         break;
                     #endregion
                     #region Action-> VerifySortOrder
                     case "verifysortorder":
                         Property.StepDescription = "Verify sort order with Property " + "'" + contentFirst + "'" + " and sort order " + "'" + contentSecond + "'";
-                        verification = objTestObject.verifySortOrder(contentFirst, contentSecond);
+                        verification = _objTestObject.VerifySortOrder(contentFirst, contentSecond);
                         break;
                     #endregion
-                 
+
                     #region Action-> DragAndDrop
                     case "draganddrop":
-                        Property.StepDescription = "Drag " + testObject + " and drop to " + contentFirst;
-                        objTestObject.DragAndDrop(objSecondDataRow);
+                        Property.StepDescription = "Drag " + _testObject + " and drop to " + contentFirst;
+                        _objTestObject.DragAndDrop(ObjSecondDataRow);
                         break;
                     #endregion
                     #region  Action-> saveContentsoffile
                     case "savecontentstofile":
                         string contents = contentFirst;
                         string filename = "CustomTagsFile.txt";
-                        if (!testObject.Equals(string.Empty))
+                        if (!_testObject.Equals(string.Empty))
                         {
-                            filename = testObject;
+                            filename = _testObject;
                         }
-                        string filepath = Common.Property.ResultsSourcePath + "\\" + filename;
+                        string filepath = Property.ResultsSourcePath + "\\" + filename;
                         string varname = filename.Split('.')[0].ToString();
                         Utility.Savecontentstofile(filepath, contents);
                         Utility.SetVariable(varname, filepath);
-                        Common.Property.Remarks = "Data Content has been stored to file '" + filename + "'.Its location has been stored in a variable '" + varname + "'.";
+                        Property.Remarks = "Data Content has been stored to file '" + filename + "'.Its location has been stored in a variable '" + varname + "'.";
                         break;
                     #endregion
                     #region UploadFile  PBI : #205
                     case "uploadfile":
                         Property.StepDescription = "Upload file at location " + contentFirst;
-                        verification = objTestObject.UploadFile(contentFirst,contentSecond);
-                        if(verification==false)
-                         {
-                            Property.Remarks = "File not found at location " + contentFirst; 
-                         }
+                        verification = _objTestObject.UploadFile(contentFirst, contentSecond);
+                        if (verification == false)
+                        {
+                            Property.Remarks = "File not found at location " + contentFirst;
+                        }
                         break;
-                  
+
                     #endregion
-                    default: {
-                            Common.Property.Remarks = stepAction + ":" + Utility.GetCommonMsgVariable("KRYPTONERRCODE0025");
+                    default:
+                        {
+                            Property.Remarks = _stepAction + ":" + Utility.GetCommonMsgVariable("KRYPTONERRCODE0025");
                             verification = false;
                             stepStatus = ExecutionStatus.Fail;
                         }
@@ -1187,14 +1185,7 @@ namespace TestDriver
                 }
                 if (!stepStatus.Equals(ExecutionStatus.Warning))
                 {
-                    if (verification)
-                    {
-                        stepStatus = ExecutionStatus.Pass;
-                    }
-                    else
-                    {
-                        stepStatus = ExecutionStatus.Fail;
-                    }
+                    stepStatus = verification ? ExecutionStatus.Pass : ExecutionStatus.Fail;
 
                 }
             }
@@ -1206,20 +1197,18 @@ namespace TestDriver
                     throw new Exception(Utility.GetCommonMsgVariable("KRYPTONERRCODE0024"));
                 }
 
-                Property.Remarks = stepAction + ":" + e.Message;
+                Property.Remarks = _stepAction + ":" + e.Message;
                 stepStatus = ExecutionStatus.Fail;
 
                 //Overriding cache errors that appears on saucelabs
                 //seen when testing for angieslist
                 if (e.Message.IndexOf("getElementTagName execution failed; Element does not exist in cache", StringComparison.OrdinalIgnoreCase) >= 0)
                     stepStatus = ExecutionStatus.Warning;
-
-                //as per the discussion on 14th June 11
                 if (e.Message.IndexOf("Element not found in the cache", StringComparison.OrdinalIgnoreCase) >= 0)
                     stepStatus = ExecutionStatus.Pass;
 
                 //Overriding timeouts to warning instead of failure
-                if (e.Message.IndexOf(exceptions.ERROR_NORESPONSEURL, StringComparison.OrdinalIgnoreCase) >= 0)
+                if (e.Message.IndexOf(Exceptions.ERROR_NORESPONSEURL, StringComparison.OrdinalIgnoreCase) >= 0)
                     stepStatus = ExecutionStatus.Warning;
 
                 if (e.Message.IndexOf("docElement is null", StringComparison.OrdinalIgnoreCase) >= 0)
@@ -1247,9 +1236,8 @@ namespace TestDriver
             }
 
             Property.Status = stepStatus;
-
-            if (snapShotOption.ToLower().Equals("always")
-                || (snapShotOption.ToLower().Equals("on page change") && (action.ToLower().Equals("click")
+            if (_snapShotOption.ToLower().Equals("always")
+                || (_snapShotOption.ToLower().Equals("on page change") && (action.ToLower().Equals("click")
                                                                             || action.ToLower().Equals("openbrowser")
                                                                             || action.ToLower().Equals("closebrowser")
                                                                             || action.ToLower().Equals("navigateurl")
@@ -1261,23 +1249,23 @@ namespace TestDriver
                                                                             || action.ToLower().Equals("doubleclick")
                                                                             || action.ToLower().Equals("submit")
                                                                             ))
-                || (stepStatus.Equals(ExecutionStatus.Fail) && !snapShotOption.ToLower().Equals("never") && !action.Contains("."))
+                || (stepStatus.Equals(ExecutionStatus.Fail) && !_snapShotOption.ToLower().Equals("never") && !action.Contains("."))
                 )
             {
-                this.SaveSnapShots(action);
+                SaveSnapShots(action);
             }
 
-            if (keywordDic.ContainsValue("endtestonfailure") && stepStatus.Equals(ExecutionStatus.Fail))
+            if (_keywordDic.ContainsValue("endtestonfailure") && stepStatus.Equals(ExecutionStatus.Fail))
             {
                 Property.EndExecutionFlag = true;
             }
 
-            if (testObject != null && parent != null && Property.StepDescription.Equals(string.Empty))
+            if (_testObject != null && parent != null && Property.StepDescription.Equals(string.Empty))
             {
-                if (!testObject.Equals(string.Empty) && !parent.Equals(string.Empty))
-                    Property.StepDescription = stepAction + " on test object \"" + testObject + "\" in page \"" + parent + " \".";
+                if (!_testObject.Equals(string.Empty) && !parent.Equals(string.Empty))
+                    Property.StepDescription = _stepAction + " on test object \"" + _testObject + "\" in page \"" + parent + " \".";
                 else
-                    Property.StepDescription = stepAction; //For actions in which Parent and TestObject doesn't use like closeAllBrowsers etc.
+                    Property.StepDescription = _stepAction; //For actions in which Parent and TestObject doesn't use like closeAllBrowsers etc.
             }
         }
 
@@ -1285,9 +1273,9 @@ namespace TestDriver
         {
             try
             {
-                string filesName = string.Empty;
-                filesName = objBrowser.GetScreenShot(Property.StepNumber, Property.ResultsSourcePath, stepAction);
-                if (string.IsNullOrWhiteSpace(filesName) == false) // because string may be empty or null
+                var filesName = _objBrowser.GetScreenShot(Property.StepNumber, Property.ResultsSourcePath, stepAction);
+                // because string may be empty or null
+                if (string.IsNullOrWhiteSpace(filesName) == false) 
                 {
                     string[] temp = filesName.Split('|');
                     Property.Attachments = temp[0].Trim();
@@ -1296,14 +1284,14 @@ namespace TestDriver
                     else Property.HtmlSourceAttachment = string.Empty;
                 }
             }
-            catch (Exception)
+            catch (Exception e)
             {
-
+                Console.WriteLine("Error in saving the snapShot : {0}", e.Source);
             }
         }
-        public static void resetApp()
+        public static void ResetApp()
         {
-           
+
         }
 
     }

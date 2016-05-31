@@ -9,12 +9,9 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text.RegularExpressions;
 using System.Windows.Automation;
 using System.Threading;
-using OpenQA.Selenium.Remote;
-using OpenQA.Selenium;
 using ControllerLibrary;
 using Common;
 
@@ -23,50 +20,50 @@ namespace TestDriver
     class DialogHandler
     {
         Dictionary<string, string> objDataRow = new Dictionary<string, string>();
-        private string objType = string.Empty;
-        private string attributeType = string.Empty;
+        private string _objType = string.Empty;
+        private readonly string _attributeType = string.Empty;
         private string attribute = string.Empty;
-        private string browserClassName = string.Empty;
-        private AutomationElement dialogElement;
+        private string _browserClassName = string.Empty;
+        private AutomationElement _dialogElement;
         public DialogHandler()
         {
             //Retreive content from OR row dictionary.
-            if (Action.objDataRow.Count > 0)
+            if (Action.ObjDataRow.Count > 0)
             {
-                this.objDataRow = Action.objDataRow;
-                objType = this.objDataRow[KryptonConstants.OBJ_TYPE];
-                attributeType = this.objDataRow[KryptonConstants.HOW];
-                attribute = this.objDataRow[KryptonConstants.WHAT];
+                objDataRow = Action.ObjDataRow;
+                _objType = objDataRow[KryptonConstants.OBJ_TYPE];
+                _attributeType = objDataRow[KryptonConstants.HOW];
+                attribute = objDataRow[KryptonConstants.WHAT];
             }
             else
             {
-                this.objDataRow = Action.objDataRow;
-                objType = string.Empty;
-                attributeType = string.Empty;
+                objDataRow = Action.ObjDataRow;
+                _objType = string.Empty;
+                _attributeType = string.Empty;
                 attribute = string.Empty;
             }
 
         }
 
-        private void setClassNameForBrowser()
+        private void SetClassNameForBrowser()
         {
             //Working fine for all FF version(Win XP,WIn 7 ).
-            if (Common.Utility.GetParameter(Common.Property.BrowserString).Equals("ie"))
-                browserClassName = "IEFrame";
-            else if (Common.Utility.GetParameter(Common.Property.BrowserString).ToLower().Equals("firefox"))
+            if (Utility.GetParameter(Property.BrowserString).Equals("ie"))
+                _browserClassName = "IEFrame";
+            else if (Utility.GetParameter(Property.BrowserString).ToLower().Equals("firefox"))
             {
-                string versionString = Common.Utility.getFFVersionString();
+                string versionString = Utility.GetFfVersionString();
                 if (versionString.Contains("4.0"))
-                    browserClassName = "MozillaWindowClass";
+                    _browserClassName = "MozillaWindowClass";
                 else
-                    browserClassName = "MozillaUIWindowClass";
+                    _browserClassName = "MozillaUIWindowClass";
             }
         }
         #region Set Automation dialog Element.
         /// <summary>
         /// Set Final element on which actual operation would be performed.
         /// </summary>
-        private AutomationElement setAutomationElement()
+        private AutomationElement SetAutomationElement()
         {
             try
             {
@@ -81,9 +78,8 @@ namespace TestDriver
 
                 //Split What field in OR.
                 string[] whatContents = Regex.Split(attribute, "//");
-                string dialogText = string.Empty;
-                string objectLocator = string.Empty;
 
+                string objectLocator;
                 if (whatContents.Length.Equals(1))
                 {
                     objectLocator = whatContents[0];
@@ -91,7 +87,7 @@ namespace TestDriver
                 else
                 {
                     //Get Dailog Title
-                    dialogText = whatContents[0].ToLower();
+                    var dialogText = whatContents[0].ToLower();
 
                     //Update root element to point to specific dialog
                     Condition parentCondition = new PropertyCondition(AutomationElement.NameProperty, dialogText, PropertyConditionFlags.IgnoreCase);
@@ -103,8 +99,8 @@ namespace TestDriver
                     objectLocator = whatContents[1];
                 }
 
-                dialogElement = getElement(rootElement, objectLocator);//Get the dialog element.
-                return dialogElement;
+                _dialogElement = getElement(rootElement, objectLocator);//Get the dialog element.
+                return _dialogElement;
             }
             catch (IndexOutOfRangeException e)
             {
@@ -115,6 +111,7 @@ namespace TestDriver
                 throw e;
             }
         }
+
         #endregion
 
         /// <summary>
@@ -127,7 +124,7 @@ namespace TestDriver
             double start_time = 0;
             double end_time = 0;
             AutomationElement element = null;
-            int maxTime = int.Parse(Common.Utility.GetParameter("ObjectTimeout"));
+            int maxTime = int.Parse(Utility.GetParameter("ObjectTimeout"));
             try
             {
                 for (int seconds = 0; ; seconds++)
@@ -135,26 +132,29 @@ namespace TestDriver
                     start_time = (DateTime.UtcNow - new DateTime(1970, 1, 1, 0, 0, 0)).TotalSeconds;
                     if (seconds >= maxTime || diff >= maxTime)
                     {
-                        throw new System.TimeoutException();
+                        throw new TimeoutException();
                     }
                     try
                     {
-                        if ((element = setAutomationElement()) != null)
+                        if ((element = SetAutomationElement()) != null)
                         {
                             return element;
                         }
                     }
                     catch (IndexOutOfRangeException e)
                     {
-                        throw new Exception(Common.Utility.GetCommonMsgVariable("KRYPTONERRCODE0029"));
+                        throw new Exception(Utility.GetCommonMsgVariable("KRYPTONERRCODE0029"));
                     }
-                    catch (Exception) { }
+                    catch (Exception e) 
+                    {
+                        throw e;
+                    }
                     Thread.Sleep(1000);
                     end_time = (DateTime.UtcNow - new DateTime(1970, 1, 1, 0, 0, 0)).TotalSeconds;
                     diff = diff + (end_time - start_time);
                 }
             }
-            catch (System.TimeoutException e)
+            catch (TimeoutException e)
             {
                 throw e;
             }
@@ -170,7 +170,7 @@ namespace TestDriver
         {
             Condition condition = null;
             AutomationElement returnElement = null;
-            switch (attributeType.ToLower())
+            switch (_attributeType.ToLower())
             {
                 case "name":
                     condition = new PropertyCondition(AutomationElement.NameProperty, value);
@@ -191,7 +191,7 @@ namespace TestDriver
         /// <summary>
         /// Click on dialog normal and radio buttons.
         /// </summary>
-        public void clickDialogButton()
+        public void ClickDialogButton()
         {
             try
             {
@@ -205,8 +205,7 @@ namespace TestDriver
                         )
                     {
                         InvokePattern pattern = dialogElement.GetCurrentPattern(InvokePattern.Pattern) as InvokePattern;
-                        pattern.Invoke();
-
+                        if (pattern != null) pattern.Invoke();
                     }
 
                     //Click on Radio buttons.
@@ -214,19 +213,18 @@ namespace TestDriver
                              dialogElement.Current.ControlType.Equals(ControlType.TreeItem))
                     {
                         SelectionItemPattern pattern = dialogElement.GetCurrentPattern(SelectionItemPattern.Pattern) as SelectionItemPattern;
-                        pattern.Select();
+                        if (pattern != null) pattern.Select();
                     }
                     else
                     {
                         InvokePattern pattern = dialogElement.GetCurrentPattern(InvokePattern.Pattern) as InvokePattern;
-                        pattern.Invoke();
-
+                        if (pattern != null) pattern.Invoke();
                     }
                 }
             }
             catch (TimeoutException e)
             {
-                throw new Exception(Common.Utility.GetCommonMsgVariable("KRYPTONERRCODE0030"));
+                throw new Exception(Utility.GetCommonMsgVariable("KRYPTONERRCODE0030"));
             }
             catch (Exception e)
             {
@@ -238,7 +236,7 @@ namespace TestDriver
         /// Enter text in dailog Element.
         /// </summary>
         /// <param name="textToEnter">String : Text to enter.</param>
-        public void enterdataInDialog(string textToEnter)
+        public void EnterdataInDialog(string textToEnter)
         {
             try
             {
@@ -249,17 +247,13 @@ namespace TestDriver
                     if (dialogElement.Current.ControlType.Equals(ControlType.ComboBox) || dialogElement.Current.ControlType.Equals(ControlType.Edit))
                     {
                         ValuePattern pattern = dialogElement.GetCurrentPattern(ValuePattern.Pattern) as ValuePattern;
-                        pattern.SetValue(textToEnter);
+                        if (pattern != null) pattern.SetValue(textToEnter);
                     }
                 }
             }
             catch (TimeoutException)
             {
-                throw new Exception(Common.Utility.GetCommonMsgVariable("KRYPTONERRCODE0030"));
-            }
-            catch (Exception)
-            {
-                throw;
+                throw new Exception(Utility.GetCommonMsgVariable("KRYPTONERRCODE0030"));
             }
         }
 
@@ -269,27 +263,26 @@ namespace TestDriver
 
     class UploadFileOnRemote
     {
-        string _browserName;
-        string _AutoitExeName = string.Empty;
-        string _RemoteIp = string.Empty;
-        string _FilePath = string.Empty;
+        readonly string _autoitExeName;
+        readonly string _remoteIp;
+        readonly string _filePath;
 
         public UploadFileOnRemote(string browser,string remoteIp, string filePath)
         {
-            _RemoteIp = remoteIp;
-            _browserName = browser;
-            _FilePath = filePath;
-            if (_browserName.ToLower().Equals(Common.KryptonConstants.BROWSER_FIREFOX))
+            _remoteIp = remoteIp;
+            var browserName = browser;
+            _filePath = filePath;
+            if (browserName.ToLower().Equals(KryptonConstants.BROWSER_FIREFOX))
             {             
-                _AutoitExeName = "FileUploadFF.exe";
+                _autoitExeName = "FileUploadFF.exe";
             }
-            else if (_browserName.ToLower().Equals(Common.KryptonConstants.BROWSER_CHROME))
+            else if (browserName.ToLower().Equals(KryptonConstants.BROWSER_CHROME))
             {
-               _AutoitExeName = "FileUploadChrome.exe";
+               _autoitExeName = "FileUploadChrome.exe";
             }
             else
             {               
-                _AutoitExeName = "FileUploadIE.exe";
+                _autoitExeName = "FileUploadIE.exe";
             }
 
         }
@@ -298,21 +291,15 @@ namespace TestDriver
         {
             try
             {
-                ServiceAgent service = new ServiceAgent(_RemoteIp); //Node ip          
-                service.StartExecutableByName(_AutoitExeName, _FilePath);
-                Console.WriteLine(string.Format("Uploading file  {0}  on  {1}  machine..!!", _FilePath, _RemoteIp));
+                ServiceAgent service = new ServiceAgent(_remoteIp); //Node ip          
+                service.StartExecutableByName(_autoitExeName, _filePath);
+                Console.WriteLine(string.Format("Uploading file  {0}  on  {1}  machine..!!", _filePath, _remoteIp));
             }
             catch(Exception ex)
             {
-                throw new Exception( string.Format("Coud not Upload File on {0} machine. Actual Error:{1}",_RemoteIp,ex.Message));
+                throw new Exception( string.Format("Coud not Upload File on {0} machine. Actual Error:{1}",_remoteIp,ex.Message));
             }
-
-            
-
-
         }
-
-
     }
 }
 

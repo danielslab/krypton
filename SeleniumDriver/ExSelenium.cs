@@ -7,9 +7,7 @@
 ** Description: Contains Methods For the Element Operations.
 *****************************************************************************/
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+using Driver.Browsers;
 using OpenQA.Selenium;
 using OpenQA.Selenium.Support.UI;
 
@@ -21,18 +19,19 @@ namespace Driver
         {
             try
             {
-                Browser.switchToMostRecentBrowser();
-                WebDriverWait wait = new WebDriverWait(TestObject.driver, TimeSpan.FromSeconds(TimeoutSeconds));
+                Browser.SwitchToMostRecentBrowser();
+                WebDriverWait wait = new WebDriverWait(TestObject.Driver, TimeSpan.FromSeconds(TimeoutSeconds));
                 wait.IgnoreExceptionTypes(typeof(NoSuchElementException));
                 if (IsIgnoreElementVisibilty)
                     wait.Until(ExpectedConditions.ElementExists(SearchBy));
                 else
                     wait.Until(ExpectedConditions.ElementIsVisible(SearchBy));
 
-            }            
+            }
             catch (Exception)
-            { }
-
+            {
+                // ignored
+            }
         }
 
         public static By GetSelectionMethod(string FindBy, string Locator)

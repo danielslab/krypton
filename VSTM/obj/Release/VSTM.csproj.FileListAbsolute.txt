@@ -1,0 +1,3 @@
+D:\TFS Krypton Product\KryptonOpenSource\SourceCode\Output\VSTM.dll
+D:\TFS Krypton Product\KryptonOpenSource\SourceCode\VSTM\obj\Release\VSTM.csprojResolveAssemblyReference.cache
+D:\TFS Krypton Product\KryptonOpenSource\SourceCode\VSTM\obj\Release\VSTM.dll

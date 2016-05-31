@@ -8,7 +8,6 @@
 *****************************************************************************/
 using System;
 using System.Data;
-using System.Reflection;
 using System.IO;
 using System.Data.OleDb;
 using ClosedXML.Excel;
@@ -101,35 +100,33 @@ namespace ExcelLib
                 using (var conn = new OleDbConnection(connectionString))
                 {
                     conn.Open();
-                    var sheets = conn.GetOleDbSchemaTable(System.Data.OleDb.OleDbSchemaGuid.Tables, new object[] { null, null, null, "TABLE" });
-                    foreach (DataRow dr in sheets.Rows)
-                    {
-                        int tempChek = dr["TABLE_NAME"].ToString().IndexOf("$") + 1;
-                        if (tempChek < dr["TABLE_NAME"].ToString().Length)
-                        {   if (!dr["TABLE_NAME"].ToString()[tempChek].Equals('\''))
-                            {
-                                if (!dr["TABLE_NAME"].ToString()[tempChek].Equals(string.Empty))
-                                    continue;
-                            }                            
-                         }
-                        using (var cmd = conn.CreateCommand())
+                    var sheets = conn.GetOleDbSchemaTable(OleDbSchemaGuid.Tables, new object[] { null, null, null, "TABLE" });
+                    if (sheets != null)
+                        foreach (DataRow dr in sheets.Rows)
                         {
-                            DataTable dt = new DataTable();
-                            dt.TableName = dr["TABLE_NAME"].ToString().Replace("$", string.Empty);
-                            cmd.CommandText = "SELECT * FROM [" + dr["TABLE_NAME"].ToString() + "] ";
+                            int tempChek = dr["TABLE_NAME"].ToString().IndexOf("$", StringComparison.Ordinal) + 1;
+                            if (tempChek < dr["TABLE_NAME"].ToString().Length)
+                            {   if (!dr["TABLE_NAME"].ToString()[tempChek].Equals('\''))
+                            {
+                                continue;
+                            }                            
+                            }
+                            using (var cmd = conn.CreateCommand())
+                            {
+                                DataTable dt = new DataTable
+                                {
+                                    TableName = dr["TABLE_NAME"].ToString().Replace("$", string.Empty)
+                                };
+                                cmd.CommandText = "SELECT * FROM [" + dr["TABLE_NAME"].ToString() + "] ";
 
-                            var adapter = new OleDbDataAdapter(cmd);
-                            adapter.Fill(dt);
-                            dataset.Tables.Add(dt);
+                                var adapter = new OleDbDataAdapter(cmd);
+                                adapter.Fill(dt);
+                                dataset.Tables.Add(dt);
+                            }
                         }
-                    }
                     conn.Close();
                     conn.Dispose();
                 }
-            }
-            catch (Exception exception)
-            {
-                throw exception;
             }
             finally
             {
@@ -146,7 +143,7 @@ namespace ExcelLib
             if (!extn.StartsWith("."))
                 extn = "." + extn;
 
-            response = System.IO.Path.GetTempPath() + Guid.NewGuid().ToString() + extn;
+            response = Path.GetTempPath() + Guid.NewGuid().ToString() + extn;
             return response;
         }
     }

@@ -9,9 +9,8 @@
 
 using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
+using System.Globalization;
 using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using OpenQA.Selenium;
@@ -19,46 +18,45 @@ using OpenQA.Selenium.Firefox;
 using OpenQA.Selenium.IE;
 using OpenQA.Selenium.Chrome;
 using OpenQA.Selenium.Safari;
-using OpenQA.Selenium.Support.PageObjects;
 using OpenQA.Selenium.Support.UI;
-using System.Text.RegularExpressions;
 using OpenQA.Selenium.Remote;
 using OpenQA.Selenium.Interactions;
 using OpenQA.Selenium.Interactions.Internal;
 using Common;
 using System.IO;
+using Driver.Browsers;
 
 
 namespace Driver
 {
     public class TestObject : ITestObject
     {
-        public static IWebDriver driver;
-        private IWebElement testObject;
-        private IWebElement firstObject;    //This will contain first object from collection
-        private System.Collections.ObjectModel.ReadOnlyCollection<IWebElement> testObjects;
-        public static string attributeType;
-        public static string attribute;
-        private string property;
-        private string propertyValue;
-        private Dictionary<string, string> objDataRow = new Dictionary<string, string>();
-        public IWebElement frameObject;
+        public static IWebDriver Driver;
+        private IWebElement _testObject;
+        private IWebElement _firstObject;    //This will contain first object from collection
+        private System.Collections.ObjectModel.ReadOnlyCollection<IWebElement> _testObjects;
+        public static string AttributeType;
+        public static string Attribute;
+        private string _property;
+        private string _propertyValue;
+        private Dictionary<string, string> _objDataRow = new Dictionary<string, string>();
+        public IWebElement FrameObject;
         //Dictionary to store values from mapping column of object repository
-        private Dictionary<string, string> dicMapping = new Dictionary<string, string>();
-        private Dictionary<int, string> optiondic = null;
-        private Selenium.DefaultSelenium selenium = null;
-        public string DebugMode = Common.Property.DebugMode;
-        public static WebDriverWait objloadingWait;
-        private List<string> stepsForIgnoreWait = new List<string>() {"settestmode","verifyobjectnotpresent","verifyobjectnotdisplayed" };
-        public Func<IWebDriver, bool> delIsObjectLoaded;
-        private string modifier = string.Empty;
+        private readonly Dictionary<string, string> _dicMapping = new Dictionary<string, string>();
+        private Dictionary<int, string> _optiondic;
+        private Selenium.DefaultSelenium _selenium;
+        public string DebugMode = Property.DebugMode;
+        public static WebDriverWait ObjloadingWait;
+        private readonly List<string> _stepsForIgnoreWait = new List<string> { "settestmode", "verifyobjectnotpresent", "verifyobjectnotdisplayed" };
+        public Func<IWebDriver, bool> DelIsObjectLoaded;
+        private string _modifier = string.Empty;
 
         public TestObject(string waitTimeForObject = null)
         {
-            driver = Driver.Browser.driver;
-            if (waitTimeForObject != null && driver != null)
+            Driver = Browser.Driver;
+            if (waitTimeForObject != null && Driver != null)
             {
-                objloadingWait = new WebDriverWait(driver, TimeSpan.FromSeconds(Double.Parse(waitTimeForObject)));
+                ObjloadingWait = new WebDriverWait(Driver, TimeSpan.FromSeconds(Double.Parse(waitTimeForObject)));
             }
         }
 
@@ -67,81 +65,62 @@ namespace Driver
         /// set test object information dictionary.
         /// </summary>
         /// <param name="objDataRow">Dictionary containing test object information</param>
-        public void SetObjDataRow(Dictionary<string, string> objDataRow, string CurrentStepAction="")
+        /// <param name="currentStepAction"></param>
+        public void SetObjDataRow(Dictionary<string, string> objDataRow, string currentStepAction = "")
         {
-            
-                dicMapping.Clear();
-                if(objDataRow.Count > 0)
-                {
-                    this.objDataRow = objDataRow;
-                    attributeType = this.GetData(KryptonConstants.HOW);
-                    attribute = this.GetData(KryptonConstants.WHAT);
 
-                    //Retrive mapping column from object repository and parse
-                    string mapping = objDataRow[KryptonConstants.MAPPING];
-                    if (!mapping.Equals(string.Empty))
+            _dicMapping.Clear();
+            if (objDataRow.Count > 0)
+            {
+                _objDataRow = objDataRow;
+                AttributeType = GetData(KryptonConstants.HOW);
+                Attribute = GetData(KryptonConstants.WHAT);
+
+                //Retrive mapping column from object repository and parse
+                string mapping = objDataRow[KryptonConstants.MAPPING];
+                if (!mapping.Equals(string.Empty))
+                {
+                    Array arrMapping = mapping.Split('|');
+                    foreach (string mappingPair in arrMapping)
                     {
-                        Array arrMapping = mapping.Split('|');
-                        string mapName = string.Empty;
-                        string mapValue = string.Empty;
-                        foreach (string mappingPair in arrMapping)
-                        {
-                            mapName = mappingPair.Split('=')[0].Trim();
-                            mapValue = mappingPair.Split('=')[1].Trim();
-                            dicMapping.Add(mapName, mapValue);
-                        }
+                        var mapName = mappingPair.Split('=')[0].Trim();
+                        var mapValue = mappingPair.Split('=')[1].Trim();
+                        _dicMapping.Add(mapName, mapValue);
                     }
+                }
 
-                }
-                else
-                {
-                    this.objDataRow = objDataRow;
-                    attributeType = string.Empty;
-                    attribute = string.Empty;
-                }
-                RecoveryScenarios.cacheAttribute(attributeType, attribute);
-                //wait for object
-                try
-                {
-                    By obBy = ExSelenium.GetSelectionMethod(attributeType, attribute);
-                    if (obBy != null)
-                    {
-                        if (stepsForIgnoreWait.Contains(CurrentStepAction.ToLower()))
-                            ExSelenium.WaitForElement(obBy, 02, true);
-                        else
-                            ExSelenium.WaitForElement(obBy, 10, true);
-                    }
-
-                }
-                catch(Exception e) 
-                {
-                    throw e;
-                }
-            
+            }
+            else
+            {
+                _objDataRow = objDataRow;
+                AttributeType = string.Empty;
+                Attribute = string.Empty;
+            }
+            RecoveryScenarios.CacheAttribute(AttributeType, Attribute);
+            //wait for object
+            By obBy = ExSelenium.GetSelectionMethod(AttributeType, Attribute);
+            if (obBy != null)
+            {
+                ExSelenium.WaitForElement(obBy, _stepsForIgnoreWait.Contains(currentStepAction.ToLower()) ? 02 : 10,
+                    true);
+            }
         }
 
         //When Object Definition is embedded in the test case sheet instead of OR.
         public void SetObjDataRow(String testObject)
         {
-            try
+            if (testObject != null && testObject.Split(':').Length >= 2)
             {
-                if (testObject != null && testObject.Split(':').Length>=2)
-                {
-                    attributeType = testObject.Split(':')[0].Trim();
-                    attribute = testObject.Split(':')[1].Trim();
-                }
-                else
-                {
-                    attributeType = string.Empty;
-                    attribute = string.Empty;
-                }
+                AttributeType = testObject.Split(':')[0].Trim();
+                Attribute = testObject.Split(':')[1].Trim();
             }
-            catch (Exception e)
+            else
             {
-                throw e;
+                AttributeType = string.Empty;
+                Attribute = string.Empty;
             }
         }
-        
+
         /// <summary>
         /// This method will provide testobject information and attribute. 
         /// </summary>
@@ -155,32 +134,50 @@ namespace Driver
                 switch (dataType)
                 {
                     case KryptonConstants.PARENT:
-                        return objDataRow[KryptonConstants.PARENT];
-                    case KryptonConstants.TEST_OBJECT:
-                    case "testobject":
+                        return _objDataRow[KryptonConstants.PARENT];
                     case "child":
-                        return objDataRow[KryptonConstants.TEST_OBJECT];
+                        return _objDataRow[KryptonConstants.TEST_OBJECT];
                     case KryptonConstants.LOGICAL_NAME:
-                        return objDataRow[KryptonConstants.LOGICAL_NAME];
+                        return _objDataRow[KryptonConstants.LOGICAL_NAME];
                     case KryptonConstants.OBJ_TYPE:
-                        return objDataRow[KryptonConstants.OBJ_TYPE];
+                        return _objDataRow[KryptonConstants.OBJ_TYPE];
                     case KryptonConstants.HOW:
-                        return objDataRow[KryptonConstants.HOW];
+                        return _objDataRow[KryptonConstants.HOW];
                     case KryptonConstants.WHAT:
-                        return objDataRow[KryptonConstants.WHAT];
+                        return _objDataRow[KryptonConstants.WHAT];
                     case KryptonConstants.MAPPING:
-                        return objDataRow[KryptonConstants.MAPPING];
+                        return _objDataRow[KryptonConstants.MAPPING];
                     default:
                         return null;
                 }
             }
-            catch (System.Collections.Generic.KeyNotFoundException)
+            catch (KeyNotFoundException)
             {
-                throw new System.Collections.Generic.KeyNotFoundException(Common.Utility.GetCommonMsgVariable("KRYPTONERRCODE0008"));
+                throw new KeyNotFoundException(Utility.GetCommonMsgVariable("KRYPTONERRCODE0008"));
             }
-            catch (Exception e)
+        }
+
+
+        /// <summary>
+        /// Funtion to wait until the webpage fully loaded.
+        /// </summary>
+        /// <returns>timeOut : Time until web page waits.</returns>
+        public void WaitForPage(string timeOut)
+        {
+            try
             {
-                throw e;
+                double time = Convert.ToDouble(timeOut);
+                IWait<IWebDriver> wait = new WebDriverWait(Driver, TimeSpan.FromSeconds(time));
+                wait.Until(driver1 => ((IJavaScriptExecutor)Driver).ExecuteScript("return document.readyState").Equals("complete"));
+            }
+            catch (TimeoutException exeTimeOut)
+            {
+                KryptonException.Writeexception(exeTimeOut);
+                Console.WriteLine(ConsoleMessages.WEB_PAGE_FAILE_LOAD, exeTimeOut);
+            }
+            catch (Exception ex)
+            {
+                KryptonException.Writeexception(ex);
             }
         }
 
@@ -193,102 +190,55 @@ namespace Driver
             try
             {
                 //Disabling wait for any object in case of browser recovery.
-                if (Common.Property.isRecoveryRunning || Common.Property.NoWait == true)
+                if (Property.IsRecoveryRunning || Property.NoWait)
                 {
-                    this.GetElement(driver);
+                    GetElement(Driver);
                 }
                 else
                 {
-                    Func<IWebDriver, IWebElement> delIsObjectLoaded;
-                    delIsObjectLoaded = this.GetElement;
-                    objloadingWait.Until(delIsObjectLoaded);
+                    Func<IWebDriver, IWebElement> delIsObjectLoaded = GetElement;
+                    ObjloadingWait.Until(delIsObjectLoaded);
                 }
 
                 //Return first object if no object could be located, and no visible objects were still present
-                if ((testObjects.Count() >= 1)
-                        && !Common.Property.isRecoveryRunning
-                        && testObject == null)
-                    {
-                        testObject = testObjects.First();
-                    }
-                return testObject;
+                if ((_testObjects.Any())
+                        && !Property.IsRecoveryRunning
+                        && _testObject == null)
+                {
+                    _testObject = _testObjects.First();
+                }
+                return _testObject;
 
-            }
-            catch (WebDriverException e)
-            {
-                if (objDataRow.ContainsKey(KryptonConstants.TEST_OBJECT))
-                    throw new NoSuchElementException(Common.Utility.GetCommonMsgVariable("KRYPTONERRCODE0019").Replace("{MSG3}", objDataRow[KryptonConstants.TEST_OBJECT]).Replace("{MSG4}", objDataRow["parent"]).Replace("{MSG1}", attributeType).Replace("{MSG2}", attribute)); // updated By 
-                else
-                    if (attribute.Equals(String.Empty) && attributeType.Equals(String.Empty))
-                        throw new Exception("Could not found object :  " + e.Message);
-                else
-                    throw new NoSuchElementException(Common.exceptions.ERROR_OBJECTNOTFOUND+"{ method: "+ attributeType + ",  selector: "+ attribute+ "  }"); 
-                   
-            }
-            catch (System.Collections.Generic.KeyNotFoundException kn)
-            {
-                if (objDataRow.ContainsKey(KryptonConstants.TEST_OBJECT))
-                    throw new NoSuchElementException(Common.Utility.GetCommonMsgVariable("KRYPTONERRCODE0019").Replace("{MSG3}", objDataRow[KryptonConstants.TEST_OBJECT]).Replace("{MSG4}", objDataRow["parent"]).Replace("{MSG1}", attributeType).Replace("{MSG2}", attribute)); // updated By 
-                else
-                    if (attribute.Equals(String.Empty) && attributeType.Equals(String.Empty))
-                        throw new Exception("Could not found object :  " + kn.Message);
-                    else
-                        throw new NoSuchElementException(Common.exceptions.ERROR_OBJECTNOTFOUND+"{ method: " + attributeType + ",  selector: " + attribute + "  }"); 
-            }
-            catch (System.TimeoutException te)
-            {
-                if (objDataRow.ContainsKey(KryptonConstants.TEST_OBJECT))
-                    throw new NoSuchElementException(Common.Utility.GetCommonMsgVariable("KRYPTONERRCODE0019").Replace("{MSG3}", objDataRow[KryptonConstants.TEST_OBJECT]).Replace("{MSG4}", objDataRow["parent"]).Replace("{MSG1}", attributeType).Replace("{MSG2}", attribute)); // updated By 
-                else
-                    if (attribute.Equals(String.Empty) && attributeType.Equals(String.Empty))
-                        throw new Exception("Could not found object :  " + te.Message);
-                    else
-                        throw new NoSuchElementException(Common.exceptions.ERROR_OBJECTNOTFOUND + " { method: " + attributeType + ",  selector: " + attribute + "  }"); 
-                   
             }
             catch (Exception e)
             {
-                if (objDataRow.ContainsKey(KryptonConstants.TEST_OBJECT))
-                    throw new NoSuchElementException(Common.Utility.GetCommonMsgVariable("KRYPTONERRCODE0019").Replace("{MSG3}", objDataRow[KryptonConstants.TEST_OBJECT]).Replace("{MSG4}", objDataRow["parent"]).Replace("{MSG1}", attributeType).Replace("{MSG2}", attribute)); // updated By 
-                else
-                    if (attribute.Equals(String.Empty) && attributeType.Equals(String.Empty))
-                        throw new Exception("Could not found object :  " + e.Message);
-                    else
-                        throw new NoSuchElementException(Common.exceptions.ERROR_OBJECTNOTFOUND +" { method: " + attributeType + ",  selector: " + attribute + "  }"); 
-                              
+                if (_objDataRow.ContainsKey(KryptonConstants.TEST_OBJECT))
+                    throw new NoSuchElementException(Utility.GetCommonMsgVariable("KRYPTONERRCODE0019").Replace("{MSG3}", _objDataRow[KryptonConstants.TEST_OBJECT]).Replace("{MSG4}", _objDataRow["parent"]).Replace("{MSG1}", AttributeType).Replace("{MSG2}", Attribute));
+                if (Attribute.Equals(String.Empty) && AttributeType.Equals(String.Empty))
+                    throw new Exception("Could not found object :  " + e.Message);
+                throw new NoSuchElementException(Exceptions.ERROR_OBJECTNOTFOUND + " { method: " + AttributeType + ",  selector: " + Attribute + "  }");
             }
         }
-          
+
         /// <summary>
         /// Function verify the sort order of the contents in specified test element.
         /// </summary>
         /// <param name="propertyForSorting">string : Property for extacting element's content.</param>
         /// <param name="sortOrder">string : Sort Order</param>
-        public bool verifySortOrder(string propertyForSorting, string sortOrder = "")
+        public bool VerifySortOrder(string propertyForSorting, string sortOrder = "")
         {
             char splitCriteria = '\n';
-            string textContent = string.Empty;
             string[] lstOfContents = null;
-            bool result = false;
-            try
+            _testObject = WaitAndGetElement();
+            switch (propertyForSorting.ToLower())
             {
-                testObject = this.WaitAndGetElement();
-                switch (propertyForSorting.ToLower())
-                {
-                    case "text":
-                        textContent = testObject.Text;
-                        lstOfContents = textContent.Split(splitCriteria);
-                        break;
-                    default:
-                        break;
-                }
+                case "text":
+                    var textContent = _testObject.Text;
+                    lstOfContents = textContent.Split(splitCriteria);
+                    break;
+            }
 
-                result = this.isSorted(lstOfContents, sortOrder);
-            }
-            catch (Exception e)
-            {
-                throw e;
-            }
+            var result = isSorted(lstOfContents, sortOrder);
             return result;
         }
 
@@ -306,32 +256,25 @@ namespace Driver
                 {
                     for (int i = strArray.Length - 2; i >= 0; i--)
                     {
-                        if (strArray[i].CompareTo(strArray[i + 1]) < 0)
+                        if (String.Compare(strArray[i], strArray[i + 1], StringComparison.Ordinal) < 0)
                         {
                             return false;
                         }
                     }
                     return true;
                 }
-                else // By default check for ascending order.
+                for (int i = 1; i < strArray.Length; i++)
                 {
-                    for (int i = 1; i < strArray.Length; i++)
+                    if (String.Compare(strArray[i - 1], strArray[i], StringComparison.Ordinal) > 0)
                     {
-                        if (strArray[i - 1].CompareTo(strArray[i]) > 0)
-                        {
-                            return false;
-                        }
+                        return false;
                     }
-                    return true;
                 }
+                return true;
             }
-            catch (System.NullReferenceException)
+            catch (NullReferenceException)
             {
-                throw new Exception(Common.Utility.GetCommonMsgVariable("KRYPTONERRCODE0056"));
-            }
-            catch (Exception e)
-            {
-                throw e;
+                throw new Exception(Utility.GetCommonMsgVariable("KRYPTONERRCODE0056"));
             }
         }
 
@@ -343,103 +286,91 @@ namespace Driver
         {
             try
             {
-                delIsObjectLoaded = this.VerifyObjectNotDisplayedCondition;
-                objloadingWait.Until(delIsObjectLoaded);
+                DelIsObjectLoaded = VerifyObjectNotDisplayedCondition;
+                ObjloadingWait.Until(DelIsObjectLoaded);
                 return true;
             }
             catch (Exception e)
             {
-                if (e.Message.IndexOf(Common.exceptions.ERROR_OBJECTREPOSITORY, StringComparison.OrdinalIgnoreCase) >= 0)
-                    throw new Exception(Common.Utility.GetCommonMsgVariable("KRYPTONERRCODE0051").Replace("{MSG}", e.Message));
-                else
-                    throw new Exception(Common.Utility.GetCommonMsgVariable("KRYPTONERRCODE0020"));
+                if (e.Message.IndexOf(Exceptions.ERROR_OBJECTREPOSITORY, StringComparison.OrdinalIgnoreCase) >= 0)
+                    throw new Exception(Utility.GetCommonMsgVariable("KRYPTONERRCODE0051").Replace("{MSG}", e.Message));
+                throw new Exception(Utility.GetCommonMsgVariable("KRYPTONERRCODE0020"));
             }
         }
 
 
-        /// <summary>
-        ///Search frames in webpage if found search testobject in searched frames.If no frame found search testobject direct into 
-        /// </summary>
-        /// <param name="attributeType">string : Property name</param>
-        /// <param name="attribute">string : Property value</param>
+        ///  <summary>
+        /// Search frames in webpage if found search testobject in searched frames.If no frame found search testobject direct into 
+        ///  </summary>
         /// <returns>IwebElement Instance</returns>
         private IWebElement GetElement(IWebDriver driver)
         {
             try
             {
                 #region search element direct to web page.
-                if (attribute.Equals(String.Empty) && attributeType.Equals(String.Empty))
-                    throw new Exception(Common.Utility.GetCommonMsgVariable("KRYPTONERRCODE0021"));
+                if (Attribute.Equals(String.Empty) && AttributeType.Equals(String.Empty))
+                    throw new Exception(Utility.GetCommonMsgVariable("KRYPTONERRCODE0021"));
 
                 //Make a default attempt, but it might throw errors in case previous action have closed active browser
-                IWebElement element = null;
-                element = this.GetElementByAttribute(attributeType, attribute);
+                var element = GetElementByAttribute(AttributeType, Attribute);
                 if (element != null)
                 {
                     return element;
                 }
                 #endregion
-
                 #region switch to most recent browser and handle IE certificate warning and try again
                 try
                 {
-                    Driver.Browser.switchToMostRecentBrowser();
-                    element = this.GetElementByAttribute(attributeType, attribute);
+                    global::Driver.Browsers.Browser.SwitchToMostRecentBrowser();
+                    element = GetElementByAttribute(AttributeType, Attribute);
                     if (element != null)
                     {
                         return element;
                     }
                 }
-                catch(Exception e)
+                catch (Exception e)
                 {
-                    Common.KryptonException.writeexception(e);
+                    KryptonException.Writeexception(e);
                 }
                 #endregion
 
                 #region recover browser and try again
-                 //Temporarily commented as it is creating wrong attributes
-                if (!Common.Property.isRecoveryRunning)
-                    RecoveryScenarios.recoverFromBrowsers();
-                element = this.GetElementByAttribute(attributeType, attribute);
+                //Temporarily commented as it is creating wrong attributes
+                if (!Property.IsRecoveryRunning)
+                    RecoveryScenarios.RecoverFromBrowsers();
+                element = GetElementByAttribute(AttributeType, Attribute);
                 if (element != null)
                 {
                     return element;
-                }         
+                }
                 #endregion
 
                 #region search element in frames
-                string frame = this.GetData(KryptonConstants.MAPPING);
+                string frame = GetData(KryptonConstants.MAPPING);
 
                 if (!frame.Equals(string.Empty))
                 {
                     string[] keywords = frame.Split('=');
-                    if (keywords[0].ToLower().Trim().Equals("frame"))
-                    {
-                        frame = keywords[1].Trim();
-                    }
-                    else
-                    {
-                        frame = string.Empty;
-                    }
+                    frame = keywords[0].ToLower().Trim().Equals("frame") ? keywords[1].Trim() : string.Empty;
                 }
 
                 switch (frame.Equals(string.Empty))
                 {
                     case true:
                         // Handles sub frames.
-                        frameObject = null;
-                        getElementFromFrames();
-                        if (frameObject != null)
+                        FrameObject = null;
+                        GetElementFromFrames();
+                        if (FrameObject != null)
                         {
-                            return frameObject;
-                        }                        
-                        throw new NoSuchElementException();                   
+                            return FrameObject;
+                        }
+                        throw new NoSuchElementException();
                     case false:
                         driver.SwitchTo().Frame(frame);
-                        frameObject = this.GetElementByAttribute(attributeType, attribute);
-                        if (frameObject != null)
+                        FrameObject = GetElementByAttribute(AttributeType, Attribute);
+                        if (FrameObject != null)
                         {
-                            return frameObject;
+                            return FrameObject;
                         }
                         throw new NoSuchElementException();
 
@@ -450,14 +381,13 @@ namespace Driver
             }
             catch (NoSuchElementException)
             {
-               // Call recovery.
-                if (!Common.Property.isRecoveryRunning && !Common.Property.NoWait)
+                // Call recovery.
+                if (!Property.IsRecoveryRunning && !Property.NoWait)
                 {
-                    RecoveryScenarios.recoverFromBrowsers();
-                    IWebElement element = this.GetElementByAttribute(attributeType, attribute);
+                    RecoveryScenarios.RecoverFromBrowsers();
+                    IWebElement element = GetElementByAttribute(AttributeType, Attribute);
 
-                    if (element != null)
-                        return element;                  
+                    return element;
                 }
                 return null;
             }
@@ -467,33 +397,32 @@ namespace Driver
             }
             //StaleElementReferenceException is the WebDriver Exception, it usually throw when we try to switch 
             // to a frame and it is not loaded properly(as webdriver only wait for page load not for frame load).
-            catch (OpenQA.Selenium.StaleElementReferenceException e)
+            catch (StaleElementReferenceException)
             {
                 return null;
             }
-            catch (WebDriverException e)
+            catch (WebDriverException)
             {
-                throw e;
+                throw;
             }
-            catch (Exception e)
+            catch (Exception)
             {
-               if (objDataRow.ContainsKey(KryptonConstants.TEST_OBJECT))
-                    throw new NoSuchElementException(Common.Utility.GetCommonMsgVariable("KRYPTONERRCODE0019").Replace("{MSG3}", objDataRow[KryptonConstants.TEST_OBJECT]).Replace("{MSG4}", objDataRow["parent"]).Replace("{MSG1}", attributeType).Replace("{MSG2}", attribute)); // updated By 
-                 else
-                      throw;
+                if (_objDataRow.ContainsKey(KryptonConstants.TEST_OBJECT))
+                    throw new NoSuchElementException(Utility.GetCommonMsgVariable("KRYPTONERRCODE0019").Replace("{MSG3}", _objDataRow[KryptonConstants.TEST_OBJECT]).Replace("{MSG4}", _objDataRow["parent"]).Replace("{MSG1}", AttributeType).Replace("{MSG2}", Attribute)); // updated By 
+                throw;
             }
         }
 
         /// <summary>
         ///Get Frames collection in which the driver is in focus.
         /// </summary>
-        /// <returns>IEnumerable<IWebElement> collection</returns>
+        /// <returns>IEnumerable<IWebElement/> collection</returns>
         private IEnumerable<IWebElement> getFrameElement()
         {
 
-            IEnumerable<IWebElement> frames = driver.FindElements(By.TagName("frame"));
-            IEnumerable<IWebElement> iframes = driver.FindElements(By.TagName("iframe"));
-            IEnumerable<IWebElement> openiframe = driver.FindElements(By.CssSelector("#open_iframe"));
+            IEnumerable<IWebElement> frames = Driver.FindElements(By.TagName("frame"));
+            IEnumerable<IWebElement> iframes = Driver.FindElements(By.TagName("iframe"));
+            IEnumerable<IWebElement> openiframe = Driver.FindElements(By.CssSelector("#open_iframe"));
             IEnumerable<IWebElement> elements = openiframe.Union(frames.Union(iframes));
             return elements;
         }
@@ -502,35 +431,35 @@ namespace Driver
         ///Iterate through all sub frames to get testObject.
         /// </summary>
         /// <returns>IWebElement : TestObject found.</returns>
-        private void getElementFromFrames()
+        private void GetElementFromFrames()
         {
             IEnumerable<IWebElement> elements;
             try
             {
                 elements = getFrameElement();
             }
-            catch (System.InvalidOperationException)
+            catch (InvalidOperationException)
             {
                 throw new NoSuchElementException();
             }
-            IWebElement testobject;
             if (elements != null && elements.Count() > 0)
             {
                 foreach (IWebElement element1 in elements)
                 {
-                    if (frameObject != null)
+                    if (FrameObject != null)
                     {
                         break;
                     }
+                    IWebElement testobject;
                     try
                     {
-                        driver.SwitchTo().Frame(element1);
-                        
-                        testobject = this.GetElementByAttribute(attributeType, attribute);
-                        
+                        Driver.SwitchTo().Frame(element1);
+
+                        testobject = GetElementByAttribute(AttributeType, Attribute);
+
                         if (testobject != null)
                         {
-                            frameObject = testobject;
+                            FrameObject = testobject;
                             break;
                         }
                     }
@@ -540,24 +469,21 @@ namespace Driver
                         //so switching to default contents becomes necessary before switching to frame/ iFrame in question
                         try
                         {
-                            driver.SwitchTo().DefaultContent();
+                            Driver.SwitchTo().DefaultContent();
                             Thread.Sleep(100);
-                            driver.SwitchTo().Frame(element1);
-                            testobject = this.GetElementByAttribute(attributeType, attribute);
+                            Driver.SwitchTo().Frame(element1);
+                            testobject = GetElementByAttribute(AttributeType, Attribute);
 
                             if (testobject != null)
                             {
-                                frameObject = testobject;
+                                FrameObject = testobject;
                                 break;
                             }
-                            else
-                            {
-                                getElementFromFrames();
-                            }
+                            GetElementFromFrames();
                         }
-                        catch (Exception ex)
+                        catch (Exception)
                         {
-                            string sd = ex.Message;
+                            // ignored
                         }
                     }
                 }
@@ -578,18 +504,18 @@ namespace Driver
                 switch (attributeType.ToLower())
                 {
                     case "cssselector":
-                        testObjects = driver.FindElements(By.CssSelector(attribute));
+                        _testObjects = Driver.FindElements(By.CssSelector(attribute));
                         break;
                     case "css":
-                        testObjects = driver.FindElements(By.CssSelector(attribute));
+                        _testObjects = Driver.FindElements(By.CssSelector(attribute));
                         break;
                     case "name":
-                        testObjects = driver.FindElements(By.Name(attribute));
+                        _testObjects = Driver.FindElements(By.Name(attribute));
                         break;
                     case "id":
                         try
                         {
-                            testObjects = driver.FindElements(By.Id(attribute));
+                            _testObjects = Driver.FindElements(By.Id(attribute));
                         }
                         catch (NullReferenceException)
                         {
@@ -599,24 +525,24 @@ namespace Driver
                     case "linktext":
                     case "text":
                     case "link":
-                        testObjects = driver.FindElements(By.LinkText(attribute));
+                        _testObjects = Driver.FindElements(By.LinkText(attribute));
                         break;
                     case "xpath":
-                        testObjects = driver.FindElements(By.XPath(attribute));
+                        _testObjects = Driver.FindElements(By.XPath(attribute));
                         break;
                     case "partiallinktext":
-                        testObjects = driver.FindElements(By.PartialLinkText(attribute));
+                        _testObjects = Driver.FindElements(By.PartialLinkText(attribute));
                         break;
                     case "tag":
                     case "tagname":
                     case "html tag":
-                        testObjects = driver.FindElements(By.TagName(attribute));
+                        _testObjects = Driver.FindElements(By.TagName(attribute));
                         break;
                     case "class":
-                         testObjects = driver.FindElements(By.ClassName(attribute));
+                        _testObjects = Driver.FindElements(By.ClassName(attribute));
                         break;
                     case "classname":
-                        testObjects = driver.FindElements(By.ClassName(attribute));
+                        _testObjects = Driver.FindElements(By.ClassName(attribute));
                         break;
                     default:
                         throw new Exception("Locator Type :\"" + attributeType + "\" is undefined");
@@ -624,37 +550,37 @@ namespace Driver
 
                 if (DebugMode.Equals("true", StringComparison.OrdinalIgnoreCase))
                 {
-                    Console.WriteLine("Found " + testObjects.Count().ToString() + " objects matching to locator " + attributeType + "=" + attribute);
+                    Console.WriteLine("Found " + _testObjects.Count + " objects matching to locator " + attributeType + "=" + attribute);
                 }
 
-                Common.Utility.SetVariable("ElementCount", testObjects.Count().ToString());
+                Utility.SetVariable("ElementCount", _testObjects.Count.ToString());
 
-                if (testObjects.Count().Equals(0))
+                if (_testObjects.Count.Equals(0))
                 {
-                    testObject = null;
+                    _testObject = null;
                     throw new NoSuchElementException();
                 }
-                
-                if (testObjects.Count().Equals(1))
+
+                if (_testObjects.Count.Equals(1))
                 {
-                    testObject = testObjects.First();
-                    return testObject;
+                    _testObject = _testObjects.First();
+                    return _testObject;
                 }
 
                 //Variable to store if object is currently displayed
                 bool isObjectDisplayed = false;
-                firstObject = testObjects.First();
+                _firstObject = _testObjects.First();
 
                 //For each element, check if it is displayed. If yes, return it
                 int counter = 0;
-                foreach (IWebElement element in testObjects)
+                foreach (IWebElement element in _testObjects)
                 {
                     counter = counter + 1;
 
                     //If no displayed object could be located, store first element to test object by default
-                    if (!Common.Property.isRecoveryRunning)
+                    if (!Property.IsRecoveryRunning)
                     {
-                        testObject = testObjects.First();
+                        _testObject = _testObjects.First();
                     }
 
                     try
@@ -664,15 +590,15 @@ namespace Driver
                         //Print on console about object displayed status
                         if (DebugMode.Equals("true", StringComparison.OrdinalIgnoreCase))
                         {
-                            Console.WriteLine("Object position: " + counter + ", displayed= " + isObjectDisplayed.ToString());
+                            Console.WriteLine("Object position: " + counter + ", displayed= " + isObjectDisplayed);
                         }
 
                         //Return if object is displayed
                         if (isObjectDisplayed)
                         {
-                            this.HightlightObject(element);
-                            testObject = element;
-                            return testObject;
+                            HightlightObject(element);
+                            _testObject = element;
+                            return _testObject;
                         }
                     }
                     catch (Exception displayCheck)
@@ -684,40 +610,32 @@ namespace Driver
                 }
 
                 //During Browser recovery,we are not supposed to return testobject if it is not displayed on page.
-                if (Common.Property.isRecoveryRunning && !isObjectDisplayed)
+                if (Property.IsRecoveryRunning && !isObjectDisplayed)
                 {
                     return null;
                 }
 
 
                 // Xpath Generation.
-                if (Common.Utility.GetVariable("forcexpath").ToLower().Equals("true"))
+                if (Utility.GetVariable("forcexpath").ToLower().Equals("true"))
                 {
-                    string xpathString = getEquivalentXpath(testObject);
+                    string xpathString = getEquivalentXpath(_testObject);
                     if (xpathString != null)
                     {
-                        testObject = null;
-                        testObject = driver.FindElement(By.XPath(xpathString));
-                        return testObject;
+                        _testObject = null;
+                        _testObject = Driver.FindElement(By.XPath(xpathString));
+                        return _testObject;
                     }
                 }
                 return null;
             }
-            catch (NoSuchElementException e)
+            catch (NoSuchElementException)
             {
                 return null;
             }
-            catch (WebDriverException e)
-            {
-                throw e;
-            }
             catch (InvalidOperationException)
             {
-                return this.GetSingleElementByAttribute(attributeType, attribute);   
-            }
-            catch (Exception e)
-            {
-                throw e;
+                return GetSingleElementByAttribute(attributeType, attribute);
             }
         }
 
@@ -735,18 +653,18 @@ namespace Driver
                 {
 
                     case "cssselector":
-                        testObject = driver.FindElement(By.CssSelector(attribute));
+                        _testObject = Driver.FindElement(By.CssSelector(attribute));
                         break;
                     case "css":
-                        testObject = driver.FindElement(By.CssSelector(attribute));
+                        _testObject = Driver.FindElement(By.CssSelector(attribute));
                         break;
                     case "name":
-                        testObject = driver.FindElement(By.Name(attribute));
+                        _testObject = Driver.FindElement(By.Name(attribute));
                         break;
                     case "id":
                         try
                         {
-                            testObject = driver.FindElement(By.Id(attribute));
+                            _testObject = Driver.FindElement(By.Id(attribute));
                         }
                         catch (Exception)
                         {
@@ -756,52 +674,52 @@ namespace Driver
                     case "linktext":
                     case "text":
                     case "link":
-                        testObject = driver.FindElement(By.LinkText(attribute));
+                        _testObject = Driver.FindElement(By.LinkText(attribute));
                         break;
                     case "xpath":
-                        testObject = driver.FindElement(By.XPath(attribute));
+                        _testObject = Driver.FindElement(By.XPath(attribute));
                         break;
                     case "partiallinktext":
-                        testObject = driver.FindElement(By.PartialLinkText(attribute));
+                        _testObject = Driver.FindElement(By.PartialLinkText(attribute));
                         break;
                     case "tag":
                     case "tagname":
                     case "html tag":
-                        testObject = driver.FindElement(By.TagName(attribute));
+                        _testObject = Driver.FindElement(By.TagName(attribute));
                         break;
                     case "class":
-                         testObject = driver.FindElement(By.ClassName(attribute));
+                        _testObject = Driver.FindElement(By.ClassName(attribute));
                         break;
                     case "classname":
-                        testObject = driver.FindElement(By.ClassName(attribute));
+                        _testObject = Driver.FindElement(By.ClassName(attribute));
                         break;
                     default:
                         return null;
                 }
                 //Finding an element from the generated x-path from Iwebelement.
-                if (Common.Utility.GetVariable("forcexpath").ToLower().Equals("true"))
+                if (Utility.GetVariable("forcexpath").ToLower().Equals("true"))
                 {
-                    string xpath = getEquivalentXpath(testObject);
+                    string xpath = getEquivalentXpath(_testObject);
                     if (xpath != null)
-                        testObject = driver.FindElement(By.XPath(xpath));
+                        _testObject = Driver.FindElement(By.XPath(xpath));
                 }
 
-                return testObject;
+                return _testObject;
             }
             catch (NoSuchElementException e)
             {
-                Common.KryptonException.writeexception(e);
+                KryptonException.Writeexception(e);
                 return null;
             }
             catch (WebDriverException e)
             {
-                Common.KryptonException.writeexception(e);
-                throw e;
+                KryptonException.Writeexception(e);
+                throw;
             }
             catch (Exception e)
             {
-                Common.KryptonException.writeexception(e);
-                throw e;
+                KryptonException.Writeexception(e);
+                throw;
             }
         }
         /// <summary>
@@ -813,7 +731,7 @@ namespace Driver
         {
             try
             {
-                string scriptResult = (String)((IJavaScriptExecutor)driver).ExecuteScript("gPt=function(c){if(c.id!==''){return'id(\"'+c.id+'\")'} " +
+                string scriptResult = (String)((IJavaScriptExecutor)Driver).ExecuteScript("gPt=function(c){if(c.id!==''){return'id(\"'+c.id+'\")'} " +
                         "if(c===document.body){return c.tagName}" +
                         "var a=0;var e=c.parentNode.childNodes;" +
                         "for(var b=0;b<e.length;b++){var d=e[b];if(d===c){return gPt(c.parentNode)+'/'+c.tagName+'['+(a+1)+']'}if(d.nodeType===1&&d.tagName===c.tagName){a++}}};" +
@@ -833,120 +751,85 @@ namespace Driver
         /// <summary>
         ///Move the mouse to specified IWebElement based on its co-ordinates.
         /// </summary>
-        public void mouseMove()
+        public void MouseMove()
         {
-            try
-            {
-                testObject = this.WaitAndGetElement();
-                //Get Position of testObject.
-                ICoordinates posTestObject = ((ILocatable)testObject).Coordinates;
-                //Get Mouse Control.
-                IMouse mouseControl = ((IHasInputDevices)driver).Mouse;
-                //Move mouse control to posTestObject.
-                mouseControl.MouseMove(posTestObject);
-            }
-            catch (Exception)
-            {
-                throw;
-            }
+            _testObject = WaitAndGetElement();
+            //Get Position of testObject.
+            ICoordinates posTestObject = ((ILocatable)_testObject).Coordinates;
+            //Get Mouse Control.
+            IMouse mouseControl = ((IHasInputDevices)Driver).Mouse;
+            //Move mouse control to posTestObject.
+            mouseControl.MouseMove(posTestObject);
         }
 
         /// <summary>
         /// Click on an element using actions object
         /// </summary>
-        public void mouseClick()
+        public void MouseClick()
         {
-            try
-            {
-                addAction("click");
-                performAction();
-            }
-            catch (Exception)
-            {
-                throw;
-            }
+            AddAction("click");
+            PerformAction();
         }
 
         /// <summary>
         /// mouse over on an element using actions object
         /// </summary>
-        public void mouseOver()
+        public void MouseOver()
         {
-            try
-            {
-                addAction("mouseover");
-                performAction();
-            }
-            catch (Exception)
-            {
-                throw;
-            }
+            AddAction("mouseover");
+            PerformAction();
         }
 
         /// <summary>
         /// adds actions to advanced user interaction API
         /// </summary>
-        public void addAction(string actionToAdd = "", string data = "")
+        public void AddAction(string actionToAdd = "", string data = "")
         {
-            try
+            switch (actionToAdd.ToLower())
             {
-                switch (actionToAdd.ToLower())
-                {
-                    case "click":
-                        testObject = this.WaitAndGetElement();
-                        Browser.driverActions.Click(testObject);
-                        break;
-                    case "clickandhold":
-                        testObject = this.WaitAndGetElement();
-                        Browser.driverActions.ClickAndHold(testObject);
-                        break;
-                    case "contextclick":
-                        testObject = this.WaitAndGetElement();
-                        Browser.driverActions.ContextClick(testObject);
-                        break;
-                    case "doubleclick":
-                        testObject = this.WaitAndGetElement();
-                        Browser.driverActions.DoubleClick(testObject);
-                        break;
-                    case "keydown":
-                    case "keyup":
-                    case "release":
-                        testObject = this.WaitAndGetElement();
-                        Browser.driverActions.Release(testObject);
-                        break;
-                    case "sendkeys":
-                        testObject = this.WaitAndGetElement();
-                        Browser.driverActions.SendKeys(testObject, data);
-                        break;
-                    case "mouseover":
-                    case "movetoelement":
-                    case "mousemove":
-                        testObject = this.WaitAndGetElement();
-                        Browser.driverActions.MoveToElement(testObject);
-                        break;
-                }
-            }
-            catch (Exception)
-            {
-                throw;
+                case "click":
+                    _testObject = WaitAndGetElement();
+                    Browser.DriverActions.Click(_testObject);
+                    break;
+                case "clickandhold":
+                    _testObject = WaitAndGetElement();
+                    Browser.DriverActions.ClickAndHold(_testObject);
+                    break;
+                case "contextclick":
+                    _testObject = WaitAndGetElement();
+                    Browser.DriverActions.ContextClick(_testObject);
+                    break;
+                case "doubleclick":
+                    _testObject = WaitAndGetElement();
+                    Browser.DriverActions.DoubleClick(_testObject);
+                    break;
+                case "keydown":
+                case "keyup":
+                case "release":
+                    _testObject = WaitAndGetElement();
+                    Browser.DriverActions.Release(_testObject);
+                    break;
+                case "sendkeys":
+                    _testObject = WaitAndGetElement();
+                    Browser.DriverActions.SendKeys(_testObject, data);
+                    break;
+                case "mouseover":
+                case "movetoelement":
+                case "mousemove":
+                    _testObject = WaitAndGetElement();
+                    Browser.DriverActions.MoveToElement(_testObject);
+                    break;
             }
         }
 
         /// <summary>
         /// Performs actions present in action object
         /// </summary>
-        public void performAction()
+        public void PerformAction()
         {
-            try
-            {
-                //Finally, perform action on webelement
-                IAction finalAction = Browser.driverActions.Build();
-                finalAction.Perform();
-            }
-            catch (Exception)
-            {
-                throw;
-            }
+            //Finally, perform action on webelement
+            IAction finalAction = Browser.DriverActions.Build();
+            finalAction.Perform();
         }
 
         /// <summary>
@@ -955,15 +838,8 @@ namespace Driver
         /// </summary>
         public void ClearText()
         {
-            try
-            {
-                testObject = this.WaitAndGetElement();
-                testObject.Clear();
-            }
-            catch (Exception)
-            {
-                throw;
-            }
+            _testObject = WaitAndGetElement();
+            _testObject.Clear();
         }
 
 
@@ -975,19 +851,19 @@ namespace Driver
         {
             try
             {
-                testObject = this.WaitAndGetElement();               
+                _testObject = WaitAndGetElement();
                 DateTime startTime = DateTime.Now;
-                if (Common.Utility.GetParameter("runbyevents").Equals("true"))
+                if (Utility.GetParameter("runbyevents").Equals("true"))
                 {
-                    switch (Browser.browserName.ToLower())
+                    switch (Browser.BrowserName.ToLower())
                     {
                         case "ie":
                         case "iexplore":
-                            this.ExecuteScript(testObject, "arguments[0].click();");
+                            ExecuteScript(_testObject, "arguments[0].click();");
                             try
                             {
-                                this.WaitForObjectNotPresent(Common.Utility.GetVariable("ObjectTimeout"),
-                                                             Common.Utility.GetVariable("GlobalTimeout"), keyWordDic);
+                                WaitForObjectNotPresent(Utility.GetVariable("ObjectTimeout"),
+                                                             Utility.GetVariable("GlobalTimeout"), keyWordDic);
                             }
                             catch
                             {
@@ -995,7 +871,7 @@ namespace Driver
                             }
                             break;
                         default:
-                            testObject.Click();
+                            _testObject.Click();
                             break;
                     }
                 }
@@ -1004,110 +880,94 @@ namespace Driver
                     try
                     {
                         // Perform Shift+Click only if Shift key is passed as Data for action sheet data in case Chrome.
-                        if ("Shift".Equals(data, StringComparison.OrdinalIgnoreCase) && Browser.browserName.Equals(KryptonConstants.BROWSER_CHROME,StringComparison.OrdinalIgnoreCase))
+                        if ("Shift".Equals(data, StringComparison.OrdinalIgnoreCase) && Browser.BrowserName.Equals(KryptonConstants.BROWSER_CHROME, StringComparison.OrdinalIgnoreCase))
                         {
-                            Actions objAction = new Actions(driver);
+                            Actions objAction = new Actions(Driver);
 
-                            objAction = objAction.KeyDown(Keys.Shift).Click(testObject).KeyUp(Keys.Shift);
-                            IAction objIAction = objAction.Build();
+                            objAction = objAction.KeyDown(Keys.Shift).Click(_testObject).KeyUp(Keys.Shift);
+                            objAction.Build();
                             objAction.Perform();
                         }
                         else
                         {
-                            testObject.Click();
+                            _testObject.Click();
                         }
 
                         // Pause here for .5 sec as on mac safari VerifyTextOnPage after this looks at the page click is on and assumes that page has been received from server
                         // find a better way to do this
-                        if (Browser.browserName.Equals("safari"))
+                        if (Browser.BrowserName.Equals("safari"))
                             Thread.Sleep(2000);
                     }
-                      catch(ElementNotVisibleException enve)
-                      {
-                          try { ExecuteScript(testObject, "arguments[0].click();"); }
-                          catch { throw enve; }
-                        
-                       }
+                    catch (ElementNotVisibleException enve)
+                    {
+                        try { ExecuteScript(_testObject, "arguments[0].click();"); }
+                        catch { throw enve; }
+
+                    }
                     catch (Exception e)
-                     {
-                        if (e.Message.ToLower().Contains(Common.exceptions.ERROR_NORESPONSEURL))
+                    {
+                        if (e.Message.ToLower().Contains(Exceptions.ERROR_NORESPONSEURL))
                         {
-                            testObject.Click();
+                            _testObject.Click();
                         }
                         else
                         {
-                           throw e;
-                        }                      
-                        
-                       
+                            throw;
+                        }
                     }
                 }
 
                 //measure total time and raise exception if timeout is more than the allowed limit
                 DateTime finishTime = DateTime.Now;
-                double totalTime = (double)(finishTime - startTime).TotalSeconds;
-                foreach (string modifiervalue in keyWordDic.Values)
-                {
-                    if (modifiervalue.ToLower().Contains("timeout="))
+                double totalTime = (finishTime - startTime).TotalSeconds;
+                if (keyWordDic != null)
+                    foreach (string modifiervalue in keyWordDic.Values)
                     {
-                        double timeout = double.Parse(modifiervalue.Split('=').Last());
-                        if (totalTime > timeout)
+                        if (modifiervalue.ToLower().Contains("timeout="))
                         {
-                            throw new Exception("Page load took " + totalTime.ToString() + " seconds to load against expected time of " + timeout + " seconds.");
-                        }
-                        else
-                        {
-                            Common.Property.Remarks = "Page load took " + totalTime.ToString() + " seconds to load against expected time of " + timeout + " seconds.";
+                            double timeout = double.Parse(modifiervalue.Split('=').Last());
+                            if (totalTime > timeout)
+                            {
+                                throw new Exception("Page load took " + totalTime.ToString(CultureInfo.InvariantCulture) + " seconds to load against expected time of " + timeout + " seconds.");
+                            }
+                            Property.Remarks = "Page load took " + totalTime.ToString(CultureInfo.InvariantCulture) + " seconds to load against expected time of " + timeout + " seconds.";
                         }
                     }
-                }
             }
             catch (Exception e)
             {
-                if (objDataRow.ContainsKey(KryptonConstants.TEST_OBJECT))
+                if (_objDataRow.ContainsKey(KryptonConstants.TEST_OBJECT))
                 {
-                    Common.KryptonException.writeexception(e);
-                    throw new NoSuchElementException(Utility.GetCommonMsgVariable("KRYPTONERRCODE0067").Replace("{MSG3}", objDataRow[KryptonConstants.TEST_OBJECT]).Replace("{MSG4}", objDataRow["parent"]).Replace("{MSG1}", attributeType).Replace("{MSG2}", attribute).Replace("{ErrorMsg}", e.Message)); // added by 
+                    KryptonException.Writeexception(e);
+                    throw new NoSuchElementException(Utility.GetCommonMsgVariable("KRYPTONERRCODE0067").Replace("{MSG3}", _objDataRow[KryptonConstants.TEST_OBJECT]).Replace("{MSG4}", _objDataRow["parent"]).Replace("{MSG1}", AttributeType).Replace("{MSG2}", Attribute).Replace("{ErrorMsg}", e.Message)); // added by 
                 }
-                else
-                    throw;
+                throw;
             }
         }
 
-        public void clickInThread()
+        public void ClickInThread()
         {
-            try
+            _testObject = WaitAndGetElement();
+            var ts = new CancellationTokenSource();
+            CancellationToken ct = ts.Token;
+            Task.Factory.StartNew(() =>
             {
-
-                testObject = this.WaitAndGetElement();
-
-                var ts = new CancellationTokenSource();
-                CancellationToken ct = ts.Token;
-                Task.Factory.StartNew(() =>
+                while (true)
                 {
-                    while (true)
+                    _testObject.Click();
+                    Thread.Sleep(100);
+                    if (ct.IsCancellationRequested)
                     {
-                        testObject.Click();
-                        Thread.Sleep(100);
-                        if (ct.IsCancellationRequested)
-                        {
-                            // another thread decided to cancel
-                            Console.WriteLine("task canceled");
-                            break;
-                        }
+                        // another thread decided to cancel
+                        Console.WriteLine("task canceled");
+                        break;
                     }
-                }, ct);
-                // Simulate waiting 10s for the task to complete
-                Thread.Sleep(10000);
-                // Can't wait anymore => cancel this task
-                ts.Cancel();
-            }
-            catch (Exception e)
-            {
-                throw e;
-            }
-
-
+                }
+            }, ct);
+            // Simulate waiting 10s for the task to complete
+            Thread.Sleep(10000);
+            // Can't wait anymore => cancel this task
+            ts.Cancel();
         }
 
 
@@ -1117,207 +977,207 @@ namespace Driver
         /// <param name="key">String : Keyboard key </param>
         public void KeyPress(string key)
         {
-            testObject = this.WaitAndGetElement();
+            _testObject = WaitAndGetElement();
             switch (key.ToLower())
             {
                 case "arrowdown":
-                    testObject.SendKeys(Keys.ArrowDown);
+                    _testObject.SendKeys(Keys.ArrowDown);
                     break;
                 case "enter":
-                    testObject.SendKeys(Keys.Enter);
+                    _testObject.SendKeys(Keys.Enter);
                     break;
                 case "add":
-                    testObject.SendKeys(Keys.Add);
+                    _testObject.SendKeys(Keys.Add);
                     break;
                 case "alt":
-                    testObject.SendKeys(Keys.Alt);
+                    _testObject.SendKeys(Keys.Alt);
                     break;
                 case "arrowleft":
-                    testObject.SendKeys(Keys.ArrowLeft);
+                    _testObject.SendKeys(Keys.ArrowLeft);
                     break;
                 case "arrowright":
-                    testObject.SendKeys(Keys.ArrowRight);
+                    _testObject.SendKeys(Keys.ArrowRight);
                     break;
                 case "arrowup":
-                    testObject.SendKeys(Keys.ArrowUp);
+                    _testObject.SendKeys(Keys.ArrowUp);
                     break;
                 case "backspace":
-                    testObject.SendKeys(Keys.Backspace);
+                    _testObject.SendKeys(Keys.Backspace);
                     break;
                 case "cancel":
-                    testObject.SendKeys(Keys.Cancel);
+                    _testObject.SendKeys(Keys.Cancel);
                     break;
                 case "clear":
-                    testObject.SendKeys(Keys.Clear);
+                    _testObject.SendKeys(Keys.Clear);
                     break;
                 case "command":
-                    testObject.SendKeys(Keys.Command);
+                    _testObject.SendKeys(Keys.Command);
                     break;
                 case "control":
                 case "ctrl":
-                    testObject.SendKeys(Keys.Control);
+                    _testObject.SendKeys(Keys.Control);
                     break;
                 case "decimal":
-                    testObject.SendKeys(Keys.Decimal);
+                    _testObject.SendKeys(Keys.Decimal);
                     break;
                 case "delete":
-                    testObject.SendKeys(Keys.Delete);
+                    _testObject.SendKeys(Keys.Delete);
                     break;
                 case "divide":
-                    testObject.SendKeys(Keys.Divide);
+                    _testObject.SendKeys(Keys.Divide);
                     break;
                 case "down":
-                    testObject.SendKeys(Keys.Down);
+                    _testObject.SendKeys(Keys.Down);
                     break;
                 case "end":
-                    testObject.SendKeys(Keys.End);
+                    _testObject.SendKeys(Keys.End);
                     break;
                 case "equal":
-                    testObject.SendKeys(Keys.Equal);
+                    _testObject.SendKeys(Keys.Equal);
                     break;
                 case "escape":
-                    testObject.SendKeys(Keys.Escape);
+                    _testObject.SendKeys(Keys.Escape);
                     break;
                 case "f1":
-                    testObject.SendKeys(Keys.F1);
+                    _testObject.SendKeys(Keys.F1);
                     break;
                 case "f10":
-                    testObject.SendKeys(Keys.F10);
+                    _testObject.SendKeys(Keys.F10);
                     break;
                 case "f11":
-                    testObject.SendKeys(Keys.F11);
+                    _testObject.SendKeys(Keys.F11);
                     break;
                 case "f12":
-                    testObject.SendKeys(Keys.F12);
+                    _testObject.SendKeys(Keys.F12);
                     break;
                 case "f2":
-                    testObject.SendKeys(Keys.F2);
+                    _testObject.SendKeys(Keys.F2);
                     break;
                 case "f3":
-                    testObject.SendKeys(Keys.F3);
+                    _testObject.SendKeys(Keys.F3);
                     break;
                 case "f4":
-                    testObject.SendKeys(Keys.F4);
+                    _testObject.SendKeys(Keys.F4);
                     break;
                 case "f5":
-                    testObject.SendKeys(Keys.F5);
+                    _testObject.SendKeys(Keys.F5);
                     break;
                 case "f6":
-                    testObject.SendKeys(Keys.F6);
+                    _testObject.SendKeys(Keys.F6);
                     break;
                 case "f7":
-                    testObject.SendKeys(Keys.F7);
+                    _testObject.SendKeys(Keys.F7);
                     break;
                 case "f8":
-                    testObject.SendKeys(Keys.F8);
+                    _testObject.SendKeys(Keys.F8);
                     break;
                 case "f9":
-                    testObject.SendKeys(Keys.F9);
+                    _testObject.SendKeys(Keys.F9);
                     break;
                 case "help":
-                    testObject.SendKeys(Keys.Help);
+                    _testObject.SendKeys(Keys.Help);
                     break;
                 case "home":
-                    testObject.SendKeys(Keys.Home);
+                    _testObject.SendKeys(Keys.Home);
                     break;
                 case "insert":
-                    testObject.SendKeys(Keys.Insert);
+                    _testObject.SendKeys(Keys.Insert);
                     break;
                 case "left":
-                    testObject.SendKeys(Keys.Left);
+                    _testObject.SendKeys(Keys.Left);
                     break;
                 case "leftalt":
-                    testObject.SendKeys(Keys.LeftAlt);
+                    _testObject.SendKeys(Keys.LeftAlt);
                     break;
                 case "leftcontrol":
-                    testObject.SendKeys(Keys.LeftControl);
+                    _testObject.SendKeys(Keys.LeftControl);
                     break;
                 case "leftshift":
-                    testObject.SendKeys(Keys.LeftShift);
+                    _testObject.SendKeys(Keys.LeftShift);
                     break;
                 case "meta":
-                    testObject.SendKeys(Keys.Meta);
+                    _testObject.SendKeys(Keys.Meta);
                     break;
                 case "multiply":
-                    testObject.SendKeys(Keys.Multiply);
+                    _testObject.SendKeys(Keys.Multiply);
                     break;
                 case "null":
-                    testObject.SendKeys(Keys.Null);
+                    _testObject.SendKeys(Keys.Null);
                     break;
                 case "numberpad0":
-                    testObject.SendKeys(Keys.NumberPad0);
+                    _testObject.SendKeys(Keys.NumberPad0);
                     break;
                 case "numberpad1":
-                    testObject.SendKeys(Keys.NumberPad1);
+                    _testObject.SendKeys(Keys.NumberPad1);
                     break;
                 case "numberpad2":
-                    testObject.SendKeys(Keys.NumberPad2);
+                    _testObject.SendKeys(Keys.NumberPad2);
                     break;
                 case "numberpad3":
-                    testObject.SendKeys(Keys.NumberPad3);
+                    _testObject.SendKeys(Keys.NumberPad3);
                     break;
                 case "numberpad4":
-                    testObject.SendKeys(Keys.NumberPad4);
+                    _testObject.SendKeys(Keys.NumberPad4);
                     break;
                 case "numberpad5":
-                    testObject.SendKeys(Keys.NumberPad5);
+                    _testObject.SendKeys(Keys.NumberPad5);
                     break;
                 case "numberpad6":
-                    testObject.SendKeys(Keys.NumberPad6);
+                    _testObject.SendKeys(Keys.NumberPad6);
                     break;
                 case "numberpad7":
-                    testObject.SendKeys(Keys.NumberPad7);
+                    _testObject.SendKeys(Keys.NumberPad7);
                     break;
                 case "numberpad8":
-                    testObject.SendKeys(Keys.NumberPad8);
+                    _testObject.SendKeys(Keys.NumberPad8);
                     break;
                 case "numberpad9":
-                    testObject.SendKeys(Keys.NumberPad9);
+                    _testObject.SendKeys(Keys.NumberPad9);
                     break;
                 case "pagedown":
-                    testObject.SendKeys(Keys.PageDown);
+                    _testObject.SendKeys(Keys.PageDown);
                     break;
                 case "pageup":
-                    testObject.SendKeys(Keys.PageUp);
+                    _testObject.SendKeys(Keys.PageUp);
                     break;
                 case "pause":
-                    testObject.SendKeys(Keys.Pause);
+                    _testObject.SendKeys(Keys.Pause);
                     break;
                 case "return":
-                    testObject.SendKeys(Keys.Return);
+                    _testObject.SendKeys(Keys.Return);
                     break;
                 case "right":
-                    testObject.SendKeys(Keys.Right);
+                    _testObject.SendKeys(Keys.Right);
                     break;
                 case "semicolon":
-                    testObject.SendKeys(Keys.Semicolon);
+                    _testObject.SendKeys(Keys.Semicolon);
                     break;
                 case "separator":
-                    testObject.SendKeys(Keys.Separator);
+                    _testObject.SendKeys(Keys.Separator);
                     break;
                 case "shift":
-                    testObject.SendKeys(Keys.Shift);
+                    _testObject.SendKeys(Keys.Shift);
                     break;
                 case "space":
-                    testObject.SendKeys(Keys.Space);
+                    _testObject.SendKeys(Keys.Space);
                     break;
                 case "subtract":
-                    testObject.SendKeys(Keys.Subtract);
+                    _testObject.SendKeys(Keys.Subtract);
                     break;
                 case "tab":
-                    testObject.SendKeys(Keys.Tab);
+                    _testObject.SendKeys(Keys.Tab);
                     break;
                 case "up":
-                    testObject.SendKeys(Keys.Up);
+                    _testObject.SendKeys(Keys.Up);
                     break;
                 case "ctrl+c":
-                    testObject.SendKeys(Keys.Control + "c");
+                    _testObject.SendKeys(Keys.Control + "c");
                     break;
                 case "ctrl+v":
-                    testObject.SendKeys(Keys.Control + "v");
+                    _testObject.SendKeys(Keys.Control + "v");
                     break;
                 case "ctrl+a":
-                    testObject.SendKeys(Keys.Control + "a");
+                    _testObject.SendKeys(Keys.Control + "a");
                     break;
 
             }
@@ -1327,28 +1187,18 @@ namespace Driver
         /// This will check all specified child checkboxes.
         /// </summary>
         /// <param name="dataContents">String[] : Labels of the checkboxes that have to be checked.</param>
-        public void checkMultiple(string[] dataContents)
+        public void CheckMultiple(string[] dataContents)
         {
-            try
-            {
-                //Get the Test Object.
-                testObject = WaitAndGetElement();
+            //Get the Test Object.
+            _testObject = WaitAndGetElement();
 
-                //Get All Specified CheckBoxes
-                List<IWebElement> AllCheckBoxes = this.getAllCheckBoxes(dataContents);
+            //Get All Specified CheckBoxes
+            List<IWebElement> allCheckBoxes = GetAllCheckBoxes(dataContents);
 
-                //Checking All Specified Checkboxes.
-                foreach (IWebElement Checkbox in AllCheckBoxes)
-                {
-                    if (!Checkbox.Selected)
-                    {
-                        Checkbox.Click();
-                    }
-                }
-            }
-            catch (Exception e)
+            //Checking All Specified Checkboxes.
+            foreach (IWebElement checkbox in allCheckBoxes.Where(checkbox => !checkbox.Selected))
             {
-                throw e;
+                checkbox.Click();
             }
         }
         /// <summary>
@@ -1356,83 +1206,66 @@ namespace Driver
         /// </summary>
         /// <param name="dataContents"></param>
         /// <returns></returns>
-        private List<IWebElement> getAllCheckBoxes(string[] dataContents)
+        private List<IWebElement> GetAllCheckBoxes(string[] dataContents)
         {
-            try
+            //Get All Labels in the test object.
+            IList<IWebElement> allLabels = _testObject.FindElements(By.TagName("label"));
+
+            //Declaring List Of all Checkboxes that need to be processed.
+            List<IWebElement> allCheckBoxes = new List<IWebElement>();
+
+            //Processing each Labels one by one.
+            foreach (IWebElement labels in allLabels)
             {
-                //Get All Labels in the test object.
-                IList<IWebElement> AllLabels = testObject.FindElements(By.TagName("label"));
-
-                //Declaring List Of all Checkboxes that need to be processed.
-                List<IWebElement> AllCheckBoxes = new List<IWebElement>();
-
-                //Processing each Labels one by one.
-                foreach (IWebElement Labels in AllLabels)
+                //Checking if Checkbox need to be processed based upon inputs given.
+                if (!checkLabels(dataContents, labels.Text))
                 {
-                    //Checking if Checkbox need to be processed based upon inputs given.
-                    if (!checkLabels(dataContents, Labels.Text))
-                    {
-                        continue; //Continuing to next label.
-                    }
-
-                    string forAttribute = string.Empty;
-
-                    IWebElement CheckBoxOfLabel = null;
-                    //Fetching 'for' attribute of current label.
-                    forAttribute = Labels.GetAttribute("for");
-                    //There are checkbox groups in which for is not specified, these groups have different hierarchies.
-                    if (!(forAttribute == null))
-                    {
-                        //Getting checkbox Element.
-                        CheckBoxOfLabel = driver.FindElement(By.Id(forAttribute));
-
-                        //Add checkbox to list.
-                        AllCheckBoxes.Add(CheckBoxOfLabel);
-                    }
-                    else //If for attribute is not present in DOM for labels.
-                    {
-                        //Getting CheckBox Element.
-                        CheckBoxOfLabel = Labels.FindElement(By.TagName("input"));
-
-                        //Add checkbox to list.
-                        AllCheckBoxes.Add(CheckBoxOfLabel);
-                    }
+                    continue; //Continuing to next label.
                 }
-                return AllCheckBoxes;
+
+                IWebElement checkBoxOfLabel;
+                //Fetching 'for' attribute of current label.
+                var forAttribute = labels.GetAttribute("for");
+                //There are checkbox groups in which for is not specified, these groups have different hierarchies.
+                if (forAttribute != null)
+                {
+                    //Getting checkbox Element.
+                    checkBoxOfLabel = Driver.FindElement(By.Id(forAttribute));
+
+                    //Add checkbox to list.
+                    allCheckBoxes.Add(checkBoxOfLabel);
+                }
+                else //If for attribute is not present in DOM for labels.
+                {
+                    //Getting CheckBox Element.
+                    checkBoxOfLabel = labels.FindElement(By.TagName("input"));
+
+                    //Add checkbox to list.
+                    allCheckBoxes.Add(checkBoxOfLabel);
+                }
             }
-            catch (Exception e)
-            {
-                throw e;
-            }
+            return allCheckBoxes;
         }
 
         /// <summary>
         /// Uncheck all child checkboxes.
         /// </summary>
         /// <param name="dataContent">string[] : specified the labels of checkboxes.</param>
-        public void uncheckMultiple(string[] dataContent)
+        public void UncheckMultiple(string[] dataContent)
         {
-            try
+            //Get Test Object.
+            _testObject = WaitAndGetElement();
+
+            //Get all specified checkboxes.
+            List<IWebElement> allCheckBoxes = GetAllCheckBoxes(dataContent);
+
+            //UnChecking All Specified Checkboxes.
+            foreach (IWebElement checkbox in allCheckBoxes)
             {
-                //Get Test Object.
-                testObject = this.WaitAndGetElement();
-
-                //Get all specified checkboxes.
-                List<IWebElement> AllCheckBoxes = this.getAllCheckBoxes(dataContent);
-
-                //UnChecking All Specified Checkboxes.
-                foreach (IWebElement Checkbox in AllCheckBoxes)
+                if (checkbox.Selected)
                 {
-                    if (Checkbox.Selected)
-                    {
-                        Checkbox.Click();
-                    }
+                    checkbox.Click();
                 }
-
-            }
-            catch (Exception e)
-            {
-                throw e;
             }
         }
 
@@ -1440,29 +1273,13 @@ namespace Driver
         /// Check if specified label is the current label.
         /// </summary>
         /// <param name="dataContent"></param>
-        /// <param name="LabelText"></param>
+        /// <param name="labelText"></param>
         /// <returns></returns>
-        private bool checkLabels(string[] dataContent, string LabelText)
+        private bool checkLabels(string[] dataContent, string labelText)
         {
-            try
-            {
-                bool checkLabel = false;
-                foreach (string data in dataContent)
-                {
-                    if (data.Trim().Equals(LabelText))
-                    {
-                        checkLabel = true;
-                        break;
-                    }
-                }
-                return checkLabel;
-            }
-            catch (Exception e)
-            {
-                throw e;
-            }
-
+            return dataContent.Any(data => data.Trim().Equals(labelText));
         }
+
         /// <summary>
         ///  Method to check on checkbox and radio button.
         /// </summary>
@@ -1470,27 +1287,27 @@ namespace Driver
         {
             try
             {
-                testObject = this.WaitAndGetElement();
-                bool isSelected = testObject.Selected;
+                _testObject = WaitAndGetElement();
+                bool isSelected = _testObject.Selected;
 
                 switch (checkStatus.ToLower().Trim())
                 {
                     case "on":
                         if (!isSelected)
                         {
-                            testObject.Click();
+                            _testObject.Click();
                         }
                         break;
                     case "off":
                         if (isSelected)
                         {
-                            testObject.Click();
+                            _testObject.Click();
                         }
                         break;
                     default:
                         if (!isSelected)
                         {
-                            testObject.Click();
+                            _testObject.Click();
                         }
                         break;
                 }
@@ -1503,7 +1320,7 @@ namespace Driver
                 {
                     try
                     {
-                        ExecuteScript(testObject, "arguments[0].click();");  
+                        ExecuteScript(_testObject, "arguments[0].click();");
                     }
                     catch
                     {
@@ -1511,7 +1328,7 @@ namespace Driver
                     }
                 }
                 else
-                throw;
+                    throw;
             }
         }
 
@@ -1521,15 +1338,7 @@ namespace Driver
         /// </summary>
         public void UnCheck()
         {
-
-            try
-            {
-                this.Check("off");
-            }
-            catch (Exception)
-            {
-                throw;
-            }
+            Check("off");
         }
 
 
@@ -1541,26 +1350,25 @@ namespace Driver
         {
             try
             {
-              
-                    testObject = this.WaitAndGetElement();               
-               
-                //Check ON or OFF condition for radio button or checkbox. : 
+
+                _testObject = WaitAndGetElement();
+
+                //Check ON or OFF condition for radio button or checkbox.
                 if (text.Equals("ON", StringComparison.CurrentCultureIgnoreCase) || (text.Equals("OFF", StringComparison.CurrentCultureIgnoreCase)))
                 {
-                    string objType = string.Empty;
-                    objType = testObject.GetAttribute("type");
+                    var objType = _testObject.GetAttribute("type");
                     if (objType.Equals("checkbox", StringComparison.CurrentCultureIgnoreCase) ||
                          objType.Equals("radio", StringComparison.CurrentCultureIgnoreCase))
                     {
                         switch (text.ToLower())
                         {
                             case "on":
-                                Common.Property.StepDescription = "Check " + testObject.Text;
-                                this.Check();
+                                Property.StepDescription = "Check " + _testObject.Text;
+                                Check();
                                 break;
                             case "off":
-                                Common.Property.StepDescription = "Uncheck " + testObject.Text;
-                                this.UnCheck();
+                                Property.StepDescription = "Uncheck " + _testObject.Text;
+                                UnCheck();
                                 break;
                         }
                     }
@@ -1571,82 +1379,72 @@ namespace Driver
                     string objTagName = string.Empty;
                     if (objTagName.ToLower().Equals("iframe") || objTagName.ToLower().Equals("frame"))
                     {
-                        driver.SwitchTo().Frame(testObject); //Selecting the frame
-                        driver.FindElement(By.CssSelector("body")).SendKeys("text"); //entering the data to frame.
+                        Driver.SwitchTo().Frame(_testObject); //Selecting the frame
+                        Driver.FindElement(By.CssSelector("body")).SendKeys("text"); //entering the data to frame.
                     }
                     else
                     {
-                        testObject.Clear();
+                        _testObject.Clear();
                         try
                         {
-                            testObject.SendKeys(text);
+                            _testObject.SendKeys(text);
                         }
-                        catch(ElementNotVisibleException enve)
+                        catch (ElementNotVisibleException enve)
                         {
                             try
-                            { 
-                                ExecuteScript(testObject, string.Format("arguments[0].value='{0}';", text)); 
+                            {
+                                ExecuteScript(_testObject, string.Format("arguments[0].value='{0}';", text));
                             }
-                             catch
+                            catch
                             {
                                 throw enve;
-                            }   
+                            }
                         }
-                        catch (Exception ee)
+                        catch (Exception)
                         {
-                            if (objDataRow.ContainsKey(KryptonConstants.TEST_OBJECT))
-                                throw new NoSuchElementException(Utility.GetCommonMsgVariable("KRYPTONERRCODE0069").Replace("{MSG3}", objDataRow[KryptonConstants.TEST_OBJECT]).Replace("{MSG4}", objDataRow["parent"]).Replace("{MSG1}", attributeType).Replace("{MSG2}", attribute)); // added by 
-                            else
-                                throw ee;
+                            if (_objDataRow.ContainsKey(KryptonConstants.TEST_OBJECT))
+                                throw new NoSuchElementException(Utility.GetCommonMsgVariable("KRYPTONERRCODE0069").Replace("{MSG3}", _objDataRow[KryptonConstants.TEST_OBJECT]).Replace("{MSG4}", _objDataRow["parent"]).Replace("{MSG1}", AttributeType).Replace("{MSG2}", Attribute)); // added by 
+                            throw;
                         }
                     }
                 }
             }
-            
-            catch (OpenQA.Selenium.StaleElementReferenceException)
+
+            catch (StaleElementReferenceException)
             {
+                _testObject = WaitAndGetElement();
+                _testObject.Clear();
                 try
                 {
-                    testObject = this.WaitAndGetElement();
-                    testObject.Clear();
-                    try
-                    {
-                        testObject.SendKeys(text);
-                    }
-                    catch (Exception ee)
-                    {
-                        if (objDataRow.ContainsKey(KryptonConstants.TEST_OBJECT))
-                            throw new NoSuchElementException(Utility.GetCommonMsgVariable("KRYPTONERRCODE0069").Replace("{MSG3}", objDataRow[KryptonConstants.TEST_OBJECT]).Replace("{MSG4}", objDataRow["parent"]).Replace("{MSG1}", attributeType).Replace("{MSG2}", attribute)); // added by 
-                        else
-                            throw ee;
-                    }
+                    _testObject.SendKeys(text);
                 }
-                catch( Exception ex)
+                catch (Exception)
                 {
-                    throw ex;
+                    if (_objDataRow.ContainsKey(KryptonConstants.TEST_OBJECT))
+                        throw new NoSuchElementException(Utility.GetCommonMsgVariable("KRYPTONERRCODE0069").Replace("{MSG3}", _objDataRow[KryptonConstants.TEST_OBJECT]).Replace("{MSG4}", _objDataRow["parent"]).Replace("{MSG1}", AttributeType).Replace("{MSG2}", Attribute)); // added by 
+                    throw;
                 }
             }
             catch (Exception e)
             {
                 if (e.Message.Contains("Element is no longer attached to the DOM"))
                 {
-                    testObject = this.WaitAndGetElement();
-                    testObject.Clear();
+                    _testObject = WaitAndGetElement();
+                    _testObject.Clear();
                     try
                     {
-                        testObject.SendKeys(text);
+                        _testObject.SendKeys(text);
                     }
-                    catch (Exception ee)
+                    catch (Exception)
                     {
-                        if (objDataRow.ContainsKey(KryptonConstants.TEST_OBJECT))
-                            throw new NoSuchElementException(Utility.GetCommonMsgVariable("KRYPTONERRCODE0069").Replace("{MSG3}", objDataRow[KryptonConstants.TEST_OBJECT]).Replace("{MSG4}", objDataRow["parent"]).Replace("{MSG1}", attributeType).Replace("{MSG2}", attribute)); // added by 
-                        else
-                            throw ee;
+                        if (_objDataRow.ContainsKey(KryptonConstants.TEST_OBJECT))
+                            throw new NoSuchElementException(Utility.GetCommonMsgVariable("KRYPTONERRCODE0069").Replace("{MSG3}", _objDataRow[KryptonConstants.TEST_OBJECT]).Replace("{MSG4}", _objDataRow["parent"]).Replace("{MSG1}", AttributeType).Replace("{MSG2}", Attribute)); // added by 
+                        throw;
                     }
                 }
                 else
                 {
-                    throw e;
+                    throw;
                 }
             }
         }
@@ -1657,108 +1455,92 @@ namespace Driver
         /// </summary>
         public void Submit()
         {
-            try
-            {
-                testObject = this.WaitAndGetElement();
-                testObject.Submit();
-
-            }
-            catch (Exception)
-            {
-                throw;
-            }
+            _testObject = WaitAndGetElement();
+            _testObject.Submit();
         }
 
-       
+
         /// <summary>
         ///Method to fire specified event.
         /// </summary>
         public void FireEvent(string eventName)
         {
-            string script = string.Empty;
-            string onEventName = string.Empty;
+            //Retrieve test object from application
+            _testObject = WaitAndGetElement();
 
-            try
+            //Get all events that needs to be fired
+            string[] arrEvents = eventName.Split('|');
+            string[] arrScripts = new string[arrEvents.Length];
+
+
+            //Start a for loop for each event, created javascript and store to script array
+            for (int i = 0; i < arrEvents.Length; i++)
             {
-                //Retrieve test object from application
-                testObject = this.WaitAndGetElement();
+                //Retrieve event name from array one by one
+                eventName = arrEvents[i].Trim().ToLower(); //event must be in lower case.
 
-                //Get all events that needs to be fired
-                string[] arrEvents = eventName.Split('|');
-                string[] arrScripts = new string[arrEvents.Length];
+                // Replace special characters
+                eventName = Utility.ReplaceSpecialCharactersInString(eventName);
 
-
-                //Start a for loop for each event, created javascript and store to script array
-                for (int i = 0; i < arrEvents.Length; i++)
+                //Eventname should start with "on" for internet explorer
+                string onEventName;
+                if (eventName.ToLower().StartsWith("on"))
                 {
-                    //Retrieve event name from array one by one
-                    eventName = arrEvents[i].ToString().Trim().ToLower(); //event must be in lower case :
-
-                    // Replace special characters
-                    eventName = Common.Utility.ReplaceSpecialCharactersInString(eventName);
-
-                    //Eventname should start with "on" for internet explorer
-                    if (eventName.ToLower().StartsWith("on"))
-                    {
-                        onEventName = eventName;
-                        eventName = eventName.Substring(2);
-                    }
-                    else
-                    {
-                        onEventName = "on" + eventName;
-                    }
-
-                    //Following script should work good for all browsers
-                    script = "var canBubble = false;" + Environment.NewLine +
-                            "var element = arguments[0];" + Environment.NewLine +
-                            "    if (document.createEventObject()) {" + Environment.NewLine +
-                            "        var evt = document.createEventObject();" + Environment.NewLine +
-                            "        arguments[0].fireEvent('" + onEventName + "', evt);" + Environment.NewLine +
-                            "    }" + Environment.NewLine +
-                            "    else {" + Environment.NewLine +
-                            "        var evt = document.createEvent(\"HTMLEvents\");" + Environment.NewLine +
-                            "        evt.initEvent('" + eventName + "', true, true);" + Environment.NewLine +
-                            "        arguments[0].dispatchEvent(evt);" + Environment.NewLine +
-                            "    }";
-
-
-                    //Firefox and others has to be force for this script
-                    if (!Browser.browserName.Equals("ie"))
-                    {
-                        script = "var evt = document.createEvent(\"HTMLEvents\"); evt.initEvent(\"" +
-                                 eventName + "\", true, true );return !arguments[0].dispatchEvent(evt);";
-                    }
-
-                    //Store scripts in script specific array
-                    arrScripts[i] = script;
-
+                    onEventName = eventName;
+                    eventName = eventName.Substring(2);
+                }
+                else
+                {
+                    onEventName = "on" + eventName;
                 }
 
-                //Execute scripts now. This loop needs to be saparate as events needs to be fired as fast as possible
-                for (int i = 0; i < arrScripts.Length; i++)
+                //Following script should work good for all browsers
+                var script = "var canBubble = false;" + Environment.NewLine +
+                             "var element = arguments[0];" + Environment.NewLine +
+                             "    if (document.createEventObject()) {" + Environment.NewLine +
+                             "        var evt = document.createEventObject();" + Environment.NewLine +
+                             "        arguments[0].fireEvent('" + onEventName + "', evt);" + Environment.NewLine +
+                             "    }" + Environment.NewLine +
+                             "    else {" + Environment.NewLine +
+                             "        var evt = document.createEvent(\"HTMLEvents\");" + Environment.NewLine +
+                             "        evt.initEvent('" + eventName + "', true, true);" + Environment.NewLine +
+                             "        arguments[0].dispatchEvent(evt);" + Environment.NewLine +
+                             "    }";
+
+
+                //Firefox and others has to be force for this script
+                if (!Browser.BrowserName.Equals("ie"))
                 {
-                    this.ExecuteScript(testObject, arrScripts[i]);
+                    script = "var evt = document.createEvent(\"HTMLEvents\"); evt.initEvent(\"" +
+                             eventName + "\", true, true );return !arguments[0].dispatchEvent(evt);";
                 }
+
+                //Store scripts in script specific array
+                arrScripts[i] = script;
+
             }
 
-            catch (Exception e)
+            //Execute scripts now. This loop needs to be saparate as events needs to be fired as fast as possible
+            foreach (string script in arrScripts)
             {
-                throw e;
+                ExecuteScript(_testObject, script);
             }
         }
 
-        /// <summary>
-        ///Method to wait for specified object to become visible.
-        /// </summary>
-        /// <param name="waitForType">string : Type of condition</param>
+        ///  <summary>
+        /// Method to wait for specified object to become visible.
+        ///  </summary>
+        /// <param name="globalWaitTime">global wait time from the parameter file</param>
         /// <param name="optionDic">Dictionary : Option dictionary</param>
+        /// <param name="waitTime">wait time for the object mention in the test case</param>
+        /// <param name="modifier"></param>
         public string WaitForObject(string waitTime, string globalWaitTime, Dictionary<int, string> optionDic, string modifier)
         {
             try
             {
                 int intWaitTime = 0;
-                this.modifier = modifier;
-                this.optiondic = optionDic;
+                _modifier = modifier;
+                _optiondic = optionDic;
                 if (string.IsNullOrEmpty(globalWaitTime.Trim()))
                 {
                     globalWaitTime = "0";
@@ -1775,12 +1557,11 @@ namespace Driver
                 {
                     intWaitTime = Int32.Parse(globalWaitTime);
                 }
-                WebDriverWait wait = new WebDriverWait(driver, TimeSpan.FromSeconds(intWaitTime));
-                Func<IWebDriver, bool> condition;
-                condition = this.VerifyObjectDisplayCondition;
-                DateTime dtBefore = System.DateTime.Now;
-                wait.Until((Func<IWebDriver, bool>)condition);
-                DateTime dtafter = System.DateTime.Now;
+                WebDriverWait wait = new WebDriverWait(Driver, TimeSpan.FromSeconds(intWaitTime));
+                Func<IWebDriver, bool> condition = VerifyObjectDisplayCondition;
+                DateTime dtBefore = DateTime.Now;
+                wait.Until(condition);
+                DateTime dtafter = DateTime.Now;
                 TimeSpan timeSpan = dtafter - dtBefore;
                 int timeInterval = timeSpan.Milliseconds;
                 return timeInterval.ToString();
@@ -1789,60 +1570,51 @@ namespace Driver
             catch (FormatException)
             {
                 throw new Exception("GlobalTimeout parameter with value: " + globalWaitTime + "  was not in a correct format");
-            
+
             }
             catch (WebDriverTimeoutException)
             {
-                throw new Exception("WebDriverTime Out Exception");
+                throw new Exception("Object is not present on current page");
             }
 
         }
 
-        /// <summary>
-        ///Method to wait for specified object to disappear.
-        /// </summary>
-        /// <param name="waitForType">string : Type of condition</param>
+        ///  <summary>
+        /// Method to wait for specified object to disappear.
+        ///  </summary>
         /// <param name="optionDic">Dictionary : Option dictionary</param>
         public void WaitForObjectNotPresent(string waitTime, string globalWaitTime, Dictionary<int, string> optionDic)
         {
             if (waitTime.Equals(string.Empty))
-                {
-                    waitTime = globalWaitTime;
-                }
-                this.optiondic = optionDic;
-                
-                int intWaitTime = Int32.Parse(waitTime);
-                WebDriverWait wait = new WebDriverWait(driver, TimeSpan.FromSeconds(intWaitTime));
-                Func<IWebDriver, bool> condition;
-                condition = this.VerifyObjectNotDisplayedCondition;
-                wait.Until((Func<IWebDriver, bool>)condition);
-           
-        }
-        /// <summary>
-        ///Wait for specified test object property to appear.
-        /// </summary>
-        /// <param name="testData">string : test data</param>
-        /// <param name="globalWaitTime">string : Global time out</param>
-        /// <param name="optionDic">Dictionary : Option Dictionary</param>
-        public void WaitForObjectProperty(string propertyParam, string propertyValueParam, string globalWaitTime, Dictionary<int, string> optionDic)
-        {
-            try
             {
-                property = propertyParam.Trim();
-                propertyValue = propertyValueParam.Trim();
-                this.optiondic = optionDic;
-                int intWaitTime = Int32.Parse(globalWaitTime);
-                WebDriverWait wait = new WebDriverWait(driver, TimeSpan.FromSeconds(intWaitTime));
-                Func<IWebDriver, bool> condition;
-                condition = this.VerifyObjectPropertyCondition;
-                wait.Until((Func<IWebDriver, bool>)condition);
+                waitTime = globalWaitTime;
             }
-            catch (Exception e)
-            {
-                throw e;
-            }
+            _optiondic = optionDic;
+
+            int intWaitTime = Int32.Parse(waitTime);
+            WebDriverWait wait = new WebDriverWait(Driver, TimeSpan.FromSeconds(intWaitTime));
+            Func<IWebDriver, bool> condition = VerifyObjectNotDisplayedCondition;
+            wait.Until(condition);
 
         }
+
+        ///  <summary>
+        /// Wait for specified test object property to appear.
+        ///  </summary>
+        /// <param name="globalWaitTime">string : Global time out</param>
+        ///  <param name="optionDic">Dictionary : Option Dictionary</param>
+        public void WaitForObjectProperty(string propertyParam, string propertyValueParam, string globalWaitTime, Dictionary<int, string> optionDic)
+        {
+            _property = propertyParam.Trim();
+            _propertyValue = propertyValueParam.Trim();
+            _optiondic = optionDic;
+            int intWaitTime = Int32.Parse(globalWaitTime);
+            WebDriverWait wait = new WebDriverWait(Driver, TimeSpan.FromSeconds(intWaitTime));
+            Func<IWebDriver, bool> condition = VerifyObjectPropertyCondition;
+            wait.Until(condition);
+        }
+
+
 
         /// <summary>
         ///Method to verify specified test object property.
@@ -1853,18 +1625,12 @@ namespace Driver
         {
             try
             {
-                return this.VerifyObjectProperty(property, propertyValue, optiondic);
+                return VerifyObjectProperty(_property, _propertyValue, _optiondic);
             }
             catch (NoSuchElementException)
             {
                 return false;
             }
-            catch (Exception e)
-            {
-                throw e;
-            }
-
-
         }
 
         /// <summary>
@@ -1876,8 +1642,8 @@ namespace Driver
         {
             try
             {
-                bool status = this.VerifyObjectDisplayed();
-                if (!status && modifier.Equals("refresh"))
+                bool status = VerifyObjectDisplayed();
+                if (!status && _modifier.Equals("refresh"))
                 {
                     driver.Navigate().Refresh();
                 }
@@ -1891,10 +1657,6 @@ namespace Driver
             {
                 return false;
             }
-            catch (Exception e)
-            {
-                throw e;
-            }
         }
 
 
@@ -1907,7 +1669,7 @@ namespace Driver
         {
             try
             {
-                return !this.VerifyObjectDisplayed();
+                return !VerifyObjectDisplayed();
             }
             catch (NoSuchElementException e)
             {
@@ -1920,50 +1682,37 @@ namespace Driver
         /// </summary>
         public void DoubleClick()
         {
-            try
-            {
-                selenium = Browser.GetSeleniumOne();
-                selenium.DoubleClick(attribute);
-            }
-            catch (Exception)
-            {
-                throw;
-            }
+            _selenium = Browser.GetSeleniumOne();
+            _selenium.DoubleClick(Attribute);
         }
 
-        
+
         /// <summary>
         /// Method to select specified item from list.
         /// </summary>
-        /// <param name="text">string : option to be select from list</param>
-        /// /
-
         public void SelectItem(string[] itemList, bool selectMultiple = false)
         {
-            string AvailbleItemsInList = string.Empty;
+            string availbleItemsInList = string.Empty;
             string expectedItems = string.Empty;
 
             try
             {
                 string firstItem = itemList.First();
-                foreach (var item in itemList)
-                {
-                    expectedItems += string.Format("\t" + item);
-                }
-                testObject = this.WaitAndGetElement();
-               if (testObject != null)
-                   AvailbleItemsInList = testObject.Text;
-                
+                expectedItems = itemList.Aggregate(expectedItems, (current, item) => current + string.Format("\t" + item));
+                _testObject = WaitAndGetElement();
+                if (_testObject != null)
+                    availbleItemsInList = _testObject.Text;
+
 
                 #region  KRYPTON0156: Handling conditions where selectItem can be used for radio groups
-                if (testObject.GetAttribute("type") != null && testObject.GetAttribute("type").ToLower().Equals("radio"))
+                if (_testObject != null && (_testObject.GetAttribute("type") != null && _testObject.GetAttribute("type").ToLower().Equals("radio")))
                 {
                     string radioValue = string.Empty;
 
                     //Check if given option is also stored in mapping column
                     string valueFromMapping = string.Empty;
 
-                    foreach (KeyValuePair<string, string> mappingKey in dicMapping)
+                    foreach (KeyValuePair<string, string> mappingKey in _dicMapping)
                     {
                         if (mappingKey.Key.ToLower().Equals(firstItem.ToLower()))
                         {
@@ -1972,7 +1721,7 @@ namespace Driver
                         }
                     }
 
-                    foreach (IWebElement radioObject in testObjects)
+                    foreach (IWebElement radioObject in _testObjects)
                     {
                         //Retrieve value property of radio button and compare with passed text
                         string tempRadioValue = radioObject.GetAttribute("value");
@@ -1980,7 +1729,7 @@ namespace Driver
                         if (tempRadioValue.ToLower().Equals(firstItem.ToLower()) || tempRadioValue.ToLower().Equals(valueFromMapping.ToLower()))
                         {
                             radioValue = tempRadioValue;
-                            testObject = radioObject;
+                            _testObject = radioObject;
                             break;
                         }
                     }
@@ -1988,14 +1737,11 @@ namespace Driver
                     //Determine if a radio option was found or not, and take action based on that
                     if (!radioValue.Equals(string.Empty))
                     {
-                        this.ExecuteScript(testObject, "arguments[0].click();");
+                        ExecuteScript(_testObject, "arguments[0].click();");
                         return;
                     }
-                    else
-                    {
-                        Common.Property.Remarks = string.Empty;
-                        throw new Exception(Common.Utility.GetCommonMsgVariable("KRYPTONERRCODE0022").Replace("{MSG}", firstItem));
-                    }
+                    Property.Remarks = string.Empty;
+                    throw new Exception(Utility.GetCommonMsgVariable("KRYPTONERRCODE0022").Replace("{MSG}", firstItem));
                 }
                 #endregion
 
@@ -2003,69 +1749,65 @@ namespace Driver
                 //Following code section is a shortcut for the same, and works reliably and fast on all browsers
 
                 //Clear previus selection if multiple options needs to be selected
-                
-                    if (selectMultiple)
-                    {
-                        SelectElement select = new SelectElement(testObject);
-                        select.DeselectAll();
-                    }
-                
 
-                bool IsSelectionSuccessful = false;
-
-
+                if (selectMultiple)
+                {
+                    SelectElement select = new SelectElement(_testObject);
+                    select.DeselectAll();
+                }
+                bool isSelectionSuccessful = false;
                 foreach (string optionForSelection in itemList)
                 {
                     string optionText = optionForSelection.Trim();
 
 
-                    IList<IWebElement> allOptions = testObject.FindElements(By.TagName("option"));
-                    foreach (IWebElement option in allOptions)
+                    if (_testObject != null)
                     {
-                        try
+                        IList<IWebElement> allOptions = _testObject.FindElements(By.TagName("option"));
+                        foreach (IWebElement option in allOptions)
                         {
-                            string propertyValue = option.GetAttribute("value");
-                            if (option.Displayed)
+                            try
                             {
-                                if (option.Text.Contains(optionText))
+                                string propertyValue = option.GetAttribute("value");
+                                if (option.Displayed)
                                 {
-                                    IsSelectionSuccessful = true;
+                                    if (option.Text.Contains(optionText))
+                                    {
+                                        isSelectionSuccessful = true;
+                                        option.Click();
+                                        break;
+                                    }
+                                    if (propertyValue != null && propertyValue.ToLower().Contains(optionText))
+                                    {
+                                        isSelectionSuccessful = true;
+                                        option.Click();
+                                        break;
+                                    }
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                if (ex is StaleElementReferenceException)
+                                {
+                                    Thread.Sleep(2500);
+                                    isSelectionSuccessful = true;
                                     option.Click();
                                     break;
                                 }
-                                else if (propertyValue != null && propertyValue.ToLower().Contains(optionText))
-                                {
-                                    IsSelectionSuccessful = true;
-                                    option.Click();
-                                    break;
-                                }
+                                throw new Exception(string.Format("Could not select \"{0}\" in the list with options:\" {1} \". Actual error:{2}", optionText, availbleItemsInList, ex.Message));
                             }
-                        }
-                        catch (Exception ex)
-                        {
-                            if (ex is StaleElementReferenceException)
-                            {
-                                Thread.Sleep(2500);
-                                IsSelectionSuccessful = true;
-                                option.Click();
-                                break;
-                            }
-                            else
-                                throw new Exception(string.Format("Could not select \"{0}\" in the list with options:\" {1} \". Actual error:{2}", optionText, AvailbleItemsInList, ex.Message));
-
                         }
                     }
-
                 }
-                if (!IsSelectionSuccessful)
+                if (!isSelectionSuccessful)
                 {
-                    throw new Exception(string.Format("Could not found \"{0}\" in the list with options:\" {1} \".", expectedItems, AvailbleItemsInList));
+                    throw new Exception(string.Format("Could not found \"{0}\" in the list with options:\" {1} \".", expectedItems, availbleItemsInList));
 
                 }
             }
             catch
             {
-                throw new Exception(string.Format("Could not select \"{0}\" in the list with options:\" {1} \".", expectedItems, AvailbleItemsInList));
+                throw new Exception(string.Format("Could not select \"{0}\" in the list with options:\" {1} \".", expectedItems, availbleItemsInList));
 
             }
 
@@ -2079,32 +1821,23 @@ namespace Driver
         /// <param name="index">string : index of item to be select</param>
         public string SelectItemByIndex(string index)
         {
+            int intIndex = Int32.Parse(index) - 1;
+            _testObject = WaitAndGetElement();
 
-            try
+            #region  KRYPTON0156: Handling conditions where selectItemByIndex can be used for radio groups
+            if (_testObject.GetAttribute("type").ToLower().Equals("radio"))
             {
-                int intIndex = Int32.Parse(index) - 1;
-                testObject = this.WaitAndGetElement();
-
-                #region  KRYPTON0156: Handling conditions where selectItemByIndex can be used for radio groups
-                if (testObject.GetAttribute("type").ToLower().Equals("radio"))
-                {
-                    testObject = testObjects.ElementAt(intIndex);
-                    this.ExecuteScript(testObject, "arguments[0].click();");
-                    return testObject.GetAttribute("value");
-                }
-                #endregion
-
-                SelectElement select = new SelectElement(testObject);
-                
-                select.SelectByIndex(intIndex);
-                IWebElement[] options = select.Options.ToArray();
-                return options[intIndex].Text;
-
+                _testObject = _testObjects.ElementAt(intIndex);
+                ExecuteScript(_testObject, "arguments[0].click();");
+                return _testObject.GetAttribute("value");
             }
-            catch (Exception e)
-            {
-                throw e;
-            }
+            #endregion
+
+            SelectElement select = new SelectElement(_testObject);
+
+            @select.SelectByIndex(intIndex);
+            IWebElement[] options = @select.Options.ToArray();
+            return options[intIndex].Text;
         }
 
 
@@ -2115,200 +1848,186 @@ namespace Driver
         /// <returns>string : Property value</returns>
         public string GetObjectProperty(string property)
         {
-            try
+            _testObject = WaitAndGetElement();
+            string actualPropertyValue;
+            string javascript;
+
+            switch (property.ToLower())
             {
-                testObject = this.WaitAndGetElement();
-                string actualPropertyValue = string.Empty;
-                string javascript;
+                case "text":
+                    actualPropertyValue = _testObject.Text;
+                    break;
+                // Edited to work with firefox
+                case "style.background":
+                case "style.backgroundimage":
+                case "style.background-image":
+                    switch (Browser.BrowserName.ToLower())
+                    {
+                        case "ie":
+                            javascript = "return arguments[0].currentStyle.backgroundImage;";
+                            break;
+                        case "firefox":
+                            javascript = "return document.defaultView.getComputedStyle(arguments[0], '').getPropertyValue(\"background-image\");";
+                            break;
+                        default:
+                            javascript = "return arguments[0].currentStyle.backgroundImage;";
+                            break;
+                    }
+                    actualPropertyValue = ExecuteScript(_testObject, javascript);
+                    break;
 
-                switch (property.ToLower())
-                {
-                    case "text":
-                        actualPropertyValue = testObject.Text;
-                        break;
-                    // Edited to work with firefox
-                    case "style.background":
-                    case "style.backgroundimage":
-                    case "style.background-image":
-                        switch (Browser.browserName.ToLower())
-                        {
-                            case "ie":
-                                javascript = "return arguments[0].currentStyle.backgroundImage;";
-                                break;
-                            case "firefox":
-                                javascript = "return document.defaultView.getComputedStyle(arguments[0], '').getPropertyValue(\"background-image\");";
-                                break;
-                            default:
-                                javascript = "return arguments[0].currentStyle.backgroundImage;";
-                                break;
-                        }
-                        actualPropertyValue = this.ExecuteScript(testObject, javascript);
-                        break;
+                case "style.color":
+                    switch (Browser.BrowserName.ToLower())
+                    {
+                        case "ie":
+                            javascript = "var color=arguments[0].currentStyle.color;return color;";
+                            break;
+                        case "firefox":
+                            javascript = "var color= document.defaultView.getComputedStyle(arguments[0], '').getPropertyValue(\"color\");var c = color.replace(/rgb\\((.+)\\)/,'$1').replace(/\\s/g,'').split(',');color = '#'+ parseInt(c[0]).toString(16) +''+ parseInt(c[1]).toString(16) +''+ parseInt(c[2]).toString(16);return color;";
+                            break;
+                        default:
+                            javascript = "var color=arguments[0].currentStyle.color;return color;"; ;
+                            break;
+                    }
+                    actualPropertyValue = ExecuteScript(_testObject, javascript);
+                    break;
+                case "style.fontweight":
+                case "style.font-weight":
+                    switch (Browser.BrowserName.ToLower())
+                    {
+                        case "ie":
+                            javascript = "var fontWeight= arguments[0].currentStyle.fontWeight;if(fontWeight==700){return 'bold';}if(fontWeight==400){return 'normal';}return fontWait;";
+                            break;
+                        case "firefox":
+                            javascript = "return document.defaultView.getComputedStyle(arguments[0], '').getPropertyValue(\"font-weight\");";
+                            break;
+                        default:
+                            javascript = "return arguments[0].currentStyle.fontWeight;";
+                            break;
+                    }
+                    actualPropertyValue = ExecuteScript(_testObject, javascript);
+                    break;
+                case "style.left":
+                    switch (Browser.BrowserName.ToLower())
+                    {
+                        case "ie":
+                            javascript = "return arguments[0].currentStyle.left;";
+                            break;
+                        case "firefox":
+                            javascript = "return document.defaultView.getComputedStyle(arguments[0], '').getPropertyValue(\"left\");";
+                            break;
+                        default:
+                            javascript = "return arguments[0].currentStyle.left;";
+                            break;
+                    }
+                    actualPropertyValue = ExecuteScript(_testObject, javascript);
+                    break;
+                case "disabled":
+                    javascript = "return arguments[0].disabled;";
+                    actualPropertyValue = ExecuteScript(_testObject, javascript);
+                    break;
 
-                    case "style.color":
-                        switch (Browser.browserName.ToLower())
-                        {
-                            case "ie":
-                                javascript = "var color=arguments[0].currentStyle.color;return color;";
-                                break;
-                            case "firefox":
-                                javascript = "var color= document.defaultView.getComputedStyle(arguments[0], '').getPropertyValue(\"color\");var c = color.replace(/rgb\\((.+)\\)/,'$1').replace(/\\s/g,'').split(',');color = '#'+ parseInt(c[0]).toString(16) +''+ parseInt(c[1]).toString(16) +''+ parseInt(c[2]).toString(16);return color;";
-                                break;
-                            default:
-                                javascript = "var color=arguments[0].currentStyle.color;return color;"; ;
-                                break;
-                        }
-                        actualPropertyValue = this.ExecuteScript(testObject, javascript);
-                        break;
-                    case "style.fontweight":
-                    case "style.font-weight":
-                        switch (Browser.browserName.ToLower())
-                        {
-                            case "ie":
-                                javascript = "var fontWeight= arguments[0].currentStyle.fontWeight;if(fontWeight==700){return 'bold';}if(fontWeight==400){return 'normal';}return fontWait;";
-                                break;
-                            case "firefox":
-                                javascript = "return document.defaultView.getComputedStyle(arguments[0], '').getPropertyValue(\"font-weight\");";
-                                break;
-                            default:
-                                javascript = "return arguments[0].currentStyle.fontWeight;";
-                                break;
-                        }
-                        actualPropertyValue = this.ExecuteScript(testObject, javascript);
-                        break;
-                    case "style.left":
-                        switch (Browser.browserName.ToLower())
-                        {
-                            case "ie":
-                                javascript = "return arguments[0].currentStyle.left;";
-                                break;
-                            case "firefox":
-                                javascript = "return document.defaultView.getComputedStyle(arguments[0], '').getPropertyValue(\"left\");";
-                                break;
-                            default:
-                                javascript = "return arguments[0].currentStyle.left;";
-                                break;
-                        }
-                        actualPropertyValue = this.ExecuteScript(testObject, javascript);
-                        break;
-                    case "disabled":
-                        javascript = "return arguments[0].disabled;";
-                        actualPropertyValue = this.ExecuteScript(testObject, javascript);
-                        break;
+                case "tooltip":
+                case "title":
+                    javascript = "return title=arguments[0].title;";
+                    actualPropertyValue = ExecuteScript(_testObject, javascript);
+                    break;
+                case "tag":
+                case "html tag":
+                case "htmltag":
+                case "tagname":
+                    actualPropertyValue = _testObject.GetAttribute("tagName");
+                    break;
+                case "scrollheight":
+                    javascript = "return arguments[0].scrollHeight;";
+                    actualPropertyValue = ExecuteScript(_testObject, javascript);
+                    break;
+                case "filename":
+                    javascript = "var src = arguments[0].src; src=src.split(\"/\"); return(src[src.length-1]);";
+                    actualPropertyValue = ExecuteScript(_testObject, javascript);
+                    break;
+                case "height":
+                    javascript = "return arguments[0].height;";
+                    actualPropertyValue = ExecuteScript(_testObject, javascript);
+                    break;
+                case "width":
+                    javascript = "return arguments[0].width;";
+                    actualPropertyValue = ExecuteScript(_testObject, javascript);
+                    break;
+                case "checked":
+                    javascript = "return arguments[0].checked;";
+                    actualPropertyValue = ExecuteScript(_testObject, javascript).ToLower();
+                    break;
+                case "orientation":
+                    // For orientation, calculate width and height
+                    int height = Convert.ToInt16(GetObjectProperty("height"));
+                    int width = Convert.ToInt16(GetObjectProperty("width"));
 
-                    case "tooltip":
-                    case "title":
-                        javascript = "return title=arguments[0].title;";
-                        actualPropertyValue = this.ExecuteScript(testObject, javascript);
-                        break;
-                    case "tag":
-                    case "html tag":
-                    case "htmltag":
-                    case "tagname":
-                        actualPropertyValue = testObject.GetAttribute("tagName");
-                        break;
-                    case "scrollheight":
-                        javascript = "return arguments[0].scrollHeight;";
-                        actualPropertyValue = this.ExecuteScript(testObject, javascript);
-                        break;
-                    case "file name":
-                    case "filename":
-                        javascript = "var src = arguments[0].src; src=src.split(\"/\"); return(src[src.length-1]);";
-                        actualPropertyValue = this.ExecuteScript(testObject, javascript);
-                        break;
-                    case "height":
-                        javascript = "return arguments[0].height;";
-                        actualPropertyValue = this.ExecuteScript(testObject, javascript);
-                        break;
-                    case "width":
-                        javascript = "return arguments[0].width;";
-                        actualPropertyValue = this.ExecuteScript(testObject, javascript);
-                        break;
-                    case "checked":
+                    //Now, determine if orientation is horizontal, vertical or square
+                    actualPropertyValue = "undetermined";
+                    if (height > width)
+                    {
+                        actualPropertyValue = "vertical";
+                    }
+                    if (height < width)
+                    {
+                        actualPropertyValue = "horizontal";
+                    }
+                    if (height == width)
+                    {
+                        actualPropertyValue = "square";
+                    }
+                    break;
+                case "selected":
+                    // Selected means, either selected option from a radio group, or selected value from list boxes
+                    #region KRYPTON0467: Handling conditions where property of selected radio buttons out of a group need to retrieved
+                    if (_testObject.GetAttribute("type").ToLower().Equals("radio"))
+                    {
+                        //Out of radio group, retrieve which one is selected
+                        string radioValue = string.Empty;
                         javascript = "return arguments[0].checked;";
-                        actualPropertyValue = this.ExecuteScript(testObject, javascript).ToLower();
-                        break;
-                    case "orientation":
-                        // For orientation, calculate width and height
-                        int height = Convert.ToInt16(this.GetObjectProperty("height"));
-                        int width = Convert.ToInt16(this.GetObjectProperty("width"));
 
-                        //Now, determine if orientation is horizontal, vertical or square
-                        actualPropertyValue = "undetermined";
-                        if (height > width)
+                        foreach (IWebElement radioObject in _testObjects)
                         {
-                            actualPropertyValue = "vertical";
-                        }
-                        if (height < width)
-                        {
-                            actualPropertyValue = "horizontal";
-                        }
-                        if (height == width)
-                        {
-                            actualPropertyValue = "square";
-                        }
-                        break;
-                    case "selected":
-                        // Selected means, either selected option from a radio group, or selected value from list boxes
-                        #region KRYPTON0467: Handling conditions where property of selected radio buttons out of a group need to retrieved
-                        if (testObject.GetAttribute("type").ToLower().Equals("radio"))
-                        {
-                            //Out of radio group, retrieve which one is selected
-                            string radioValue = string.Empty;
-                            javascript = "return arguments[0].checked;";
+                            radioValue = ExecuteScript(radioObject, javascript);
 
-                            foreach (IWebElement radioObject in testObjects)
+                            if (radioValue.ToLower().Equals("true") || radioValue.ToLower().Equals("on") || radioValue.ToLower().Equals("1"))
                             {
-                                radioValue = this.ExecuteScript(radioObject, javascript).ToString();
-
-                                if (radioValue.ToLower().Equals("true") || radioValue.ToLower().Equals("on") || radioValue.ToLower().Equals("1"))
-                                {
-                                    radioValue = radioObject.GetAttribute("value");
-                                    testObject = radioObject;
-                                    break;
-                                }
-                                else
-                                {
-                                    radioValue = "{no option selected}";
-                                }
+                                radioValue = radioObject.GetAttribute("value");
+                                _testObject = radioObject;
+                                break;
                             }
+                            radioValue = "{no option selected}";
+                        }
 
-                            //Check if given option is also stored in mapping column, if so assign to actual property value
-                            actualPropertyValue = radioValue;
+                        //Check if given option is also stored in mapping column, if so assign to actual property value
+                        actualPropertyValue = radioValue;
 
-                            foreach (KeyValuePair<string, string> mappingKey in dicMapping)
+                        foreach (KeyValuePair<string, string> mappingKey in _dicMapping)
+                        {
+                            if (mappingKey.Value.ToLower().Equals(radioValue.ToLower()))
                             {
-                                if (mappingKey.Value.ToLower().Equals(radioValue.ToLower()))
-                                {
-                                    actualPropertyValue = mappingKey.Key;
-                                    break;
-                                }
+                                actualPropertyValue = mappingKey.Key;
+                                break;
                             }
                         }
+                    }
                         #endregion
-                        else
-                        {
-                            javascript = "return arguments[0].selected;";
-                            actualPropertyValue = this.ExecuteScript(testObject, javascript).ToLower();
-
-                        }
-
-                        break;
-                    default:
-                        actualPropertyValue = testObject.GetAttribute(property);
-                        if (actualPropertyValue == null)
-                        {
-                            throw new Exception(Common.Utility.GetCommonMsgVariable("KRYPTONERRCODE0023").Replace("{MSG1}", property).Replace("{MSG2}", testObject.Text));
-                        }
-                        break;
-                }
-                return actualPropertyValue;
+                    else
+                    {
+                        javascript = "return arguments[0].selected;";
+                        actualPropertyValue = ExecuteScript(_testObject, javascript).ToLower();
+                    }
+                    break;
+                default:
+                    actualPropertyValue = _testObject.GetAttribute(property);
+                    if (actualPropertyValue == null)
+                    {
+                        throw new Exception(Utility.GetCommonMsgVariable("KRYPTONERRCODE0023").Replace("{MSG1}", property).Replace("{MSG2}", _testObject.Text));
+                    }
+                    break;
             }
-            catch (Exception)
-            {
-                throw;
-            }
-
+            return actualPropertyValue;
         }
 
         /// <summary>
@@ -2319,23 +2038,23 @@ namespace Driver
         {
             try
             {
-                IWebElement testObject = (IWebElement)this.GetElement(driver);
-                                
+                IWebElement testObject = (IWebElement)GetElement(Driver);
+
                 bool status = true;
                 if (testObject == null || !testObject.Displayed)
                 {
-                    Common.Property.Remarks = "Object is not displaying.";
+                    Property.Remarks = "Object is not displaying.";
                     status = false;
                 }
                 return status;
             }
-            catch (OpenQA.Selenium.NoSuchElementException nsee)
+            catch (NoSuchElementException)
             {
-                throw nsee;
+                throw;
             }
             catch (Exception e)
             {
-                if (e.Message.IndexOf(exceptions.ERROR_ELEMENT_NOT_ATTACHED, StringComparison.OrdinalIgnoreCase) >= 0) // done Temp: for Chromedriver issue.
+                if (e.Message.IndexOf(Exceptions.ERROR_ELEMENT_NOT_ATTACHED, StringComparison.OrdinalIgnoreCase) >= 0) // done Temp: for Chromedriver issue.
                 {
                     throw new Exception("Object is not displaying.");
                 }
@@ -2343,8 +2062,7 @@ namespace Driver
                 {
                     throw new Exception("Object is not displaying due to unexpected alert open.");
                 }
-                else
-                    throw e;                
+                throw;
             }
         }
 
@@ -2356,34 +2074,19 @@ namespace Driver
         /// <returns>boolean value</returns>
         public bool VerifyListItemPresent(string listItemName)
         {
-            try
+            _testObject = WaitAndGetElement();
+            SelectElement select = new SelectElement(_testObject);
+            IList<IWebElement> option = @select.Options;
+            bool flag = option.Any(element => element.Text.Equals(listItemName));
+            if (!flag)
             {
-                testObject = this.WaitAndGetElement();
-                SelectElement select = new SelectElement(testObject);
-                IList<IWebElement> option = select.Options;
-                bool flag = false;
-                foreach (IWebElement element in option)
-                {
-                    if (element.Text.Equals(listItemName))
-                    {
-                        flag = true;
-                        break;
-                    }
-                }
-                if (!flag)
-                {
-                    Common.Property.Remarks = "List Item \"" + listItemName + "\" does not match with \"" + testObject.Text + "\" values in list";
-                }
-                return flag;
+                Property.Remarks = "List Item \"" + listItemName + "\" does not match with \"" + _testObject.Text + "\" values in list";
             }
-            catch (Exception)
-            {
-                throw;
-            }
+            return flag;
         }
 
 
-        
+
 
         /// <summary>
         /// Method to verify list itme is not present in list.
@@ -2392,21 +2095,13 @@ namespace Driver
         /// <returns>boolean value</returns>
         public bool VerifyListItemNotPresent(string listItemName)
         {
-            try
+            bool status = VerifyListItemPresent(listItemName);
+            Property.Remarks = string.Empty;
+            if (status)
             {
-                bool status = this.VerifyListItemPresent(listItemName);
-                Common.Property.Remarks = string.Empty;
-                if (status)
-                {
-                    Common.Property.Remarks = "List Item \"" + listItemName + "\" is present";
-                }
-                return !status;
+                Property.Remarks = "List Item \"" + listItemName + "\" is present";
             }
-            catch (Exception)
-            {
-                throw;
-            }
-
+            return !status;
         }
 
         /// <summary>
@@ -2417,38 +2112,26 @@ namespace Driver
         {
             try
             {
-                testObject = this.WaitAndGetElement();
-                if (testObject != null)
+                _testObject = WaitAndGetElement();
+                if (_testObject != null)
                 {
-                    IWebElement element = (IWebElement)testObject;
+                    IWebElement element = (IWebElement)_testObject;
                     bool status = element.Displayed;
                     if (!status)
                     {
-                        Common.Property.Remarks = "Element is present but not displayed.";
+                        Property.Remarks = "Element is present but not displayed.";
                     }
                     return status;
 
                 }
-                else
-                {
-                    Common.Property.Remarks = "Element is not present.";
-                    return false;
-                }
-
-               
-               
-
+                Property.Remarks = "Element is not present.";
+                return false;
             }
             catch (NoSuchElementException e)
             {
-                Common.Property.Remarks = e.Message;
+                Property.Remarks = e.Message;
                 return false;
             }
-            catch (Exception)
-            {
-                throw;
-            }
-
         }
 
 
@@ -2459,60 +2142,38 @@ namespace Driver
         /// <returns>boolean value</returns>
         public bool VerifyObjectNotPresent()
         {
-
-            try
-            {
-                return this.WaitNonPresenceAndGetElement();
-            }
-            catch (Exception)
-            {
-                throw;
-            }
+            return WaitNonPresenceAndGetElement();
         }
 
 
-        /// <summary>
-        ///Method to verify object property with specified property.
-        /// </summary>
-        /// <param name="property">string : Property name</param>
+        ///  <summary>
+        /// Method to verify object property with specified property.
+        ///  </summary>
+        ///  <param name="property">string : Property name</param>
+        /// <param name="propertyValue"></param>
+        /// <param name="keywordDic"></param>
         /// <returns>boolean value</returns>
-        public bool VerifyObjectProperty(string property, string propertyValue, Dictionary<int, string> KeywordDic)
+        public bool VerifyObjectProperty(string property, string propertyValue, Dictionary<int, string> keywordDic)
         {
-            try
-
+            string actualPropertyValue = GetObjectProperty(property);
+            var isKeyVerified = !keywordDic.Count.Equals(0) ? Utility.DoKeywordMatch(propertyValue, actualPropertyValue) : actualPropertyValue.Equals(propertyValue);
+            if (!isKeyVerified)
             {
-                bool isKeyVerified;
-                string actualPropertyValue = this.GetObjectProperty(property);
-                if (!KeywordDic.Count.Equals(0))
-                {
-                    isKeyVerified = Common.Utility.doKeywordMatch(propertyValue, actualPropertyValue);
-                }
-                else
-                {
-                    isKeyVerified = actualPropertyValue.Equals(propertyValue);
-                }
-                if (!isKeyVerified)
-                {
-                    Common.Property.Remarks = "Property -\"" + property + "\", actual value \"" + actualPropertyValue + "\" does not match with expected value - \"" + propertyValue + "\".";
-                }
-                else
-                    Common.Property.Remarks = "Property -\"" + property + "\", actual value \"" + actualPropertyValue + "\" match with expected value - \"" + propertyValue + "\".";
+                Property.Remarks = "Property -\"" + property + "\", actual value \"" + actualPropertyValue + "\" does not match with expected value - \"" + propertyValue + "\".";
+            }
+            else
+                Property.Remarks = "Property -\"" + property + "\", actual value \"" + actualPropertyValue + "\" match with expected value - \"" + propertyValue + "\".";
 
-                return isKeyVerified;
-            }
-            catch (Exception e)
-            {
-                throw e;
-            }
+            return isKeyVerified;
         }
 
         public bool VerifyObjectPropertyNot(string property, string propertyValue, Dictionary<int, string> KeywordDic)
         {
-            bool status = this.VerifyObjectProperty(property, propertyValue, KeywordDic);
-            Common.Property.Remarks = string.Empty;
+            bool status = VerifyObjectProperty(property, propertyValue, KeywordDic);
+            Property.Remarks = string.Empty;
             if (status)
             {
-                Common.Property.Remarks = "Property \"" + property + "\" matches with actual value \"" + propertyValue;
+                Property.Remarks = "Property \"" + property + "\" matches with actual value \"" + propertyValue;
             }
             return !status;
         }
@@ -2522,36 +2183,35 @@ namespace Driver
         /// </summary>
         private void HightlightObject(IWebElement tObject = null)
         {
-            
-                if (DebugMode.Equals("true", StringComparison.OrdinalIgnoreCase)
-                    && Browser.isRemoteExecution.ToString().Equals("false", StringComparison.OrdinalIgnoreCase))
+
+            if (DebugMode.Equals("true", StringComparison.OrdinalIgnoreCase)
+                && Browser.IsRemoteExecution.ToString().Equals("false", StringComparison.OrdinalIgnoreCase))
+            {
+                string propertyName = "outline";
+                string originalColor = "none";
+                string highlightColor = "#00ff00 solid 3px";
+
+                try
                 {
-                    string propertyName = "outline";
-                    string originalColor = "none";
-                    string highlightColor = "#00ff00 solid 3px";
-
-                    try
-                    {
-                        //This works with internet explorer
-                        originalColor = this.ExecuteScript(tObject, "return arguments[0].currentStyle." + propertyName);
-                    }
-                    catch
-                    {
-                        //This works with firefox, chrome and possibly others
-                        originalColor = this.ExecuteScript(tObject, "return arguments[0].style." + propertyName);
-                    }
-
-                    this.ExecuteScript(tObject, "arguments[0].style." + propertyName + " = '" + highlightColor + "'");
-                    Thread.Sleep(50);
-                    this.ExecuteScript(tObject, "arguments[0].style." + propertyName + " = '" + originalColor + "'");
-                    Thread.Sleep(50);
-                    this.ExecuteScript(tObject, "arguments[0].style." + propertyName + " = '" + highlightColor + "'");
-                    Thread.Sleep(50);
-                    this.ExecuteScript(tObject, "arguments[0].style." + propertyName + " = '" + originalColor + "'");
-                    //Thread.Sleep(10);
+                    //This works with internet explorer
+                    originalColor = ExecuteScript(tObject, "return arguments[0].currentStyle." + propertyName);
+                }
+                catch
+                {
+                    //This works with firefox, chrome and possibly others
+                    originalColor = ExecuteScript(tObject, "return arguments[0].style." + propertyName);
                 }
 
-            
+                ExecuteScript(tObject, "arguments[0].style." + propertyName + " = '" + highlightColor + "'");
+                Thread.Sleep(50);
+                ExecuteScript(tObject, "arguments[0].style." + propertyName + " = '" + originalColor + "'");
+                Thread.Sleep(50);
+                ExecuteScript(tObject, "arguments[0].style." + propertyName + " = '" + highlightColor + "'");
+                Thread.Sleep(50);
+                ExecuteScript(tObject, "arguments[0].style." + propertyName + " = '" + originalColor + "'");
+            }
+
+
         }
 
 
@@ -2561,73 +2221,72 @@ namespace Driver
         /// </summary>
         private string ExecuteScript(IWebElement tObject = null, string scriptToExecute = "")
         {
-           
-                try
-                {
-                    object scriptRet = null;                  
-                    if (Browser.isRemoteExecution.Equals("false"))
-                    {
-                        switch (Browser.browserName.ToLower())
-                        {
-                            case KryptonConstants.BROWSER_FIREFOX:
-                                FirefoxDriver ffscriptdriver = (FirefoxDriver)driver;
-                                scriptRet = ffscriptdriver.ExecuteScript(scriptToExecute, tObject);
-                                if (scriptRet != null)
-                                {
-                                    return scriptRet.ToString();
-                                }
-                                break;
-                            case KryptonConstants.BROWSER_IE:                                
-                                InternetExplorerDriver iescriptdriver = (InternetExplorerDriver)driver;
-                        
-                                scriptRet = iescriptdriver.ExecuteScript(scriptToExecute, tObject);
-                                if (scriptRet != null)
-                                {
-                                    return scriptRet.ToString();
-                                }
-                                break;
-                            case KryptonConstants.BROWSER_CHROME:
-                                ChromeDriver crscriptdriver = (ChromeDriver)driver;
-                                scriptRet = crscriptdriver.ExecuteScript(scriptToExecute, tObject);
-                                if (scriptRet != null)
-                                {
-                                    return scriptRet.ToString();
-                                }
-                                break;
-                            case KryptonConstants.BROWSER_SAFARI:
-                                SafariDriver safacriptdriver = (SafariDriver)driver;
-                                scriptRet = safacriptdriver.ExecuteScript(scriptToExecute, tObject);
-                                if (scriptRet != null)
-                                {
-                                    return scriptRet.ToString();
-                                }
-                                break;
 
-                            default:
-                                return string.Empty;
-                        }
-                    }
-                    else
-                    {
-                    // Create RemoteWebDriver reference variable in order to execute java script.
-                        RemoteWebDriver rdscriptriver = (RemoteWebDriver)driver;
-                        scriptRet = rdscriptriver.ExecuteScript(scriptToExecute, tObject);
-                        if (scriptRet != null)
-                        {
-                            return scriptRet.ToString();
-                        }
-                    }
-                    return string.Empty;//empty string is return if script return null value.
-                }    
-                catch (Exception e)
+            try
+            {
+                object scriptRet;
+                if (Browser.IsRemoteExecution.Equals("false"))
                 {
-                    if (testObject != null && objDataRow.Count>0)
-                        throw new Exception(Common.Utility.GetCommonMsgVariable("KRYPTONERRCODE0068").Replace("{MSG3}", objDataRow[KryptonConstants.TEST_OBJECT]).Replace("{MSG4}", objDataRow["parent"]).Replace("{MSG1}", attributeType).Replace("{MSG2}", attribute));
-                    else
-                        throw new Exception("Java Script Error :  "+ e.Message);
+                    switch (Browser.BrowserName.ToLower())
+                    {
+                        case KryptonConstants.BROWSER_FIREFOX:
+                            FirefoxDriver ffscriptdriver = (FirefoxDriver)Driver;
+                            scriptRet = ffscriptdriver.ExecuteScript(scriptToExecute, tObject);
+                            if (scriptRet != null)
+                            {
+                                return scriptRet.ToString();
+                            }
+                            break;
+                        case KryptonConstants.BROWSER_IE:
+                            InternetExplorerDriver iescriptdriver = (InternetExplorerDriver)Driver;
+
+                            scriptRet = iescriptdriver.ExecuteScript(scriptToExecute, tObject);
+                            if (scriptRet != null)
+                            {
+                                return scriptRet.ToString();
+                            }
+                            break;
+                        case KryptonConstants.BROWSER_CHROME:
+                            ChromeDriver crscriptdriver = (ChromeDriver)Driver;
+                            scriptRet = crscriptdriver.ExecuteScript(scriptToExecute, tObject);
+                            if (scriptRet != null)
+                            {
+                                return scriptRet.ToString();
+                            }
+                            break;
+                        case KryptonConstants.BROWSER_SAFARI:
+                            SafariDriver safacriptdriver = (SafariDriver)Driver;
+                            scriptRet = safacriptdriver.ExecuteScript(scriptToExecute, tObject);
+                            if (scriptRet != null)
+                            {
+                                return scriptRet.ToString();
+                            }
+                            break;
+
+                        default:
+                            return string.Empty;
+                    }
                 }
+                else
+                {
+                    // Create RemoteWebDriver reference variable in order to execute java script.
+                    RemoteWebDriver rdscriptriver = (RemoteWebDriver)Driver;
+                    scriptRet = rdscriptriver.ExecuteScript(scriptToExecute, tObject);
+                    if (scriptRet != null)
+                    {
+                        return scriptRet.ToString();
+                    }
+                }
+                return string.Empty;//empty string is return if script return null value.
             }
-                     
+            catch (Exception e)
+            {
+                if (_testObject != null && _objDataRow.Count > 0)
+                    throw new Exception(Utility.GetCommonMsgVariable("KRYPTONERRCODE0068").Replace("{MSG3}", _objDataRow[KryptonConstants.TEST_OBJECT]).Replace("{MSG4}", _objDataRow["parent"]).Replace("{MSG1}", AttributeType).Replace("{MSG2}", Attribute));
+                throw new Exception("Java Script Error :  " + e.Message);
+            }
+        }
+
         /// <summary>
         ///Method to exceute javascript on web page or test object.
         /// </summary>
@@ -2637,21 +2296,21 @@ namespace Driver
         {
             try
             {
-                if (attributeType == null || attributeType.Equals(string.Empty))
+                if (AttributeType == null || AttributeType.Equals(string.Empty))
                 {
-                    testObject = null;
+                    _testObject = null;
                 }
                 else
                 {
-                    testObject = this.GetElement(driver);
-                    
-                }               
-              return this.ExecuteScript(testObject, scriptToExecute);                
+                    _testObject = GetElement(Driver);
+
+                }
+                return ExecuteScript(_testObject, scriptToExecute);
             }
             catch (Exception e)
             {
-                Browser.switchToMostRecentBrowser();
-                return this.ExecuteScript(testObject, scriptToExecute);
+                Browser.SwitchToMostRecentBrowser();
+                return ExecuteScript(_testObject, scriptToExecute);
             }
         }
 
@@ -2662,25 +2321,18 @@ namespace Driver
         /// <param name="propertyValue">string : Value of property</param>
         public void SetAttribute(string property, string propertyValue)
         {
-            try
+            _testObject = WaitAndGetElement();
+            string javascript;
+            switch (property.ToLower().Trim())
             {
-                testObject = this.WaitAndGetElement();
-                string javascript;
-                switch (property.ToLower().Trim())
-                {
-                    case "checked":
-                        javascript = "return arguments[0]." + property + " = " + propertyValue + ";";
-                        break;
-                    default:
-                        javascript = "return arguments[0]." + property + " = \"" + propertyValue + "\";";
-                        break;
-                }
-                this.ExecuteScript(testObject, javascript);
+                case "checked":
+                    javascript = "return arguments[0]." + property + " = " + propertyValue + ";";
+                    break;
+                default:
+                    javascript = "return arguments[0]." + property + " = \"" + propertyValue + "\";";
+                    break;
             }
-            catch (Exception e)
-            {
-                throw e;
-            }
+            ExecuteScript(_testObject, javascript);
         }
 
         /// <summary>
@@ -2689,36 +2341,30 @@ namespace Driver
         /// <param name="targetObjDic">Dictionary : Target object details</param>
         public void DragAndDrop(Dictionary<string, string> targetObjDic)
         {
-            try
-            {
-                IWebElement sourceObject = this.WaitAndGetElement();
+            IWebElement sourceObject = WaitAndGetElement();
 
-                // Set second object's information in dictionary
-                this.SetObjDataRow(targetObjDic);
-                IWebElement targetObject = this.WaitAndGetElement();
+            // Set second object's information in dictionary
+            SetObjDataRow(targetObjDic);
+            IWebElement targetObject = WaitAndGetElement();
 
-                Actions action = new Actions(driver);
-                action.DragAndDrop(sourceObject, targetObject).Perform();
-                Thread.Sleep(100);
-            }
-            catch (Exception e)
-            {
-                throw e;
-            }
+            Actions action = new Actions(Driver);
+            action.DragAndDrop(sourceObject, targetObject).Perform();
+            Thread.Sleep(100);
         }
-        
+
         /// <summary>
         /// Upload the file
         /// </summary>
         /// <param name="path"></param>
-        public bool UploadFile(string path , string element)
+        /// <param name="element"></param>
+        public bool UploadFile(string path, string element)
         {
             string p = @"" + path;
             if (!File.Exists(p))
             {
                 return false;
             }
-            InternetExplorerDriver iedriver = (InternetExplorerDriver)driver;
+            InternetExplorerDriver iedriver = (InternetExplorerDriver)Driver;
             iedriver.FindElement(By.Id(element)).SendKeys(p);
             return true;
         }

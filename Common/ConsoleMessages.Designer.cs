@@ -61,6 +61,60 @@ namespace Common {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Warning: Coluld not read project logo file. Using default logo of Krypton Report..
+        /// </summary>
+        public static string COULD_NOT_READ_PROJECT_LOGO {
+            get {
+                return ResourceManager.GetString("COULD_NOT_READ_PROJECT_LOGO", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Warning: &quot;EmailNotificationFrom&quot; parameter is invalid! Email notification process aborted.
+        /// </summary>
+        public static string EMAIL_NOTIFICATION_ABORTED {
+            get {
+                return ResourceManager.GetString("EMAIL_NOTIFICATION_ABORTED", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Warning: Email StartTemplate file is missing! Email notification process aborted.
+        /// </summary>
+        public static string EMAIL_TEMPLETE_MISSING {
+            get {
+                return ResourceManager.GetString("EMAIL_TEMPLETE_MISSING", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Exception while trying to delete older test runs. Error: .
+        /// </summary>
+        public static string EXCEPTION_WHILE_DELETING_TEST_RUNS {
+            get {
+                return ResourceManager.GetString("EXCEPTION_WHILE_DELETING_TEST_RUNS", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to File Not Found:  .
+        /// </summary>
+        public static string FOD {
+            get {
+                return ResourceManager.GetString("FOD", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to KRYPTONPrallelRecovery : invalid arguments.
+        /// </summary>
+        public static string INVALID_ARGUMNETS {
+            get {
+                return ResourceManager.GetString("INVALID_ARGUMNETS", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to ------------------------------------------------.
         /// </summary>
         public static string MSG_DASHED {
@@ -129,6 +183,42 @@ namespace Common {
         public static string MSG_UPLOADING_LOG {
             get {
                 return ResourceManager.GetString("MSG_UPLOADING_LOG", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to KRYPTONPrallelRecovery : .
+        /// </summary>
+        public static string PARALLEL_rECOVERY {
+            get {
+                return ResourceManager.GetString("PARALLEL_rECOVERY", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Please register AutoIt dll.
+        /// </summary>
+        public static string REGISTER_AUTOIT {
+            get {
+                return ResourceManager.GetString("REGISTER_AUTOIT", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAALwAAAA1CAMAAADMKHGJAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAPBQTFRFAAAAAK7vCT1g////CT1gCT1gCT1gAK7vCT1gAK7vCT1gAK7vCT1gAK7vCT1gAK7vAK7vCT1gAK7vCT1gCT1gAK7vCT1gCT1gAK7vCT1gCT1gAK7vCT1gAK7vAK7vCT1gAK7vAK7vCT1gCT1gCT1gAK7vCT1gAK7vCT1gCT1gAK7vCT1gCT1gAK7vCT1gAK7vCT1gCT1gAK7vCT1gAK7vCT1gCT1gAK7vAK7vCT1gCT1gAK7vCT1gCT1gCT1gAK7vAK7vCT1gCT1gAK7vCT1gCT1gAK7vCT1gCT1gAK7vCT1gCT1gAK7vCT1gAK7vCT1gYRXGaAAAAE50Uk5TAAAAAAMJDBAQEhIeHiAgISotMDA8QEBLUFBUWlpdYGBpcHB1eI [rest of string was truncated]&quot;;.
+        /// </summary>
+        public static string THINKSYSLOGO {
+            get {
+                return ResourceManager.GetString("THINKSYSLOGO", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Web page Fail to Load.
+        /// </summary>
+        public static string WEB_PAGE_FAILE_LOAD {
+            get {
+                return ResourceManager.GetString("WEB_PAGE_FAILE_LOAD", resourceCulture);
             }
         }
     }

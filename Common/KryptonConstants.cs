@@ -6,10 +6,6 @@
 ** Developed by: ThinkSys Software 
 ** Description: Specify all the Global Constants
 *****************************************************************************/
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 
 namespace Common
 {

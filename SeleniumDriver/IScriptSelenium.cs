@@ -7,10 +7,7 @@
 ** Description: Interface to create selenium script in programming language
 *****************************************************************************/
 
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 
 namespace Driver
 {
@@ -25,16 +22,16 @@ namespace Driver
         void Uncheck();
         void Wait();
         void Close();
-        void Navigate(string TestData);
+        void Navigate(string testData);
         void FireEvent();
         void GoBack();
         void GoForward();
         void Refresh();
         void Clear();
         void EnterUniqueData();
-        void KeyPress(string key);
-        void SelectItem(string item);
-        void SelectItemByIndex(string index);
+        void KeyPress(string testData);
+        void SelectItem(string testData);
+        void SelectItemByIndex(string testData);
         void WaitForObject();
         void WaitForObjectNotPresent();
         void WaitForObjectProperty();
@@ -59,7 +56,7 @@ namespace Driver
         void VerifyObjectDisplay();
         void VerifyObjectNotDisplay();
         void ExecuteScript(string script, string testObject);
-        void DeleteCookies(string url);
+        void DeleteCookies(string testData);
         void ShutDownDriver();
         void SetObjDataRow(Dictionary<string, string> objDataRow);
         void SaveScript();

@@ -7,30 +7,25 @@
 ** Description: File to Interact With TFS.
 *****************************************************************************/
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Diagnostics;
 using System.IO;
 using Microsoft.TeamFoundation.Client;
 using Microsoft.TeamFoundation.TestManagement.Client;
-using Microsoft.TeamFoundation.WorkItemTracking.Client;
-using System.Runtime.InteropServices;
-using System.Xml;
-using System.Xml.XPath;
+using Common;
 
 namespace Krypton
 {
     public class TestManager
     {
         //Declare all class level variables here
-        static string ProjectUrl = Common.Utility.GetParameter("TFSUrl");
-        static string projectName = Common.Utility.GetParameter("TFSProjectName");
-        static string testPlanName = Common.Utility.GetParameter("TestPlanName");
-        static string testSuiteName = Common.Property.CurrentTestCase.Split('.').First();
-        static int testCaseId = Convert.ToInt32(Common.Property.CurrentTestCase.Split('.').Last());
-        static string testSuiteId = Common.Utility.GetParameter("TestSuiteId");
-        static string MHTReportGenerationExe = Common.Utility.GetParameter("MHTGenerationExeName");
+        static readonly string ProjectUrl = Utility.GetParameter("TFSUrl");
+        static readonly string ProjectName = Utility.GetParameter("TFSProjectName");
+        static readonly string TestPlanName = Utility.GetParameter("TestPlanName");
+        static readonly string TestSuiteName = Property.CurrentTestCase.Split('.').First();
+        static readonly int TestCaseId = Convert.ToInt32(Property.CurrentTestCase.Split('.').Last());
+        static readonly string TestSuiteId = Utility.GetParameter("TestSuiteId");
+        static readonly string MhtReportGenerationExe = Utility.GetParameter("MHTGenerationExeName");
 
         /// <summary>
         /// This method is used to initiate execution in test manager, create test run and results and set required parameters
@@ -38,114 +33,89 @@ namespace Krypton
         /// <returns></returns>
         public bool InitExecution()
         {
-            try
-            {
-                //Create a connection to tfs project
-                ITestManagementTeamProject tfsProject = null;
-                tfsProject = GetProject(ProjectUrl, projectName);
+            //Create a connection to tfs project
+            ITestManagementTeamProject tfsProject = null;
+            tfsProject = GetProject(ProjectUrl, ProjectName);
 
-                if (tfsProject == null)
-                {
-                    throw new Exception("Unabled to connect to test project: " + projectName);
-                }
-                //Retrieve test plan details
-                ITestPlanCollection testPlans = tfsProject.TestPlans.Query("select * from TestPlan where PlanName ='" +
-                                                testPlanName + "'");
-                if (testPlans.Count() == 0)
-                {
-                    throw new Exception("Unabled to locate test plan: " + testPlanName + " in Test Manager.");
+            if (tfsProject == null)
+            {
+                throw new Exception("Unabled to connect to test project: " + ProjectName);
+            }
+            //Retrieve test plan details
+            ITestPlanCollection testPlans = tfsProject.TestPlans.Query("select * from TestPlan where PlanName ='" +
+                                                                       TestPlanName + "'");
+            if (testPlans.Count == 0)
+            {
+                throw new Exception("Unabled to locate test plan: " + TestPlanName + " in Test Manager.");
                   
-                }
-
-                ITestPlan tfsTestPlan = testPlans.First();
-
-                //Retrieve test suite details
-                ITestSuiteCollection testSuites = null;
-                IStaticTestSuite tfsTestSuite = null;
-
-                //Optionally, test suite id of test manager can be passed as an command line arguments
-                //This helps when same test case has been added to multiple test suites
-                if (testSuiteId.ToLower().Equals(string.Empty) ||
-                    testSuiteId.ToLower().Equals(string.Empty) ||
-                    testSuiteId.ToLower().Equals("testsuiteid", StringComparison.OrdinalIgnoreCase))
-                {
-                    testSuites = tfsProject.TestSuites.Query("Select * from TestSuite where Title='" +
-                                                      testSuiteName + "' and PlanID='" + tfsTestPlan.Id + "'");
-                }
-                else
-                {
-                    testSuites = tfsProject.TestSuites.Query("Select * from TestSuite where Id='" +
-                                                      testSuiteId + "' and PlanID='" + tfsTestPlan.Id + "'");
-                }
-
-
-                foreach (IStaticTestSuite testSuite in testSuites)
-                {
-                    if (testSuite.Title.ToLower().Equals(testSuiteName.ToLower()) ||
-                        testSuite.Id.ToString().Equals(testSuiteId))
-                    {
-                        tfsTestSuite = testSuite;
-                        break;
-                    }
-                }
-
-                if (tfsTestSuite == null)
-                {
-                    throw new Exception("Unabled to locate test suite: " + testSuiteName + " in Test Manager Test Plan: " + testPlanName);
-                   
-                }
-
-                //Get handle to a specific test case in the test suite
-                ITestCase tfsTestCase = null;
-                foreach (ITestCase testcase in tfsTestSuite.AllTestCases)
-                {
-                    if (testcase.Id.Equals(testCaseId))
-                    {
-                        tfsTestCase = testcase;
-                        break;
-                    }
-                }
-
-                if (tfsTestCase == null)
-                {
-                    throw new Exception("Unabled to locate test case id: " + testCaseId + " in Test Manager");
-                }
-
-                //Create a test run
-                ITestPoint tfsTestPoint = CreateTestPoints(tfsTestPlan, tfsTestSuite, tfsTestCase);
-                ITestRun tfsTestRun = CreateTestRun(tfsProject, tfsTestPlan, tfsTestPoint);
-                tfsTestRun.Refresh();
-
-                //Suprisingly, most recently created test results should be available in last, but test manager returns it at first position
-                //Find test results that were create by the test run
-                ITestCaseResultCollection tfsTestCaseResults = tfsProject.TestResults.ByTestId(tfsTestCase.Id);
-                ITestCaseResult tfsTestResult = tfsTestCaseResults.Last();  //Default assignment
-                foreach (ITestCaseResult testResult in tfsTestCaseResults)
-                {
-                    if (testResult.DateCreated.CompareTo(tfsTestRun.DateCreated) == 1)
-                    {
-                        tfsTestResult = testResult;
-                        break;
-                    }
-                }
-
-                //Set test run and result id to property variable for usage while uploading results
-                Common.Property.RCTestRunId = tfsTestRun.Id;
-                Common.Property.RCTestResultId = tfsTestResult.TestResultId;
-
-                //Set status of test case execution
-
-                //Set other details on test execution
-                tfsTestResult.ComputerName = Common.Property.RCMachineId;
-                tfsTestResult.DateStarted = DateTime.Now;
-                tfsTestResult.State = TestResultState.InProgress;
-                tfsTestResult.Save();
-
             }
-            catch (Exception exception)
+
+            ITestPlan tfsTestPlan = testPlans.First();
+
+            //Retrieve test suite details
+            ITestSuiteCollection testSuites = null;
+
+            //Optionally, test suite id of test manager can be passed as an command line arguments
+            //This helps when same test case has been added to multiple test suites
+            if (TestSuiteId.ToLower().Equals(string.Empty) ||
+                TestSuiteId.ToLower().Equals(string.Empty) ||
+                TestSuiteId.ToLower().Equals("testsuiteid", StringComparison.OrdinalIgnoreCase))
             {
-                throw exception;
+                testSuites = tfsProject.TestSuites.Query("Select * from TestSuite where Title='" +
+                                                         TestSuiteName + "' and PlanID='" + tfsTestPlan.Id + "'");
             }
+            else
+            {
+                testSuites = tfsProject.TestSuites.Query("Select * from TestSuite where Id='" +
+                                                         TestSuiteId + "' and PlanID='" + tfsTestPlan.Id + "'");
+            }
+
+
+            IStaticTestSuite tfsTestSuite = testSuites.Cast<IStaticTestSuite>().FirstOrDefault(testSuite => testSuite.Title.ToLower().Equals(TestSuiteName.ToLower()) || testSuite.Id.ToString().Equals(TestSuiteId));
+
+            if (tfsTestSuite == null)
+            {
+                throw new Exception("Unabled to locate test suite: " + TestSuiteName + " in Test Manager Test Plan: " + TestPlanName);
+                   
+            }
+
+            //Get handle to a specific test case in the test suite
+            ITestCase tfsTestCase = tfsTestSuite.AllTestCases.FirstOrDefault(testcase => testcase.Id.Equals(TestCaseId));
+
+            if (tfsTestCase == null)
+            {
+                throw new Exception("Unabled to locate test case id: " + TestCaseId + " in Test Manager");
+            }
+
+            //Create a test run
+            ITestPoint tfsTestPoint = CreateTestPoints(tfsTestPlan, tfsTestSuite, tfsTestCase);
+            ITestRun tfsTestRun = CreateTestRun(tfsProject, tfsTestPlan, tfsTestPoint);
+            tfsTestRun.Refresh();
+
+            //Suprisingly, most recently created test results should be available in last, but test manager returns it at first position
+            //Find test results that were create by the test run
+            ITestCaseResultCollection tfsTestCaseResults = tfsProject.TestResults.ByTestId(tfsTestCase.Id);
+            ITestCaseResult tfsTestResult = tfsTestCaseResults.Last();  //Default assignment
+            foreach (ITestCaseResult testResult in tfsTestCaseResults)
+            {
+                if (testResult.DateCreated.CompareTo(tfsTestRun.DateCreated) == 1)
+                {
+                    tfsTestResult = testResult;
+                    break;
+                }
+            }
+
+            //Set test run and result id to property variable for usage while uploading results
+            Property.RcTestRunId = tfsTestRun.Id;
+            Property.RcTestResultId = tfsTestResult.TestResultId;
+
+            //Set status of test case execution
+
+            //Set other details on test execution
+            tfsTestResult.ComputerName = Property.RcMachineId;
+            tfsTestResult.DateStarted = DateTime.Now;
+            tfsTestResult.State = TestResultState.InProgress;
+            tfsTestResult.Save();
             return true;
         }
 
@@ -168,96 +138,92 @@ namespace Krypton
         ///  
         public static bool UploadTestResults(string xmlFileList, string testCaseStatus) 
         {
-            try
+            Array xmlFiles = xmlFileList.Split(';');
+            ITestManagementTeamProject tfsProject = null;
+            tfsProject = GetProject(ProjectUrl, ProjectName);
+
+            if (tfsProject == null)
             {
-                 Array xmlFiles = xmlFileList.Split(';');
-                ITestManagementTeamProject tfsProject = null;
-                tfsProject = GetProject(ProjectUrl, projectName);
+                throw new Exception("Unabled to connect to test project: " + ProjectName);
+            }
+            //Above section commented as this is not required when InitExecution method is implemented
+            ITestCaseResult tfsTestResult = null;
+            tfsTestResult = tfsProject.TestResults.Find(Property.RcTestRunId, Property.RcTestResultId);
 
-                if (tfsProject == null)
+            if (tfsTestResult == null)
+            {
+                throw new Exception("Unabled to locate test results in Test Manager");
+            }
+
+            //Set status of test case execution
+            switch (testCaseStatus.ToLower())
+            {
+                case "fail":
+                case "failed":
+                    tfsTestResult.Outcome = TestOutcome.Failed;
+                    break;
+                case "pass":
+                case "passed":
+                    tfsTestResult.Outcome = TestOutcome.Passed;
+                    break;
+                case "warning":
+                    tfsTestResult.Outcome = TestOutcome.Warning;
+                    break;
+            }
+            tfsTestResult.Save();
+            //Attach files
+            foreach (string xmlFileName in xmlFiles)
+            {
+                DirectoryInfo resultLocation = new DirectoryInfo(xmlFileName).Parent;
+
+                //Generate MHT report
+                try
                 {
-                    throw new Exception("Unabled to connect to test project: " + projectName);
+                    string iconLocation = new DirectoryInfo(Property.ApplicationPath).FullName;
+                    iconLocation = iconLocation.TrimEnd('\\');
+                    Process generateMht = new Process();
+                    generateMht.StartInfo.FileName = Property.ApplicationPath + MhtReportGenerationExe;
+                    if (resultLocation != null)
+                        generateMht.StartInfo.Arguments = "\"" + resultLocation.FullName + "\"" + " " + "\"" + iconLocation + "\"";
+                    generateMht.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
+                    generateMht.Start();
+                    generateMht.WaitForExit();
+                    generateMht.Close();
                 }
-                //Above section commented as this is not required when InitExecution method is implemented
-                ITestCaseResult tfsTestResult = null;
-                tfsTestResult = tfsProject.TestResults.Find(Common.Property.RCTestRunId, Common.Property.RCTestResultId);
-
-                if (tfsTestResult == null)
+                catch
                 {
-                    throw new Exception("Unabled to locate test results in Test Manager");
+                    //No through
                 }
-
-                //Set status of test case execution
-                switch (testCaseStatus.ToLower())
-                {
-                    case "fail":
-                    case "failed":
-                        tfsTestResult.Outcome = TestOutcome.Failed;
-                        break;
-                    case "pass":
-                    case "passed":
-                        tfsTestResult.Outcome = TestOutcome.Passed;
-                        break;
-                    case "warning":
-                        tfsTestResult.Outcome = TestOutcome.Warning;
-                        break;
-                }
-                tfsTestResult.Save();
-                //Attach files
-                foreach (string xmlFileName in xmlFiles)
-                {
-                    DirectoryInfo resultLocation = new DirectoryInfo(xmlFileName).Parent;
-
-                    //Generate MHT report
-                    try
-                    {
-                        string iconLocation = new DirectoryInfo(Common.Property.ApplicationPath).FullName;
-                        iconLocation = iconLocation.TrimEnd('\\');
-                        Process generateMHT = new Process();
-                        generateMHT.StartInfo.FileName = Common.Property.ApplicationPath + MHTReportGenerationExe;
-                        generateMHT.StartInfo.Arguments = "\"" + resultLocation.FullName + "\"" + " " + "\"" + iconLocation + "\"";
-                        generateMHT.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
-                        generateMHT.Start();
-                        generateMHT.WaitForExit();
-                        generateMHT.Close();
-                    }
-                    catch
-                    {
-                        //No through
-                    }
-                    //Traverse through each file
+                //Traverse through each file
+                if (resultLocation != null)
                     foreach (FileInfo resultFile in resultLocation.GetFiles())
                     {
                         if (!(resultFile.Extension.ToLower().Contains("jpeg") ||
-                            resultFile.Extension.ToLower().Contains("html") ||
-                            resultFile.Extension.ToLower().Contains("jpg")))
+                              resultFile.Extension.ToLower().Contains("html") ||
+                              resultFile.Extension.ToLower().Contains("jpg")))
                         {
                             ITestAttachment resultAttachment = tfsTestResult.CreateAttachment(resultFile.FullName);
                             tfsTestResult.Attachments.Add(resultAttachment);
                             tfsTestResult.Save();
                         }
                     }
-                }
+            }
 
-                //Set other details on test execution
-                try
-                {
-                    tfsTestResult.RunBy = tfsTestResult.GetTestRun().Owner;
-                    tfsTestResult.DateCompleted = DateTime.Now;
-                    tfsTestResult.Duration = DateTime.Now - tfsTestResult.DateStarted;
-                    tfsTestResult.ErrorMessage = Common.Property.ExecutionFailReason;
-                    tfsTestResult.State = TestResultState.Completed;
-                    tfsTestResult.Save();
-                }
-                catch
-                {
-                }
+            //Set other details on test execution
+            try
+            {
+                tfsTestResult.RunBy = tfsTestResult.GetTestRun().Owner;
+                tfsTestResult.DateCompleted = DateTime.Now;
+                tfsTestResult.Duration = DateTime.Now - tfsTestResult.DateStarted;
+                tfsTestResult.ErrorMessage = Property.ExecutionFailReason;
+                tfsTestResult.State = TestResultState.Completed;
                 tfsTestResult.Save();
             }
-            catch (Exception exception)
+            catch
             {
-                throw exception;
+                // ignored
             }
+            tfsTestResult.Save();
             return true;
         }
 
@@ -329,7 +295,7 @@ namespace Krypton
             }
             catch (Exception e)
             {
-                Console.WriteLine("Exception while trying to delete older test runs. Error: " + e.Message);
+                Console.WriteLine(ConsoleMessages.EXCEPTION_WHILE_DELETING_TEST_RUNS + e.Message);
             }
         }
 

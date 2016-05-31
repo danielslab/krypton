@@ -1,9 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using Common;
 using Reporting;
-using System.Text;
 
 namespace Krypton
 {
@@ -16,24 +14,37 @@ namespace Krypton
         /// <param name="stepNo">Step Number</param>
         /// <param name="stepDescription">Description</param>
         /// <returns></returns>
-        public static void WriteExceptionLog(Common.KryptonException exception, int stepNo, string stepDescription)
+        public static void WriteExceptionLog(KryptonException exception, int stepNo, string stepDescription)
         {
             Console.WriteLine(exception.Message);
-            Common.Property.InitializeStepLog();
-            Common.Property.StepNumber = stepNo.ToString();
-            Common.Property.StepDescription = stepDescription;
-            Common.Property.Status = Common.ExecutionStatus.Fail;
-            Common.Property.Remarks = exception.Message;
-            Common.Property.ExecutionDate = DateTime.Now.ToString(Common.Utility.GetParameter("DateFormat"));
-            Common.Property.ExecutionTime = DateTime.Now.ToString(Common.Utility.GetParameter("TimeFormat"));
-
-            xmlLog.WriteExecutionLog();//Generation of xml log file
-            xmlLog.SaveXmlLog();
+            try
+            {
+                Property.InitializeStepLog();
+            }
+            catch (Exception ex)
+            {
+                KryptonException.ReportException(ex.Message+"Initializesteplog()");
+            }
+            Property.StepNumber = stepNo.ToString();
+            Property.StepDescription = stepDescription;
+            Property.Status = ExecutionStatus.Fail;
+            Property.Remarks = exception.Message;
+            Property.ExecutionDate = DateTime.Now.ToString(Utility.GetParameter("DateFormat"));
+            Property.ExecutionTime = DateTime.Now.ToString(Utility.GetParameter("TimeFormat"));
+            try
+            {
+                XmlLog.WriteExecutionLog();
+                XmlLog.SaveXmlLog();
+            }
+            catch (Exception e) 
+            {
+                KryptonException.ReportException(e.Message + "--->" + e.StackTrace + "--->" + e.Source);    
+            }
+            
             if (Utility.GetParameter("closebrowseroncompletion").ToLower().Trim().Equals("true"))
             {
-                if (testStepAction != null)
-                    testStepAction.Do("closeallbrowsers");
-
+                if (TestStepAction != null)
+                    TestStepAction.Do("closeallbrowsers");
             }
 
             try
@@ -42,24 +53,22 @@ namespace Krypton
                 {
                     //Execution end date and time set
                     DateTime dtNow = DateTime.Now;
-                    Common.Property.ExecutionEndDateTime = dtNow.ToString(Common.Property.DATE_TIME);
+                    Property.ExecutionEndDateTime = dtNow.ToString(Property.Date_Time);
 
                     CreateHtmlReportSteps();
 
                     if (Utility.GetParameter("closebrowseroncompletion").ToLower().Trim().Equals("true"))
                     {
-                        if (testStepAction != null && !Utility.GetParameter("RunRemoteExecution").Equals("true", StringComparison.OrdinalIgnoreCase))
-                            testStepAction.Do("shutdowndriver"); //shutdown driver
-
+                        if (TestStepAction != null && !Utility.GetParameter("RunRemoteExecution").Equals("true", StringComparison.OrdinalIgnoreCase))
+                            TestStepAction.Do("shutdowndriver"); //shutdown driver
                     }
                 }
             }
-            catch
-            {
-
+            catch(Exception ex){
+                TestEngine.Logwriter.WriteLog("Data" + ex.Data + "Stacktrace" + ex.StackTrace + "Message" + ex.Message);
             }
             //Wait for user input at the end of the execution is handled by configuration file
-            if (!string.Equals(Common.Utility.GetParameter("EndExecutionWaitRequired"), "false", StringComparison.OrdinalIgnoreCase)
+            if (!string.Equals(Utility.GetParameter("EndExecutionWaitRequired"), "false", StringComparison.OrdinalIgnoreCase)
                 && stepDescription.IndexOf("Execute Test Case", StringComparison.OrdinalIgnoreCase) < 0)
             {
                 Console.WriteLine(ConsoleMessages.MSG_DASHED);
@@ -68,54 +77,51 @@ namespace Krypton
                 {
                     ConsoleKeyInfo inf = Console.ReadKey(true); // Key output not shown
                     if (inf.Key == ConsoleKey.Enter) break;
-                    else
-                    {
-                        Console.WriteLine("Please press [Enter]" + inf.Key);
-                    }
+                        
+                    Console.WriteLine("Please press [Enter]" + inf.Key);
                 }
             }
-            testSuiteResult = 1;
-            return;
+            TestSuiteResult = 1;
         }
 
         /// <summary>
         /// common steps for creating html report and upload
         /// </summary>
-        internal static void CreateHtmlReportSteps(List<string> InputTestIds = null)
+        internal static void CreateHtmlReportSteps(List<string> inputTestIds = null)
         {
             //Creating HTML Report
             try
             {
-                LogFile.allXmlFilesLocation = string.Join(";", filePath);
+                LogFile.AllXmlFilesLocation = string.Join(";", FilePath);
 
                 // Using new format of report.
-                bool IsSummaryRequired = Common.Utility.GetParameter("SummaryReportRequired").ToLower().Equals("true");
-                bool HtmlReportRequired = Utility.GetParameter("HtmlReportRequired").ToLower().Equals("false") ? false : true;
-                Reporting.LogFile.CreateHtmlReport(string.Empty, false, true, Property.isSauceLabExecution);
-                Reporting.HTMLReport.CreateHtmlReport(string.Empty, false, true, Property.isSauceLabExecution, IsSummaryRequired, false, false, HtmlReportRequired);
+                bool isSummaryRequired = Utility.GetParameter("SummaryReportRequired").ToLower().Equals("true");
+                bool htmlReportRequired = !Utility.GetParameter("HtmlReportRequired").ToLower().Equals("false");
+                LogFile.CreateHtmlReport(string.Empty, false, true, Property.IsSauceLabExecution);
+                HtmlReport.CreateHtmlReport(string.Empty, false, true, Property.IsSauceLabExecution, isSummaryRequired, false, false, htmlReportRequired);
                 GetReportSummary();
-                Property.finalXmlPath = filePath[filePath.Length - 1]; //assign the last xml result file path
-
+                Property.FinalXmlPath = FilePath[FilePath.Length - 1];
             }
             catch (Exception exception)
             {
-                testSuiteResult = 1;
-                throw exception;
+                TestSuiteResult = 1;
+                KryptonException.ReportException(exception.Data +"\n Message " +exception.Message +"\n StackTrace"+ exception.StackTrace+"\n Line Number"+
+                    exception.StackTrace.Substring(exception.StackTrace.LastIndexOf(' ')));
             }
 
             Console.WriteLine(ConsoleMessages.MSG_DASHED);
             Console.WriteLine(ConsoleMessages.MSG_UPLOADING_LOG);
 
-            Manager.UploadTestExecutionResults(InputTestIds); //upload log file to filesystem/QC/XStudio
+            Manager.UploadTestExecutionResults();
             try
             {
-                if (Common.Utility.GetParameter("EmailNotification").Equals("true", StringComparison.OrdinalIgnoreCase))
-                    Common.Utility.EmailNotification("end", false); //Email Notification after completion of the process
+                if (Utility.GetParameter("EmailNotification").Equals("true", StringComparison.OrdinalIgnoreCase))
+                    Utility.EmailNotification("end", false); //Email Notification after completion of the process
             }
-            catch (Exception exception)
+            catch (Exception)
             {
                 Console.WriteLine(Utility.GetCommonMsgVariable("KRYPTONERRCODE0053"));
-                throw exception;
+                throw;
             }
         }
 
@@ -127,7 +133,7 @@ namespace Krypton
             int startLocation = 0;
             string strRepotSummary = string.Empty;
             string text_to_replace = string.Empty;
-            strRepotSummary = Common.Property.ReportSummaryBody;
+            strRepotSummary = Property.ReportSummaryBody;
             //Remove detailed steps from the report
             int i = 0;
             int endlocation = 0;
@@ -213,7 +219,7 @@ namespace Krypton
             totalWarning = strRepotSummary.Substring(startLocation, endlocation - startLocation);
             inttotalWarning = int.Parse(totalWarning);
             inttotalPassed = inttotalPassed + inttotalWarning;
-            Common.Property.ReportSummaryBody = strRepotSummary;
+            Property.ReportSummaryBody = strRepotSummary;
         }
 
     }

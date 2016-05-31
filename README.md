@@ -15,6 +15,14 @@ It incorporates the contemporary approaches of any modern automation tool; like 
 What makes it different from other freeware’s available in market, is its highly customizable property which entertains testing on any kind of project of any domain.
 
 It comes with Test Management Tools integration feature by which one can maintain all requirements, test cases and defects in a single place. 
+
+
+# What's New in build 2.0.1
+
+1. Latest Browser Firefox and Chrome support.
+2. Suite files are now written in the excel format for better handling.
+3. Html Report Generation bug fix.
+4. Web Api Request handling with additional headers.
  
 # Prerequisits
 

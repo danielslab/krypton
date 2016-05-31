@@ -8,15 +8,11 @@
 *****************************************************************************/
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using Common;
-using System.IO;
 using System.Data;
-using System.Data.OleDb;
-using System.Data.SqlClient;
 using System.Data.Odbc;
+using System.IO;
 using System.Threading;
+using Common;
 
 namespace TestDriver
 {
@@ -42,11 +38,9 @@ namespace TestDriver
             string connectionString = getDBConnectionString(databaseType);
 
             //Get location where SQL queries are stored
-            string sqlQueryPath = Path.GetFullPath(Common.Property.SqlQueryFilePath);
+            string sqlQueryPath = Path.GetFullPath(Property.SqlQueryFilePath);
 
             // Check whether given argument is a query or sql query file.
-            try
-            {
                 if (selectQuery.Split('.')[1].ToLower() == "sql")
                 {
                     try
@@ -57,22 +51,16 @@ namespace TestDriver
                     }
                     catch (Exception exception)
                     {
-                        Common.Property.Remarks = Utility.GetCommonMsgVariable("KRYPTONERRCODE0026").Replace("{MSG}", exception.Message);
+                        Property.Remarks = Utility.GetCommonMsgVariable("KRYPTONERRCODE0026").Replace("{MSG}", exception.Message);
                         return false;
                     }
                 }
-            }
-            catch (Exception)
-            {
-                // Continue as there is no sql file passed as argument.
-            }
-
             try
             {
                 //replace the variables in the query by their values.
                 selectQuery = Utility.ReplaceVariablesInString(selectQuery);
-                DBRelatedMethods.query = selectQuery;
-                DBRelatedMethods.ConnectionString = connectionString;
+                query = selectQuery;
+                ConnectionString = connectionString;
 
                 OdbcDataReader reader = null;
 
@@ -96,7 +84,7 @@ namespace TestDriver
                         Utility.SetVariable(queryResults.Columns[i].ColumnName, finalRecord[i].ToString());
 
                         //If values are being retrieved, show all retrived values in comments column
-                        Common.Property.Remarks = Common.Property.Remarks +
+                        Property.Remarks = Property.Remarks +
                                                   queryResults.Columns[i].ColumnName + ":=" + finalRecord[i].ToString() + "; ";
                     }
 
@@ -107,7 +95,7 @@ namespace TestDriver
 
                 #endregion
 
-                Common.Property.Remarks = Common.Property.Remarks + " Sql Query Used: " + selectQuery;
+                Property.Remarks = Property.Remarks + " Sql Query Used: " + selectQuery;
                 comm.Dispose();
                 reader.Close();
                 conn.Close();
@@ -120,15 +108,15 @@ namespace TestDriver
                     return false;
                 }
             }
-            catch (System.TimeoutException)
+            catch (TimeoutException)
             {
-                Common.Property.Remarks = Utility.GetCommonMsgVariable("KRYPTONERRCODE0058").Replace("{MSG}", errorMessage);
+                Property.Remarks = Utility.GetCommonMsgVariable("KRYPTONERRCODE0058").Replace("{MSG}", errorMessage);
                 return false;
             }
             catch (Exception exception)
             {
-                Common.Property.Remarks = Utility.GetCommonMsgVariable("KRYPTONERRCODE0027").Replace("{MSG}", exception.Message);
-                Common.Property.Remarks = Common.Property.Remarks + "   Sql Query used : " + selectQuery;
+                Property.Remarks = Utility.GetCommonMsgVariable("KRYPTONERRCODE0027").Replace("{MSG}", exception.Message);
+                Property.Remarks = Property.Remarks + "   Sql Query used : " + selectQuery;
                 return false;
             }
 
@@ -149,31 +137,24 @@ namespace TestDriver
             string connectionString = getDBConnectionString(databaseType);
 
             //Get location where SQL queries are stored
-            string sqlQueryPath = Path.GetFullPath(Common.Property.SqlQueryFilePath);               
+            string sqlQueryPath = Path.GetFullPath(Property.SqlQueryFilePath);               
 
             int rowsAffected = 0;
 
             // Check whether given argument is a query or sql query file.
-            try
+            if (updateQuery.Split('.')[1].ToLower() == "sql")
             {
-                if (updateQuery.Split('.')[1].ToLower() == "sql")
+                try
                 {
-                    try
-                    {
-                        StreamReader readFile = new StreamReader(sqlQueryPath + "/" + updateQuery);
-                        updateQuery = readFile.ReadToEnd();
-                        readFile.Close();
-                    }
-                    catch (Exception exception)
-                    {
-                        Common.Property.Remarks = Utility.GetCommonMsgVariable("KRYPTONERRCODE0026").Replace("{MSG}", exception.Message);
-                        return false;
-                    }
+                    StreamReader readFile = new StreamReader(sqlQueryPath + "/" + updateQuery);
+                    updateQuery = readFile.ReadToEnd();
+                    readFile.Close();
                 }
-            }
-            catch (Exception)
-            {
-                // Continue as there is no sql file passed as argument.
+                catch (Exception exception)
+                {
+                    Property.Remarks = Utility.GetCommonMsgVariable("KRYPTONERRCODE0026").Replace("{MSG}", exception.Message);
+                    return false;
+                }
             }
 
             try
@@ -190,18 +171,18 @@ namespace TestDriver
                 comm = new OdbcCommand(updateQuery, conn);
                 rowsAffected = comm.ExecuteNonQuery();
 
-                Common.Property.Remarks = " Sql Query Used: " + updateQuery;
+                Property.Remarks = " Sql Query Used: " + updateQuery;
 
                 comm.Dispose();
                 conn.Close();
             }
             catch (Exception exception)
             {
-                bool updateResult = executeUpdateQueryTillTimeout(connectionString, updateQuery);
+                bool updateResult = ExecuteUpdateQueryTillTimeout(connectionString, updateQuery);
                 if (!updateResult)
                 {
-                    Common.Property.Remarks = Utility.GetCommonMsgVariable("KRYPTONERRCODE0028").Replace("{MSG}", exception.Message);
-                    Common.Property.Remarks = Common.Property.Remarks + "   SQL Query used : " + updateQuery;
+                    Property.Remarks = Utility.GetCommonMsgVariable("KRYPTONERRCODE0028").Replace("{MSG}", exception.Message);
+                    Property.Remarks = Property.Remarks + "   SQL Query used : " + updateQuery;
                     return false;
                 }
             }
@@ -229,13 +210,13 @@ namespace TestDriver
         /// <param name="connectionString"></param>
         /// <param name="updateQuery"></param>
         /// <returns>bool value</returns>
-        private static bool executeUpdateQueryTillTimeout(string connectionString, string updateQuery)
+        private static bool ExecuteUpdateQueryTillTimeout(string connectionString, string updateQuery)
         {
             {
                 double diff = 0;
                 double start_time = 0;
                 double end_time = 0;
-                int maxTime = int.Parse(Common.Utility.GetParameter("GlobalTimeout"));
+                int maxTime = int.Parse(Utility.GetParameter("GlobalTimeout"));
                 try
                 {
                     for (int seconds = 0; ; seconds++)
@@ -243,7 +224,7 @@ namespace TestDriver
                         start_time = (DateTime.UtcNow - new DateTime(1970, 1, 1, 0, 0, 0)).TotalSeconds;
                         if (seconds >= maxTime || diff >= maxTime)
                         {
-                            throw new System.TimeoutException();
+                            throw new TimeoutException();
                         }
                         bool readerResult = updateCondition(connectionString, updateQuery);
                         if (readerResult)
@@ -255,7 +236,7 @@ namespace TestDriver
                         diff = diff + (end_time - start_time);
                     }
                 }
-                catch (System.TimeoutException)
+                catch (TimeoutException)
                 {
                     return false;
                 }
@@ -271,12 +252,12 @@ namespace TestDriver
         /// </param>
         /// <param name="databaseType">This is a hint telling which database server is to be used</param>
         /// <returns></returns>
-        public static bool verifyDatabase(string data, string databaseType)
+        public static bool VerifyDatabase(string data, string databaseType)
         {
             bool result = false;
 
             //Retrieve Sql query to be executed from test data
-            string sqlQuery = Common.Utility.GetVariable("[td]SQLQuery");
+            string sqlQuery = Utility.GetVariable("[td]SQLQuery");
 
             //Create a new connection string based on type of database specified in Parameters.ini file
             string connectionString = getDBConnectionString(databaseType);
@@ -290,8 +271,9 @@ namespace TestDriver
                 //replace the variables in the query by their values.
                 sqlQuery = Utility.ReplaceVariablesInString(sqlQuery);
 
-                DBRelatedMethods.query = sqlQuery;
-                DBRelatedMethods.ConnectionString = connectionString;
+                
+                query = sqlQuery;
+                ConnectionString = connectionString;
 
                 //using odbc connection to work with multiple database types
                 
@@ -300,6 +282,7 @@ namespace TestDriver
                 //execute the query on the database.
                 reader = executeQueryTillTimeout();
 
+                
                 //Handling when no data was retrieved from database
                 if (!reader.HasRows)
                 {
@@ -318,14 +301,14 @@ namespace TestDriver
                     for (int i = 0; i < reader.FieldCount; i++)
                     {
                         //Retrieve expected value from parameters
-                        expectedValue = Common.Utility.GetVariable(param + (i + 1).ToString());
+                        expectedValue = Utility.GetVariable(param + (i + 1).ToString());
                         expectedValue = Utility.ReplaceVariablesInString(expectedValue);
 
                         //Retrieve actual value from output of query
                         actualValue = reader[i].ToString();
 
                         //Compare both expected and actual values, these should equal
-                        if (Common.Utility.doKeywordMatch(expectedValue, actualValue))
+                        if (Utility.DoKeywordMatch(expectedValue, actualValue))
                         {
                             result = true;
                             Property.Remarks = "Actual value " + actualValue + " of column '" + reader.GetName(i) +
@@ -353,9 +336,9 @@ namespace TestDriver
                 conn.Close();
                 return result;
             }
-            catch (System.TimeoutException)
+            catch (TimeoutException)
             {
-                Property.Remarks = Common.Utility.GetCommonMsgVariable("KRYPTONERRCODE0058").Replace("{MSG}", errorMessage) + "\n" + "Connection String: " + connectionString + "\n" +
+                Property.Remarks = Utility.GetCommonMsgVariable("KRYPTONERRCODE0058").Replace("{MSG}", errorMessage) + "\n" + "Connection String: " + connectionString + "\n" +
                                    "Sql Query Used: " + sqlQuery;
                
                 return false;
@@ -420,7 +403,7 @@ namespace TestDriver
                 double diff = 0;
                 double start_time = 0;
                 double end_time = 0;
-                int maxTime = int.Parse(Common.Utility.GetParameter("GlobalTimeout"));
+                int maxTime = int.Parse(Utility.GetParameter("GlobalTimeout"));
                 try
                 {
                     for (int seconds = 0; ; seconds++)
@@ -428,7 +411,7 @@ namespace TestDriver
                         start_time = (DateTime.UtcNow - new DateTime(1970, 1, 1, 0, 0, 0)).TotalSeconds;
                         if (seconds >= maxTime || diff >= maxTime)
                         {
-                            throw new System.TimeoutException();
+                            throw new TimeoutException();
                         }
                         OdbcDataReader readerResult = conditionalAttachedMethod();
                         if (readerResult != null)
@@ -440,7 +423,7 @@ namespace TestDriver
                         diff = diff + (end_time - start_time);
                     }
                 }
-                catch (System.TimeoutException e)
+                catch (TimeoutException e)
                 {
                     conn.Close();
                     throw e;
@@ -452,20 +435,20 @@ namespace TestDriver
         {
             try
             {
-                conn = new OdbcConnection(DBRelatedMethods.ConnectionString);
+                conn = new OdbcConnection(ConnectionString);
                 conn.Open();
-                comm = new OdbcCommand(DBRelatedMethods.query, conn);                
-                comm.CommandTimeout = int.Parse(Common.Utility.GetParameter("GlobalTimeout"));
+                comm = new OdbcCommand(query, conn);                
+                comm.CommandTimeout = int.Parse(Utility.GetParameter("GlobalTimeout"));
                 OdbcDataReader dr= comm.ExecuteReader();
                 if (dr != null && !dr.HasRows)
                 {
                     dr.Close();
                     conn.Close();
                     Thread.Sleep(2500);
-                    conn = new OdbcConnection(DBRelatedMethods.ConnectionString);
+                    conn = new OdbcConnection(ConnectionString);
                     conn.Open();
-                    comm = new OdbcCommand(DBRelatedMethods.query, conn);
-                    comm.CommandTimeout = int.Parse(Common.Utility.GetParameter("GlobalTimeout"));
+                    comm = new OdbcCommand(query, conn);
+                    comm.CommandTimeout = int.Parse(Utility.GetParameter("GlobalTimeout"));
                     dr = comm.ExecuteReader();
                 }
                 return dr;

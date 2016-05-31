@@ -7,11 +7,9 @@
 ** Description: Browser Specific Functionality file
 *****************************************************************************/
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using Microsoft.Win32;
 using System.Diagnostics;
+using System.Linq;
 
 namespace Common
 {
@@ -21,35 +19,35 @@ namespace Common
 
     public interface IBrowser
     {
-        string validateBrowserInstalled();
-        Process[] getBrowserRunningProcess();
-        void clearCache();
+        string ValidateBrowserInstalled();
+        Process[] GetBrowserRunningProcess();
+        void ClearCache();
     }
 
     /// <summary>
     /// Handles IE related functionalities.
     /// </summary>
-    class IE : IBrowser
+    class Ie : IBrowser
     {
-        public string validateBrowserInstalled()
+        public string ValidateBrowserInstalled()
         {
             bool x = false;
-            string SoftwareKey = Property.Browser_KeyString;
+            string softwareKey = Property.BrowserKeyString;
             try
             {
-                using (RegistryKey rk = Registry.LocalMachine.OpenSubKey(SoftwareKey))
+                using (RegistryKey rk = Registry.LocalMachine.OpenSubKey(softwareKey))
                 {
-                    foreach (string skName in rk.GetSubKeyNames())
-                    {
-                        if (skName.ToLower().Trim().Contains("ie"))
+                    if (rk != null)
+                        foreach (string skName in rk.GetSubKeyNames())
                         {
-                            x = true;
+                            if (skName.ToLower().Trim().Contains("ie"))
+                            {
+                                x = true;
+                            }
                         }
-                    }
                     if (x)
                         return ExecutionStatus.Pass;
-                    else
-                        return ExecutionStatus.Fail;
+                    return ExecutionStatus.Fail;
                 }
             }
             catch (Exception e)
@@ -58,11 +56,12 @@ namespace Common
             }
         }
 
-        public Process[] getBrowserRunningProcess()
+        public Process[] GetBrowserRunningProcess()
         {
-            return Process.GetProcessesByName(Property.IE_PROCESS);
+            return Process.GetProcessesByName(Property.IeProcess);
         }
-        public void clearCache()
+
+        public void ClearCache()
         {
             string[] s = System.IO.Directory.GetFiles(Environment.GetFolderPath(Environment.SpecialFolder.Cookies));
             foreach (string currentFile in s)
@@ -73,7 +72,7 @@ namespace Common
                 }
                 catch (Exception)
                 {
-
+                    // ignored
                 }
             }
         }
@@ -83,23 +82,22 @@ namespace Common
     /// </summary>
     class Firefox : IBrowser
     {
-        public string validateBrowserInstalled()
+        public string ValidateBrowserInstalled()
         {
-            bool isFF = false;
-            string SoftwareKey = Property.Browser_KeyString;
+            bool isFf = false;
+            string softwareKey = Property.BrowserKeyString;
             try
             {
-                using (RegistryKey rk = Registry.LocalMachine.OpenSubKey(SoftwareKey))
+                using (RegistryKey rk = Registry.LocalMachine.OpenSubKey(softwareKey))
                 {
                     foreach (string skName in rk.GetSubKeyNames())
                     {
                         if (skName.Contains("Mozilla Firefox"))
-                            isFF = true;
+                            isFf = true;
                     }
-                    if (isFF)
+                    if (isFf)
                         return ExecutionStatus.Pass;
-                    else
-                        return ExecutionStatus.Fail;
+                    return ExecutionStatus.Fail;
                 }
             }
             catch (Exception e)
@@ -108,12 +106,12 @@ namespace Common
             }
         }
 
-        public Process[] getBrowserRunningProcess()
+        public Process[] GetBrowserRunningProcess()
         {
-            return Process.GetProcessesByName(Property.FF_Process);
+            return Process.GetProcessesByName(Property.FfProcess);
         }
 
-        public void clearCache()
+        public void ClearCache()
         {
             try
             {
@@ -129,7 +127,7 @@ namespace Common
             }
             catch (Exception)
             {
-
+                // ignored
             }
         }
 
@@ -140,39 +138,35 @@ namespace Common
     /// </summary>
     class Chrome : IBrowser
     {
-        public string validateBrowserInstalled()
+        public string ValidateBrowserInstalled()
         {
             bool isChrome = false;
-            string SoftwareKey = Property.Chrome_Specific_KeyString;
+            string softwareKey = Property.ChromeSpecificKeyString;
             try
             {
-                using (RegistryKey rk = Registry.LocalMachine.OpenSubKey(SoftwareKey))
+                using (RegistryKey rk = Registry.LocalMachine.OpenSubKey(softwareKey))
                 {
-                    foreach (string skName in rk.GetSubKeyNames())
+                    if (rk != null && rk.GetSubKeyNames().Any(skName => skName.Contains(KryptonConstants.BROWSER_CHROME)))
                     {
-                        if (skName.Contains(KryptonConstants.BROWSER_CHROME))
-                        {
-                            isChrome = true;
-                            break;
-                        }
+                        isChrome = true;
                     }
                     if (isChrome)
                         return ExecutionStatus.Pass;
-                    else
-                        return ExecutionStatus.Fail;
+                    return ExecutionStatus.Fail;
                 }
             }
-            catch (Exception e)
+            catch (Exception)
             {
                 throw new KryptonException(Utility.GetCommonMsgVariable("KRYPTONERRCODE0003"));
             }
         }
 
-        public Process[] getBrowserRunningProcess()
+        public Process[] GetBrowserRunningProcess()
         {
-            return Process.GetProcessesByName(Property.CHROME_PROCESS);
+            return Process.GetProcessesByName(Property.ChromeProcess);
         }
-        public void clearCache()
+
+        public void ClearCache()
         {
             //Code need to be written.
         }
@@ -184,22 +178,22 @@ namespace Common
 
     public class BrowserManager
     {
-        public static IBrowser browser;
-        public static IBrowser getBrowser(string browserrun)
+        public static IBrowser Browser;
+        public static IBrowser GetBrowser(string browserrun)
         {
             if (browserrun.ToLower().Equals(KryptonConstants.BROWSER_IE))
             {
-                browser = new IE();
+                Browser = new Ie();
             }
             else if (browserrun.ToLower().Equals(KryptonConstants.BROWSER_FIREFOX))
             {
-                browser = new Firefox();
+                Browser = new Firefox();
             }
             else if (browserrun.ToLower().Equals(KryptonConstants.BROWSER_CHROME))
             {
-                browser = new Chrome();
+                Browser = new Chrome();
             }
-            return browser;
+            return Browser;
         }
 
     }

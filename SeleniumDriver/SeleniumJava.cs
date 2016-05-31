@@ -9,9 +9,7 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
-using System.IO;
 using Common;
 
 namespace Driver
@@ -37,12 +35,12 @@ namespace Driver
             seleniumCodeForJava.AppendLine("private static WebDriver driver;");
             seleniumCodeForJava.AppendLine("private static WebElement testObject;");
             seleniumCodeForJava.AppendLine("public static void main(String[] args) { \ntry\n{");
-            this.InitDriver();
+            InitDriver();
         }
 
         public void InitDriver()
         {
-            switch (Common.Utility.GetParameter(Common.Property.BrowserString))
+            switch (Utility.GetParameter(Property.BrowserString))
             {
                 case KryptonConstants.BROWSER_FIREFOX:
                     seleniumCodeForJava.AppendLine("driver = new FirefoxDriver();");
@@ -107,15 +105,14 @@ namespace Driver
                         break;
                 }
             }
-            catch (System.Collections.Generic.KeyNotFoundException)
+            catch (KeyNotFoundException)
             {
 
             }
             catch (Exception e)
             {
-
+                // ignored
             }
-
         }
         public void KeyPress()
         {
@@ -141,14 +138,14 @@ namespace Driver
         public void Close()
         {
         }
-        public void Navigate(string TestData)
+        public void Navigate(string testData)
         {
-            seleniumCodeForJava.AppendLine("driver.get(\"" + TestData + "\");");
+            seleniumCodeForJava.AppendLine("driver.get(\"" + testData + "\");");
         }
-        public void DeleteCookies(String TestData)
+        public void DeleteCookies(String testData)
         {
             seleniumCodeForJava.AppendLine("driver.manage().deleteAllCookies();");//for java
-            seleniumCodeForJava.AppendLine("driver.get(\"" + TestData + "\");");//for java . 
+            seleniumCodeForJava.AppendLine("driver.get(\"" + testData + "\");");//for java . 
         }
 
         public void FireEvent()
@@ -174,9 +171,9 @@ namespace Driver
         {
             seleniumCodeForJava.AppendLine("testObject.sendKeys(new SimpleDateFormat(\"yyyyMMMddHHmmss\").format(Calendar.getInstance()));"); //for java code
         }
-        public void KeyPress(string TestData)
+        public void KeyPress(string testData)
         {
-            switch (TestData.ToLower())
+            switch (testData.ToLower())
             {
                 case "arrowdown":
                     seleniumCodeForJava.AppendLine("testObject.sendKeys(Keys.DOWN);"); //for java code
@@ -186,13 +183,13 @@ namespace Driver
                     break;
             }
         }
-        public void SelectItem(string TestData)
+        public void SelectItem(string testData)
         {
-            seleniumCodeForJava.AppendLine("new Select(testObject).selectByVisibleText(" + TestData + ");");//for java code
+            seleniumCodeForJava.AppendLine("new Select(testObject).selectByVisibleText(" + testData + ");");//for java code
         }
-        public void SelectItemByIndex(string TestData)
+        public void SelectItemByIndex(string testData)
         {
-            seleniumCodeForJava.AppendLine("new Select(testObject).selectByIndex(" + Int32.Parse(TestData) + ");");//for java code
+            seleniumCodeForJava.AppendLine("new Select(testObject).selectByIndex(" + Int32.Parse(testData) + ");");//for java code
         }
         public void WaitForObject()
         {

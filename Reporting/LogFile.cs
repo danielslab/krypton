@@ -8,59 +8,71 @@
 ** **************************************************************************/
 
 using System;
-using System.Collections.Generic;
-using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
-using System.Xml;
 using System.Data;
 using Common;
-using System.IO.Compression;
 using Ionic.Zip;
 
 
 namespace Reporting
 {
 
-    public class LogFile
+    public sealed class LogFile
     {
         // datatable by which Xml will be created
-         private static DataTable testCaseTable;
+         private static DataTable _testCaseTable;
+         private static LogFile _logInstance = null;
         // string which contains Xml file path
-        public string executedXmlPath = string.Empty;
-        public static string allXmlFilesLocation = string.Empty;//
-        public static TimeSpan timeTaken = new TimeSpan(0, 0, 0);
-        public static Boolean  firstEntryInLogFile=true;
-        public string executionTime = null;
-        public LogFile(string filePathName)
+        public string ExecutedXmlPath;
+        public static string AllXmlFilesLocation = string.Empty;
+        public static TimeSpan TimeTaken = new TimeSpan(0, 0, 0);
+        public static Boolean  FirstEntryInLogFile=true;
+        public string ExecutionTime;
+
+        private LogFile(string filePathName)
         {
-            testCaseTable = new DataTable("TestStep");
+            _testCaseTable = new DataTable("TestStep");
             // Copy the file name -- it will be used in function executeStep
-            executedXmlPath = filePathName;
+            ExecutedXmlPath = filePathName;
             // Storing all Xml Path file names at one place (will be used while generating HTML report)
-            allXmlFilesLocation = allXmlFilesLocation + "," + filePathName;
+            AllXmlFilesLocation = AllXmlFilesLocation + "," + filePathName;
 
             // Rows Structure
-            testCaseTable.Columns.Add("StepNumber", typeof(string));
-            testCaseTable.Columns.Add("StepDescription", typeof(string));
-            testCaseTable.Columns.Add("Status", typeof(string));
-            testCaseTable.Columns.Add("ExecutionDate", typeof(string));
-            testCaseTable.Columns.Add("ExecutionTime", typeof(string));
-            testCaseTable.Columns.Add("Remarks", typeof(string));
-            testCaseTable.Columns.Add("Attachments", typeof(string));
-            testCaseTable.Columns.Add("HtmlAttachments", typeof(string));
-            testCaseTable.Columns.Add("ObjectHighlight", typeof(string));
-            testCaseTable.Columns.Add("StepComments", typeof(string));
-            testCaseTable.Columns.Add("AttachmentUrl", typeof(string));
+            _testCaseTable.Columns.Add("StepNumber", typeof(string));
+            _testCaseTable.Columns.Add("StepDescription", typeof(string));
+            _testCaseTable.Columns.Add("Status", typeof(string));
+            _testCaseTable.Columns.Add("ExecutionDate", typeof(string));
+            _testCaseTable.Columns.Add("ExecutionTime", typeof(string));
+            _testCaseTable.Columns.Add("Remarks", typeof(string));
+            _testCaseTable.Columns.Add("Attachments", typeof(string));
+            _testCaseTable.Columns.Add("HtmlAttachments", typeof(string));
+            _testCaseTable.Columns.Add("ObjectHighlight", typeof(string));
+            _testCaseTable.Columns.Add("StepComments", typeof(string));
+            _testCaseTable.Columns.Add("AttachmentUrl", typeof(string));
 
 
             //creating the folder structure here
             string directory = Path.GetDirectoryName(filePathName);
-            CreateDirectory(new DirectoryInfo(directory));
-
-
+            if (directory != null) CreateDirectory(new DirectoryInfo(directory));
         }
+
+        #region Properties
+        public static string filePathName { get; set; }
+
+        public static LogFile Instance
+        {
+            get
+            {
+                _logInstance = new LogFile(filePathName);
+                return _logInstance;
+            }
+        }
+
+        
+        #endregion
+
 
         /// <summary>
         ///Creating folders and sub-folders. It is called iteratively 
@@ -71,7 +83,7 @@ namespace Reporting
         /// <returns></returns>
         private static void CreateDirectory(DirectoryInfo directory)
         {
-            if (!directory.Parent.Exists)
+            if (directory.Parent != null && !directory.Parent.Exists)
                 CreateDirectory(directory.Parent);
 
             //for deleting already exists files 
@@ -93,45 +105,45 @@ namespace Reporting
         {
 
             // Taking Parameters from Property File
-            string stepNumber = Property.StepNumber.ToString();
-            string stepDescription = Property.StepDescription.ToString();
-            string status = Property.Status.ToString();
-            string executionDate = Property.ExecutionDate.ToString();
-          //Updated Code to display accurate Time in seconds and milliseconds of each stepAction 
-            if (firstEntryInLogFile)
+            string stepNumber = Property.StepNumber;
+            string stepDescription = Property.StepDescription;
+           string status = Property.Status;
+            //Updated Code to display accurate Time in seconds and milliseconds of each stepAction 
+            if (FirstEntryInLogFile)
             {
-                executionTime = String.Format("{0:00.00}", (DateTime.Now.TimeOfDay - Convert.ToDateTime(Property.ExecutionTime).TimeOfDay).TotalSeconds); //only first time in log file
-                firstEntryInLogFile = false;
+                ExecutionTime = String.Format("{0:00.00}", (DateTime.Now.TimeOfDay - Convert.ToDateTime(Property.ExecutionTime).TimeOfDay).TotalSeconds); //only first time in log file
+                FirstEntryInLogFile = false;
             }
             else
             {
-                executionTime = String.Format("{0:00.00}", (DateTime.Now.TimeOfDay - timeTaken).TotalSeconds);
+                ExecutionTime = String.Format("{0:00.00}", (DateTime.Now.TimeOfDay - TimeTaken).TotalSeconds);
 
             }
-             timeTaken = DateTime.Now.TimeOfDay;            
+             TimeTaken = DateTime.Now.TimeOfDay;            
          
-            string remarks = Property.Remarks.ToString();
-            string attachments = Property.Attachments.ToString();
-            string attachmentUrl = Property.AttachmentsUrl.ToString();
-            string htmlAttachments = Property.HtmlSourceAttachment.ToString();
-            string objectHighlight = Property.ObjectHighlight.ToString();
-            string stepComments = Property.StepComments.ToString();
+            string remarks = Property.Remarks;
+            string attachments = Property.Attachments;
+            string attachmentUrl = Property.AttachmentsUrl;
+            string htmlAttachments = Property.HtmlSourceAttachment;
+            string objectHighlight = Property.ObjectHighlight;
+            string stepComments = Property.StepComments;
             if (status.Equals(ExecutionStatus.Fail))
                 Property.JobExecutionStatus = status;
 
             // Creating a new row for table and pupulating row's cells
-            DataRow dr = testCaseTable.NewRow();
+            DataRow dr = _testCaseTable.NewRow();
             dr["StepNumber"] = stepNumber;
             dr["StepDescription"] = stepDescription;
             dr["Status"] = status;
-            dr["ExecutionTime"] = executionTime;           
+            dr["ExecutionTime"] = ExecutionTime;           
             dr["Remarks"] = remarks;
             if (attachments != string.Empty) // when some image is present
             {
-                DirectoryInfo drInfo = new DirectoryInfo(executedXmlPath);
+                DirectoryInfo drInfo = new DirectoryInfo(ExecutedXmlPath);
                 if (drInfo.Parent != null)
                 {
-                    dr["Attachments"] = drInfo.Parent.Parent.Name + @"\" + drInfo.Parent.Name + @"\" + attachments;
+                    if (drInfo.Parent.Parent != null)
+                        dr["Attachments"] = drInfo.Parent.Parent.Name + @"\" + drInfo.Parent.Name + @"\" + attachments;
                     dr["AttachmentUrl"] = attachmentUrl;
                 }
             }
@@ -142,10 +154,11 @@ namespace Reporting
             }
             if (htmlAttachments != string.Empty)
             {
-                DirectoryInfo drInfo = new DirectoryInfo(executedXmlPath);
+                DirectoryInfo drInfo = new DirectoryInfo(ExecutedXmlPath);
                 if (drInfo.Parent != null)
                 {
-                    dr["HtmlAttachments"] = drInfo.Parent.Parent.Name + @"\" + drInfo.Parent.Name + @"\" + htmlAttachments;
+                    if (drInfo.Parent.Parent != null)
+                        dr["HtmlAttachments"] = drInfo.Parent.Parent.Name + @"\" + drInfo.Parent.Name + @"\" + htmlAttachments;
                 }
             }
             else
@@ -157,30 +170,32 @@ namespace Reporting
             int failCounter = 0;
             if (status.Equals(ExecutionStatus.Fail))
             {
-                Common.Property.JobExecutionStatus = ExecutionStatus.Fail;
+                Property.JobExecutionStatus = ExecutionStatus.Fail;
                 failCounter++;
                 if (failCounter.Equals(1))
                     Property.ExecutionFailReason = remarks;
             }
             // adding newly created row to table
-            testCaseTable.Rows.Add(dr);
+            _testCaseTable.Rows.Add(dr);
 
         }
 
         public void SaveXmlLog()
         {
             //creating a new Xml file (replacing old Xml with new one)
-            testCaseTable.WriteXml(executedXmlPath, XmlWriteMode.WriteSchema);
+            _testCaseTable.WriteXml(ExecutedXmlPath, XmlWriteMode.WriteSchema);
         }
 
-        /// <summary>
-        ///For adding new attributes to datatable (used in creating Xml Report)
-        /// </summary>
-        /// <param></param>
+        ///  <summary>
+        /// For adding new attributes to datatable (used in creating Xml Report)
+        ///  </summary>
+        ///  <param></param>
+        /// <param name="attribute"></param>
+        /// <param name="value"></param>
         /// <returns></returns> 
         public void AddTestAttribute(string attribute, string value)
         {
-            testCaseTable.ExtendedProperties[attribute] = value;
+            _testCaseTable.ExtendedProperties[attribute] = value;
 
         }
 
@@ -191,37 +206,30 @@ namespace Reporting
         /// <returns></returns>    
         public void CreateHtmlReport1()
         {
-            try
-            {
-                DateTime executionStartTime = DateTime.ParseExact(Property.ExecutionStartDateTime, Common.Utility.GetParameter("DateTimeFormat"),
-                                                                  null);
-                DateTime executionEndTime = DateTime.ParseExact(Property.ExecutionEndDateTime, Common.Utility.GetParameter("DateTimeFormat"),
-                                                                null);
-                string generalLogoLocation = "logo" + Path.GetExtension(Property.CompanyLogo); 
-                string passColor = Utility.GetParameter("ReportPassResultFontColor");
-                string failColor = Utility.GetParameter("ReportFailResultFontColor");
-                string warningColor = Utility.GetParameter("ReportWarningResultFontColor");
-                string browserDetails = Common.Utility.GetParameter(Common.Property.BrowserString); 
-                string browserVersion = Common.Utility.GetVariable(Property.BrowserVersion);
-                string[] xmlFilesLocation = allXmlFilesLocation.Split(';');
-                DataSet dsStore = new DataSet();
-                string tcName = string.Empty;
-                string tcID = string.Empty;
-                string tcBrowser = string.Empty;
+            DateTime executionStartTime = DateTime.ParseExact(Property.ExecutionStartDateTime, Utility.GetParameter("DateTimeFormat"),
+                null);
+            DateTime executionEndTime = DateTime.ParseExact(Property.ExecutionEndDateTime, Utility.GetParameter("DateTimeFormat"),
+                null);
+            string generalLogoLocation = "logo" + Path.GetExtension(Property.CompanyLogo); 
+            string passColor = Utility.GetParameter("ReportPassResultFontColor");
+            string failColor = Utility.GetParameter("ReportFailResultFontColor");
+            string warningColor = Utility.GetParameter("ReportWarningResultFontColor");
+            string browserDetails = Utility.GetParameter(Property.BrowserString); 
+            string browserVersion = Utility.GetVariable(Property.BrowserVersion);
+            string[] xmlFilesLocation = AllXmlFilesLocation.Split(';');
+            string tcName = string.Empty;
+            string tcId = string.Empty;
+            string tcBrowser = string.Empty;
 
-                string companyLogo = Property.CompanyLogo;
-                string htmlFileLocation = Common.Property.HtmlFileLocation + "/HtmlReport.html";
-                string finalStatus = ExecutionStatus.Pass;
-                Property.FinalExecutionStatus = ExecutionStatus.Pass;
-                string finalStatusColor = Utility.GetParameter("ReportPassResultFontColor");
-                string populatedTr = string.Empty;
-                string finalHtml = string.Empty;
-                string temp = string.Empty;
-                string tblID = string.Empty;
-                string expander = string.Empty;
-                string temp2 = string.Empty;
-                string htmlStart =
-                    @"<html>
+            string companyLogo = Property.CompanyLogo;
+            string htmlFileLocation = Property.HtmlFileLocation + "/HtmlReport.html";
+            string finalStatus = ExecutionStatus.Pass;
+            Property.FinalExecutionStatus = ExecutionStatus.Pass;
+            string finalStatusColor = Utility.GetParameter("ReportPassResultFontColor");
+            StringBuilder finalHtml = new StringBuilder();
+            string temp2 = string.Empty;
+            string htmlStart =
+                @"<html>
                                     <head><style>td {overflow:hidden;}</style>
                                            <script>
                                                  function doMenu(item,obj) {
@@ -243,187 +251,187 @@ namespace Reporting
                                                  <div>                                                    
                                                     <p>
                                                      <!--<font style='font-weight: " +
-                    Utility.GetParameter("ReportHeaderTextFontWeight") + @"; font-size: " +
-                    Utility.GetParameter("ReportHeaderTextFontSize") + @"; font-style:" +
-                    Utility.GetParameter("ReportHeaderTextFontStyle") + @"; font-family: " +
-                    Utility.GetParameter("ReportFont") + @"; color: " +
-                    Utility.GetParameter("ReportHeaderTextFontColor") +
-                    @";'>Browser:</font>
+                Utility.GetParameter("ReportHeaderTextFontWeight") + @"; font-size: " +
+                Utility.GetParameter("ReportHeaderTextFontSize") + @"; font-style:" +
+                Utility.GetParameter("ReportHeaderTextFontStyle") + @"; font-family: " +
+                Utility.GetParameter("ReportFont") + @"; color: " +
+                Utility.GetParameter("ReportHeaderTextFontColor") +
+                @";'>Browser:</font>
                                                       <font style='font-weight: " +
-                    Utility.GetParameter("ReportHeaderValueFontWeight") + @"; font-size: " +
-                    Utility.GetParameter("ReportHeaderValueFontSize") + @"; font-style:" +
-                    Utility.GetParameter("ReportHeaderValueFontStyle") + @"; font-family: " +
-                    Utility.GetParameter("ReportFont") + @";  color: " +
-                    Utility.GetParameter("ReportHeaderValueFontColor") + @";'>" + browserDetails + 
-                    @"</font>&nbsp;&nbsp;&nbsp;
+                Utility.GetParameter("ReportHeaderValueFontWeight") + @"; font-size: " +
+                Utility.GetParameter("ReportHeaderValueFontSize") + @"; font-style:" +
+                Utility.GetParameter("ReportHeaderValueFontStyle") + @"; font-family: " +
+                Utility.GetParameter("ReportFont") + @";  color: " +
+                Utility.GetParameter("ReportHeaderValueFontColor") + @";'>" + browserDetails + 
+                @"</font>&nbsp;&nbsp;&nbsp;
                                                     <font style='font-weight: " +
-                    Utility.GetParameter("ReportHeaderTextFontWeight") + @"; font-size: " +
-                    Utility.GetParameter("ReportHeaderTextFontSize") + @"; font-style:" +
-                    Utility.GetParameter("ReportHeaderTextFontStyle") + @"; font-family: " +
-                    Utility.GetParameter("ReportFont") + @"; color: " +
-                    Utility.GetParameter("ReportHeaderTextFontColor") +
-                    @";'>Browser Version:</font>
+                Utility.GetParameter("ReportHeaderTextFontWeight") + @"; font-size: " +
+                Utility.GetParameter("ReportHeaderTextFontSize") + @"; font-style:" +
+                Utility.GetParameter("ReportHeaderTextFontStyle") + @"; font-family: " +
+                Utility.GetParameter("ReportFont") + @"; color: " +
+                Utility.GetParameter("ReportHeaderTextFontColor") +
+                @";'>Browser Version:</font>
                                                     <font style='font-weight: " +
-                    Utility.GetParameter("ReportHeaderValueFontWeight") + @"; font-size: " +
-                    Utility.GetParameter("ReportHeaderValueFontSize") + @"; font-style:" +
-                    Utility.GetParameter("ReportHeaderValueFontStyle") + @"; font-family: " +
-                    Utility.GetParameter("ReportFont") + @";  color: " +
-                    Utility.GetParameter("ReportHeaderValueFontColor") + @";'>" + browserVersion +
-                    @"</font>&nbsp;&nbsp;&nbsp;-->
+                Utility.GetParameter("ReportHeaderValueFontWeight") + @"; font-size: " +
+                Utility.GetParameter("ReportHeaderValueFontSize") + @"; font-style:" +
+                Utility.GetParameter("ReportHeaderValueFontStyle") + @"; font-family: " +
+                Utility.GetParameter("ReportFont") + @";  color: " +
+                Utility.GetParameter("ReportHeaderValueFontColor") + @";'>" + browserVersion +
+                @"</font>&nbsp;&nbsp;&nbsp;-->
                                                     <font style='font-weight: " +
-                    Utility.GetParameter("ReportHeaderTextFontWeight") + @"; font-size: " +
-                    Utility.GetParameter("ReportHeaderTextFontSize") + @"; font-style:" +
-                    Utility.GetParameter("ReportHeaderTextFontStyle") + @"; font-family: " +
-                    Utility.GetParameter("ReportFont") + @"; color: " +
-                    Utility.GetParameter("ReportHeaderTextFontColor") +
-                    @";'>Execution Started at: </font>
+                Utility.GetParameter("ReportHeaderTextFontWeight") + @"; font-size: " +
+                Utility.GetParameter("ReportHeaderTextFontSize") + @"; font-style:" +
+                Utility.GetParameter("ReportHeaderTextFontStyle") + @"; font-family: " +
+                Utility.GetParameter("ReportFont") + @"; color: " +
+                Utility.GetParameter("ReportHeaderTextFontColor") +
+                @";'>Execution Started at: </font>
                                                     <font style='font-weight: " +
-                    Utility.GetParameter("ReportHeaderValueFontWeight") + @"; font-size: " +
-                    Utility.GetParameter("ReportHeaderValueFontSize") + @"; font-style:" +
-                    Utility.GetParameter("ReportHeaderValueFontStyle") + @"; font-family: " +
-                    Utility.GetParameter("ReportFont") + @"; color: " +
-                    Utility.GetParameter("ReportHeaderValueFontColor") + @";'>" +
-                    executionStartTime.ToString(Common.Utility.GetParameter("DateTimeFormat")) +
-                    @"</font>&nbsp;&nbsp;&nbsp;
+                Utility.GetParameter("ReportHeaderValueFontWeight") + @"; font-size: " +
+                Utility.GetParameter("ReportHeaderValueFontSize") + @"; font-style:" +
+                Utility.GetParameter("ReportHeaderValueFontStyle") + @"; font-family: " +
+                Utility.GetParameter("ReportFont") + @"; color: " +
+                Utility.GetParameter("ReportHeaderValueFontColor") + @";'>" +
+                executionStartTime.ToString(Utility.GetParameter("DateTimeFormat")) +
+                @"</font>&nbsp;&nbsp;&nbsp;
                                                     <font style='font-weight: " +
-                    Utility.GetParameter("ReportHeaderTextFontWeight") + @"; font-size: " +
-                    Utility.GetParameter("ReportHeaderTextFontSize") + @"; font-style:" +
-                    Utility.GetParameter("ReportHeaderTextFontStyle") + @"; font-family: " +
-                    Utility.GetParameter("ReportFont") + @"; color: " +
-                    Utility.GetParameter("ReportHeaderTextFontColor") +
-                    @";'>Execution Finished at: </font>
+                Utility.GetParameter("ReportHeaderTextFontWeight") + @"; font-size: " +
+                Utility.GetParameter("ReportHeaderTextFontSize") + @"; font-style:" +
+                Utility.GetParameter("ReportHeaderTextFontStyle") + @"; font-family: " +
+                Utility.GetParameter("ReportFont") + @"; color: " +
+                Utility.GetParameter("ReportHeaderTextFontColor") +
+                @";'>Execution Finished at: </font>
                                                     <font style='font-weight: " +
-                    Utility.GetParameter("ReportHeaderValueFontWeight") + @"; font-size: " +
-                    Utility.GetParameter("ReportHeaderValueFontSize") + @"; font-style:" +
-                    Utility.GetParameter("ReportHeaderValueFontStyle") + @"; font-family: " +
-                    Utility.GetParameter("ReportFont") + @"; color: " +
-                    Utility.GetParameter("ReportHeaderValueFontColor") + @";'>" +
-                    executionEndTime.ToString(Common.Utility.GetParameter("DateTimeFormat")) +
-                    @"</font>
+                Utility.GetParameter("ReportHeaderValueFontWeight") + @"; font-size: " +
+                Utility.GetParameter("ReportHeaderValueFontSize") + @"; font-style:" +
+                Utility.GetParameter("ReportHeaderValueFontStyle") + @"; font-family: " +
+                Utility.GetParameter("ReportFont") + @"; color: " +
+                Utility.GetParameter("ReportHeaderValueFontColor") + @";'>" +
+                executionEndTime.ToString(Utility.GetParameter("DateTimeFormat")) +
+                @"</font>
                                                     <font style='font-weight: " +
-                    Utility.GetParameter("ReportHeaderTextFontWeight") + @"; font-size: " +
-                    Utility.GetParameter("ReportHeaderTextFontSize") + @"; font-style:" +
-                    Utility.GetParameter("ReportHeaderTextFontStyle") + @"; font-family: " +
-                    Utility.GetParameter("ReportFont") + @"; color: " +
-                    Utility.GetParameter("ReportHeaderTextFontColor") +
-                    @";'>Environment: </font>
+                Utility.GetParameter("ReportHeaderTextFontWeight") + @"; font-size: " +
+                Utility.GetParameter("ReportHeaderTextFontSize") + @"; font-style:" +
+                Utility.GetParameter("ReportHeaderTextFontStyle") + @"; font-family: " +
+                Utility.GetParameter("ReportFont") + @"; color: " +
+                Utility.GetParameter("ReportHeaderTextFontColor") +
+                @";'>Environment: </font>
                                                     <font style='font-weight: " +
-                    Utility.GetParameter("ReportHeaderValueFontWeight") + @"; font-size: " +
-                    Utility.GetParameter("ReportHeaderValueFontSize") + @"; font-style:" +
-                    Utility.GetParameter("ReportHeaderValueFontStyle") + @"; font-family: " +
-                    Utility.GetParameter("ReportFont") + @"; color: " +
-                    Utility.GetParameter("ReportHeaderValueFontColor") + @";'>" +
-                    Utility.GetParameter("ReportHeaderValueFontColor") + @";'>" + browserVersion +
-                    Common.Utility.GetParameter(Common.Property.ENVIRONMENT) + 
-                    @"</font>&nbsp;&nbsp;&nbsp;
+                Utility.GetParameter("ReportHeaderValueFontWeight") + @"; font-size: " +
+                Utility.GetParameter("ReportHeaderValueFontSize") + @"; font-style:" +
+                Utility.GetParameter("ReportHeaderValueFontStyle") + @"; font-family: " +
+                Utility.GetParameter("ReportFont") + @"; color: " +
+                Utility.GetParameter("ReportHeaderValueFontColor") + @";'>" +
+                Utility.GetParameter("ReportHeaderValueFontColor") + @";'>" + browserVersion +
+                Utility.GetParameter(Property.Environment) + 
+                @"</font>&nbsp;&nbsp;&nbsp;
                                                     <font style='font-weight: " +
-                    Utility.GetParameter("ReportHeaderTextFontWeight") + @"; font-size: " +
-                    Utility.GetParameter("ReportHeaderTextFontSize") + @"; font-style:" +
-                    Utility.GetParameter("ReportHeaderTextFontStyle") + @"; font-family: " +
-                    Utility.GetParameter("ReportFont") + @"; color: " +
-                    Utility.GetParameter("ReportHeaderTextFontColor") +
-                    @";'>Executed by: </font>
+                Utility.GetParameter("ReportHeaderTextFontWeight") + @"; font-size: " +
+                Utility.GetParameter("ReportHeaderTextFontSize") + @"; font-style:" +
+                Utility.GetParameter("ReportHeaderTextFontStyle") + @"; font-family: " +
+                Utility.GetParameter("ReportFont") + @"; color: " +
+                Utility.GetParameter("ReportHeaderTextFontColor") +
+                @";'>Executed by: </font>
                                                     <font style='font-weight: " +
-                    Utility.GetParameter("ReportHeaderValueFontWeight") + @"; font-size: " +
-                    Utility.GetParameter("ReportHeaderValueFontSize") + @"; font-style:" +
-                    Utility.GetParameter("ReportHeaderValueFontStyle") + @"; font-family: " +
-                    Utility.GetParameter("ReportFont") + @"; color: " +
-                    Utility.GetParameter("ReportHeaderValueFontColor") + @";'>" +
-                    "1.0.0.0" +
-                    @"</font></p>
+                Utility.GetParameter("ReportHeaderValueFontWeight") + @"; font-size: " +
+                Utility.GetParameter("ReportHeaderValueFontSize") + @"; font-style:" +
+                Utility.GetParameter("ReportHeaderValueFontStyle") + @"; font-family: " +
+                Utility.GetParameter("ReportFont") + @"; color: " +
+                Utility.GetParameter("ReportHeaderValueFontColor") + @";'>" +
+                "1.0.0.0" +
+                @"</font></p>
                                                     <p><font style='font-weight: " +
-                    Utility.GetParameter("ReportHeaderTextFontWeight") + @"; font-size: " +
-                    Utility.GetParameter("ReportHeaderTextFontSize") + @"; font-style:" +
-                    Utility.GetParameter("ReportHeaderTextFontStyle") + @"; font-family: " +
-                    Utility.GetParameter("ReportFont") + @"; color: " +
-                    Utility.GetParameter("ReportHeaderTextFontColor") +
-                    @";'>Total Run Duration: </font>
+                Utility.GetParameter("ReportHeaderTextFontWeight") + @"; font-size: " +
+                Utility.GetParameter("ReportHeaderTextFontSize") + @"; font-style:" +
+                Utility.GetParameter("ReportHeaderTextFontStyle") + @"; font-family: " +
+                Utility.GetParameter("ReportFont") + @"; color: " +
+                Utility.GetParameter("ReportHeaderTextFontColor") +
+                @";'>Total Run Duration: </font>
                                                     <font style='font-weight: " +
-                    Utility.GetParameter("ReportHeaderValueFontWeight") + @"; font-size: " +
-                    Utility.GetParameter("ReportHeaderValueFontSize") + @"; font-style:" +
-                    Utility.GetParameter("ReportHeaderValueFontStyle") + @"; font-family: " +
-                    Utility.GetParameter("ReportFont") + @"; color: " +
-                    Utility.GetParameter("ReportHeaderValueFontColor") +
-                    @";'>$totalRunDuration</font></p>
+                Utility.GetParameter("ReportHeaderValueFontWeight") + @"; font-size: " +
+                Utility.GetParameter("ReportHeaderValueFontSize") + @"; font-style:" +
+                Utility.GetParameter("ReportHeaderValueFontStyle") + @"; font-family: " +
+                Utility.GetParameter("ReportFont") + @"; color: " +
+                Utility.GetParameter("ReportHeaderValueFontColor") +
+                @";'>$totalRunDuration</font></p>
                     <p>
                     <font style='font-weight: " +
-                    Utility.GetParameter("ReportHeaderTextFontWeight") + @"; font-size: " +
-                    Utility.GetParameter("ReportHeaderTextFontSize") + @"; font-style:" +
-                    Utility.GetParameter("ReportHeaderTextFontStyle") + @"; font-family: " +
-                    Utility.GetParameter("ReportFont") + @"; color: " +
-                    Utility.GetParameter("ReportHeaderTextFontColor") +
-                    @";'>Test Case(s) Executed:</font>
+                Utility.GetParameter("ReportHeaderTextFontWeight") + @"; font-size: " +
+                Utility.GetParameter("ReportHeaderTextFontSize") + @"; font-style:" +
+                Utility.GetParameter("ReportHeaderTextFontStyle") + @"; font-family: " +
+                Utility.GetParameter("ReportFont") + @"; color: " +
+                Utility.GetParameter("ReportHeaderTextFontColor") +
+                @";'>Test Case(s) Executed:</font>
                                                       <font style='font-weight: " +
-                    Utility.GetParameter("ReportHeaderValueFontWeight") + @"; font-size: " +
-                    Utility.GetParameter("ReportHeaderValueFontSize") + @"; font-style:" +
-                    Utility.GetParameter("ReportHeaderValueFontStyle") + @"; font-family: " +
-                    Utility.GetParameter("ReportFont") + @";  color: " +
-                    Utility.GetParameter("ReportHeaderValueFontColor") + @";'>$TotalCaseExecuted</font>&nbsp;&nbsp;&nbsp;
+                Utility.GetParameter("ReportHeaderValueFontWeight") + @"; font-size: " +
+                Utility.GetParameter("ReportHeaderValueFontSize") + @"; font-style:" +
+                Utility.GetParameter("ReportHeaderValueFontStyle") + @"; font-family: " +
+                Utility.GetParameter("ReportFont") + @";  color: " +
+                Utility.GetParameter("ReportHeaderValueFontColor") + @";'>$TotalCaseExecuted</font>&nbsp;&nbsp;&nbsp;
                                                     <font style='font-weight: " +
-                    Utility.GetParameter("ReportHeaderTextFontWeight") + @"; font-size: " +
-                    Utility.GetParameter("ReportHeaderTextFontSize") + @"; font-style:" +
-                    Utility.GetParameter("ReportHeaderTextFontStyle") + @"; font-family: " +
-                    Utility.GetParameter("ReportFont") + @"; color: " +
-                    Utility.GetParameter("ReportHeaderTextFontColor") +
-                    @";'>Total Passed:</font>
+                Utility.GetParameter("ReportHeaderTextFontWeight") + @"; font-size: " +
+                Utility.GetParameter("ReportHeaderTextFontSize") + @"; font-style:" +
+                Utility.GetParameter("ReportHeaderTextFontStyle") + @"; font-family: " +
+                Utility.GetParameter("ReportFont") + @"; color: " +
+                Utility.GetParameter("ReportHeaderTextFontColor") +
+                @";'>Total Passed:</font>
                                                     <font style='font-weight: " +
-                    Utility.GetParameter("ReportHeaderValueFontWeight") + @"; font-size: " +
-                    Utility.GetParameter("ReportHeaderValueFontSize") + @"; font-style:" +
-                    Utility.GetParameter("ReportHeaderValueFontStyle") + @"; font-family: " +
-                    Utility.GetParameter("ReportFont") + @";  color: " +
-                    Utility.GetParameter("ReportHeaderValueFontColor") + @";'>$TotalCasePass 
+                Utility.GetParameter("ReportHeaderValueFontWeight") + @"; font-size: " +
+                Utility.GetParameter("ReportHeaderValueFontSize") + @"; font-style:" +
+                Utility.GetParameter("ReportHeaderValueFontStyle") + @"; font-family: " +
+                Utility.GetParameter("ReportFont") + @";  color: " +
+                Utility.GetParameter("ReportHeaderValueFontColor") + @";'>$TotalCasePass 
                     </font>&nbsp;&nbsp;&nbsp;
                                                     <font style='font-weight: " +
-                    Utility.GetParameter("ReportHeaderTextFontWeight") + @"; font-size: " +
-                    Utility.GetParameter("ReportHeaderTextFontSize") + @"; font-style:" +
-                    Utility.GetParameter("ReportHeaderTextFontStyle") + @"; font-family: " +
-                    Utility.GetParameter("ReportFont") + @"; color: " +
-                    Utility.GetParameter("ReportHeaderTextFontColor") +
-                    @";'>Total Failed: </font>
+                Utility.GetParameter("ReportHeaderTextFontWeight") + @"; font-size: " +
+                Utility.GetParameter("ReportHeaderTextFontSize") + @"; font-style:" +
+                Utility.GetParameter("ReportHeaderTextFontStyle") + @"; font-family: " +
+                Utility.GetParameter("ReportFont") + @"; color: " +
+                Utility.GetParameter("ReportHeaderTextFontColor") +
+                @";'>Total Failed: </font>
                                                     <font style='font-weight: " +
-                    Utility.GetParameter("ReportHeaderValueFontWeight") + @"; font-size: " +
-                    Utility.GetParameter("ReportHeaderValueFontSize") + @"; font-style:" +
-                    Utility.GetParameter("ReportHeaderValueFontStyle") + @"; font-family: " +
-                    Utility.GetParameter("ReportFont") + @"; color: " +
-                    Utility.GetParameter("ReportHeaderValueFontColor") + @";'>$TotalCaseFail 
+                Utility.GetParameter("ReportHeaderValueFontWeight") + @"; font-size: " +
+                Utility.GetParameter("ReportHeaderValueFontSize") + @"; font-style:" +
+                Utility.GetParameter("ReportHeaderValueFontStyle") + @"; font-family: " +
+                Utility.GetParameter("ReportFont") + @"; color: " +
+                Utility.GetParameter("ReportHeaderValueFontColor") + @";'>$TotalCaseFail 
                     </font>&nbsp;&nbsp;&nbsp;
                                                     <font style='font-weight: " +
-                    Utility.GetParameter("ReportHeaderTextFontWeight") + @"; font-size: " +
-                    Utility.GetParameter("ReportHeaderTextFontSize") + @"; font-style:" +
-                    Utility.GetParameter("ReportHeaderTextFontStyle") + @"; font-family: " +
-                    Utility.GetParameter("ReportFont") + @"; color: " +
-                    Utility.GetParameter("ReportHeaderTextFontColor") +
-                    @";'>Total Warning: </font>
+                Utility.GetParameter("ReportHeaderTextFontWeight") + @"; font-size: " +
+                Utility.GetParameter("ReportHeaderTextFontSize") + @"; font-style:" +
+                Utility.GetParameter("ReportHeaderTextFontStyle") + @"; font-family: " +
+                Utility.GetParameter("ReportFont") + @"; color: " +
+                Utility.GetParameter("ReportHeaderTextFontColor") +
+                @";'>Total Warning: </font>
                                                     <font style='font-weight: " +
-                    Utility.GetParameter("ReportHeaderValueFontWeight") + @"; font-size: " +
-                    Utility.GetParameter("ReportHeaderValueFontSize") + @"; font-style:" +
-                    Utility.GetParameter("ReportHeaderValueFontStyle") + @"; font-family: " +
-                    Utility.GetParameter("ReportFont") + @"; color: " +
-                    Utility.GetParameter("ReportHeaderValueFontColor") + @";'>$TotalCaseWarning
+                Utility.GetParameter("ReportHeaderValueFontWeight") + @"; font-size: " +
+                Utility.GetParameter("ReportHeaderValueFontSize") + @"; font-style:" +
+                Utility.GetParameter("ReportHeaderValueFontStyle") + @"; font-family: " +
+                Utility.GetParameter("ReportFont") + @"; color: " +
+                Utility.GetParameter("ReportHeaderValueFontColor") + @";'>$TotalCaseWarning
                     </font>
                     </p>
                                                     <p>
                                                     </p></div><p>
                                               <font style='font-weight: " +
-                    Utility.GetParameter("ReportHeaderTextFontWeight") + @"; font-size: " +
-                    Utility.GetParameter("ReportHeaderTextFontSize") + @"; font-style:" +
-                    Utility.GetParameter("ReportHeaderTextFontStyle") + @"; font-family: " +
-                    Utility.GetParameter("ReportFont") + @"; color: " +
-                    Utility.GetParameter("ReportHeaderTextFontColor") +
-                    @";'>Execution Report</font>
+                Utility.GetParameter("ReportHeaderTextFontWeight") + @"; font-size: " +
+                Utility.GetParameter("ReportHeaderTextFontSize") + @"; font-style:" +
+                Utility.GetParameter("ReportHeaderTextFontStyle") + @"; font-family: " +
+                Utility.GetParameter("ReportFont") + @"; color: " +
+                Utility.GetParameter("ReportHeaderTextFontColor") +
+                @";'>Execution Report</font>
                                               <table width='100%' style='border:1px solid " +
-                    Utility.GetParameter("ReportTableBorderColor") +
-                    @"'>
+                Utility.GetParameter("ReportTableBorderColor") +
+                @"'>
                                                 <td>
                                                     <table  id='header'  width='100%' style='table-layout:fixed'>
                                                          <tr style='font-weight: " +
-                    Utility.GetParameter("ReportTableHeaderFontWeight") + @"; font-size: " +
-                    Utility.GetParameter("ReportTableHeaderFontSize") + @"; font-style:" +
-                    Utility.GetParameter("ReportTableHeaderFontStyle") + @"; font-family: " +
-                    Utility.GetParameter("ReportFont") + @"; color: " +
-                    Utility.GetParameter("ReportTableHeaderFontColor") + @"; background-color: " +
-                    Utility.GetParameter("ReportTableHeaderBackgroundColor") +
-                    @"'>
+                Utility.GetParameter("ReportTableHeaderFontWeight") + @"; font-size: " +
+                Utility.GetParameter("ReportTableHeaderFontSize") + @"; font-style:" +
+                Utility.GetParameter("ReportTableHeaderFontStyle") + @"; font-family: " +
+                Utility.GetParameter("ReportFont") + @"; color: " +
+                Utility.GetParameter("ReportTableHeaderFontColor") + @"; background-color: " +
+                Utility.GetParameter("ReportTableHeaderBackgroundColor") +
+                @"'>
                                                          <td width='2%'></td>
                                                          <td width='35%'>Steps</td>                                                         
                                                          <td width='10%'>Status</td>
@@ -434,9 +442,9 @@ namespace Reporting
                                                     </table>";
 
 
-                // added remarks in each test case header
-                //                     Added date/time of execution in each test case header
-                string newTestCaseBodyStart = @"<table width='100%' style='table-layout:fixed'>
+            // added remarks in each test case header
+            //                     Added date/time of execution in each test case header
+            string newTestCaseBodyStart = @"<table width='100%' style='table-layout:fixed'>
                                             <tr style='font-family: " + Utility.GetParameter("ReportFont") + @"; background-color: " + Utility.GetParameter("ReportTestCaseBackgroundColor") + @"'>
                                              <td width='2%' style='font-weight: " + Utility.GetParameter("ReportFontWeight") + @"; font-size: " + Utility.GetParameter("ReportFontSize") + @"; font-style:" + Utility.GetParameter("ReportFontStyle") + @"; color: " + Utility.GetParameter("ReportFontColor") + @"'><a id='$xn' href='javascript:doMenu($TblID,$xn)'>[+]</a></td>
                                              <td width='35%' style='font-weight: " + Utility.GetParameter("ReportFontWeight") + @"; font-size: " + Utility.GetParameter("ReportFontSize") + @"; font-style:" + Utility.GetParameter("ReportFontStyle") + @"; color: " + Utility.GetParameter("ReportFontColor") + @"'>[$TCId] $TCName</td>                                             
@@ -449,8 +457,8 @@ namespace Reporting
                                            </table>
                                            <div id='$TblID' style='display:none'>";
 
-                // Introduction of one more column (only Description)
-                string trStructure = @"<table width='100%' style='word-wrap: break-word; table-layout: fixed;'> 
+            // Introduction of one more column (only Description)
+            string trStructure = @"<table width='100%' style='word-wrap: break-word; table-layout: fixed;'> 
                                         <tr style='font-family: " + Utility.GetParameter("ReportFont") + @"; background-color: $trBackground;'>
                                             <td width='2%' ></td>
                                             <td width='35%' style='font-weight: " + Utility.GetParameter("ReportFontWeight") + @"; font-size: " + Utility.GetParameter("ReportFontSize") + @"; font-style:" + Utility.GetParameter("ReportFontStyle") + @"; color: " + Utility.GetParameter("ReportFontColor") + @"'>$stepNo<!--<font style='font-style:italic'>-->$TC_Comments<!--</font>-->$TC_Des_only</td>                                             
@@ -460,340 +468,309 @@ namespace Reporting
                                             <td width='28%' style='font-weight: " + Utility.GetParameter("ReportRemarksFontWeight") + @"; font-size: " + Utility.GetParameter("ReportFontSize") + @"; font-style:" + Utility.GetParameter("ReportRemarksFontStyle") + @"; color: " + Utility.GetParameter("ReportRemarksFontColor") + @"'>$TC_Remarks</td>                                                                                           
                                         </tr>
                                      </table>";
-                string newTestCaseBodyEnd = @"</div>";
-                string htmlEnd = @"</td>
+            string newTestCaseBodyEnd = @"</div>";
+            string htmlEnd = @"</td>
                                  </tr>
                                   </table>
                                             </body>
                                 </html>";
 
-                //
+            //
 
-                // Html Start
-                finalHtml = htmlStart;
+            // Html Start
+            finalHtml.Append(htmlStart);
 
-                int count = 0;
+            int count = 0;
 
 
-                foreach (string xmlLocation in xmlFilesLocation)
+            foreach (string xmlLocation in xmlFilesLocation)
+            {
+                if (File.Exists(xmlLocation))
                 {
-                    if (File.Exists(xmlLocation))
+                    Property.TotalCaseExecuted++;
+
+                    try
                     {
-                        Property.TotalCaseExecuted++;
+                        #region Individual TestCase
 
-                        try
+                        var dsStore = new DataSet();
+                        // copying all data from XML to datatable
+                        dsStore.ReadXml(xmlLocation);
+
+                        var dtTemp = dsStore.Tables[0];
+
+                        // getting TestCase Name and ID from extended properties
+                        if (dtTemp.ExtendedProperties["TestCase Name"] != null)
+                            tcName = dtTemp.ExtendedProperties["TestCase Name"].ToString(); 
+                        if (dtTemp.ExtendedProperties["TestCase Id"] != null)
+                            tcId = dtTemp.ExtendedProperties["TestCase Id"].ToString(); 
+                        if (dtTemp.ExtendedProperties["Browser"] != null)
+                            tcBrowser = dtTemp.ExtendedProperties["Browser"].ToString(); 
+
+                        var tblId = "tblID_" + count;
+                        var expander = "x_" + count;
+
+                        var temp = newTestCaseBodyStart;
+                        temp = temp.Replace("$TCName", tcName);
+                        temp = temp.Replace("$TCId", tcId);
+                        temp = temp.Replace("$TblID", tblId);
+                        temp = temp.Replace("$xn", expander);
+                        // Html Start + Expand/Collapse sign (for each TestCase)
+                        finalHtml.Append(temp);
+
+                        // Calculating time duration for each TestCase
+
+                        #region Each TestCase Step
+
+                        int rowNo = 0;
+
+                        //flag to keep track of first warning/failed step.
+                        bool firstFail = true;
+                        bool firstWarning = true;
+                        //headerRemark is empty if test case is passed. Else it will be updated on a failed or warning step.
+                        string headerRemarkFail = string.Empty;
+                        string headerRemarkWarning = string.Empty;
+
+                        //added start date/time in test case header
+                        finalHtml = finalHtml.Replace("$Header_TC_ExecutionTime_Date", dtTemp.Rows[0][3] + " : " + dtTemp.Rows[0][4]);
+
+                        //update browser info
+                        finalHtml = finalHtml.Replace("$Header_TC_Browser", tcBrowser);
+
+
+                        foreach (DataRow tcRow in dtTemp.Rows) // Loop over the rows.
                         {
-                            #region Individual TestCase
+                            Property.TotalStepExecuted++;
 
-                            dsStore = new DataSet();
-                            // copying all data from XML to datatable
-                            dsStore.ReadXml(xmlLocation);
-                            DataTable dtTemp = new DataTable();
+                            // taking basic TR structure
+                            var populatedTr = trStructure;
 
-                            dtTemp = dsStore.Tables[0];
-
-                            // getting TestCase Name and ID from extended properties
-                            if (dtTemp.ExtendedProperties["TestCase Name"] != null)
-                                tcName = dtTemp.ExtendedProperties["TestCase Name"].ToString(); 
-                            if (dtTemp.ExtendedProperties["TestCase Id"] != null)
-                                tcID = dtTemp.ExtendedProperties["TestCase Id"].ToString(); 
-                            if (dtTemp.ExtendedProperties["Browser"] != null)
-                                tcBrowser = dtTemp.ExtendedProperties["Browser"].ToString(); 
-
-                            tblID = "tblID_" + count;
-                            expander = "x_" + count;
-
-                            temp = newTestCaseBodyStart;
-                            temp = temp.Replace("$TCName", tcName);
-                            temp = temp.Replace("$TCId", tcID);
-                            temp = temp.Replace("$TblID", tblID);
-                            temp = temp.Replace("$xn", expander);
-                            // Html Start + Expand/Collapse sign (for each TestCase)
-                            finalHtml = finalHtml + temp;
-
-                            // Calculating time duration for each TestCase
-                            DateTime startTime, endTime;
-                            startTime = Convert.ToDateTime(dtTemp.Rows[0][4].ToString());
-                            endTime = Convert.ToDateTime(dtTemp.Rows[dtTemp.Rows.Count - 1][4].ToString());
-
-                            #region Each TestCase Step
-
-                            int rowNo = 0;
-
-                            //  flag to keep track of first warning/failed step.
-                            bool firstFail = true;
-                            bool firstWarning = true;
-                            //  headerRemark is empty if test case is passed. Else it will be updated on a failed or warning step.
-                            string headerRemarkFail = string.Empty;
-                            string headerRemarkWarning = string.Empty;
-
-                            //  added start date/time in test case header
-                            finalHtml = finalHtml.Replace("$Header_TC_ExecutionTime_Date", dtTemp.Rows[0][3].ToString() + " : " + dtTemp.Rows[0][4].ToString());
-
-                            //update browser info
-                            finalHtml = finalHtml.Replace("$Header_TC_Browser", tcBrowser);
-
-
-                            foreach (DataRow tcRow in dtTemp.Rows) // Loop over the rows.
+                            // populating row with data (present in Xml row)
+                            string stpnmb = tcRow.ItemArray[0].ToString();
+                            string stpdesp = tcRow.ItemArray[1].ToString();
+                            string stats = tcRow.ItemArray[2].ToString();
+                            string exedt = tcRow.ItemArray[3].ToString();
+                            string exetm = tcRow.ItemArray[4].ToString();
+                            string rmrk = tcRow.ItemArray[5].ToString();
+                            string attch = tcRow.ItemArray[6].ToString();
+                            string htmlattch = tcRow.ItemArray[7].ToString();
+                            string com = tcRow.ItemArray[9].ToString();
+                            int outParam;
+                            Math.DivRem(rowNo, 2, out outParam);
+                            if (outParam > 0)
                             {
-                                Common.Property.TotalStepExecuted++;
-
-                                // taking basic TR structure
-                                populatedTr = trStructure;
-
-                                // populating row with data (present in Xml row)
-                                string stpnmb = tcRow.ItemArray[0].ToString();
-                                string stpdesp = tcRow.ItemArray[1].ToString();
-                                string stats = tcRow.ItemArray[2].ToString();
-                                string exedt = tcRow.ItemArray[3].ToString();
-                                string exetm = tcRow.ItemArray[4].ToString();
-                                string rmrk = tcRow.ItemArray[5].ToString();
-                                string attch = tcRow.ItemArray[6].ToString();
-                                string htmlattch = tcRow.ItemArray[7].ToString();
-                                string objhigh = tcRow.ItemArray[8].ToString();
-                                string com = tcRow.ItemArray[9].ToString();
-                                int outParam = 0;
-                                Math.DivRem(rowNo, 2, out outParam);
-                                if (outParam > 0)
-                                {
-                                    populatedTr = populatedTr.Replace("$trBackground",
-                                                                      Utility.GetParameter(
-                                                                          "ReportTableAlternateRowColor"));
-                                }
-                                else
-                                {
-                                    populatedTr = populatedTr.Replace("$trBackground",
-                                                                      Utility.GetParameter("ReportTableRowColor"));
-                                }
-
-
-
-                                temp = "[" + stpnmb + "] " + temp2;
-                                // 
-                                populatedTr = populatedTr.Replace("$stepNo", temp);
-
-
-                                // update comments
-                                if (string.IsNullOrWhiteSpace(com) == false)
-                                {
-                                    populatedTr = populatedTr.Replace("$TC_Comments", com);
-                                    populatedTr = populatedTr.Replace("$TC_Des_only", string.Empty);
-                                }
-                                // update step description
-                                else
-                                {
-                                    populatedTr = populatedTr.Replace("$TC_Comments", string.Empty);
-                                    populatedTr = populatedTr.Replace("$TC_Des_only", stpdesp);
-                                }
-
-                                string htmlAttach = string.Empty;
-                                string htmlAttachPath = string.Empty;
-
-                                // if Attachment (Screenshot) is present, Status should act as link
-                                if (string.IsNullOrWhiteSpace(attch) == false)
-                                {
-                                    temp = "<a target='_blank' href='" + attch +
-                                           "'><font style='color: $TestStepstatusColor; font-weight: " +
-                                           Utility.GetParameter("ReportFailResultFontWeight") + ";'> " + stats +
-                                           "</font></a>"; 
-                                }
-                                if (string.IsNullOrWhiteSpace(htmlattch) == false)
-                                {
-                                    htmlAttachPath = attch.Substring(0, attch.LastIndexOf("\\"));
-                                    htmlAttach = "<a target='_blank' href='" + htmlattch +
-                                                 "'><font style='color: $TestStepstatusColor; font-weight: normal;'> (html)</font></a>";
-                                }
-                                if (string.IsNullOrWhiteSpace(attch) && string.IsNullOrWhiteSpace(htmlattch))
-                                {
-                                    temp = "<font style='color: $TestStepstatusColor; font-weight: " +
-                                           Utility.GetParameter("ReportPassResultFontWeight") + ";'>" + stats +
-                                           "</font>";
-                                }
-
-                                // Update Status
-                                populatedTr = populatedTr.Replace("$TC_Status", temp);
-
-                                //view html link
-                                populatedTr = populatedTr.Replace("$ViewHtml", htmlAttach);
-
-                                // Update Execution Date and Time
-                                temp = exedt + string.Empty + exetm;
-                                
-                                 populatedTr = populatedTr.Replace("$TC_ExecutionTime_Date", temp);
-
-                                // Update Remarks
-                                temp = rmrk;
-                                populatedTr = populatedTr.Replace("$TC_Remarks", temp);
-
-                                // Html Start + Expand/Collapse sign + individual TestCase Step (Initializing Cell Data)
-                                finalHtml = finalHtml + populatedTr;
-
-                                // updating each TestStep Status Tag Style
-                                if (stats == ExecutionStatus.Fail)
-                                {
-                                    Common.Property.TotalStepFail++;
-
-                                    // If Current TestCase Step is fail (means complete TestCase status will be fail)
-                                    finalStatus = ExecutionStatus.Fail;
-                                    finalStatusColor = failColor;
-                                    // Html Start + Expand/Collapse sign + individual TestCase Step (Inintializing Cell Style)
-                                    finalHtml = finalHtml.Replace("$TestStepstatusColor", failColor);
-
-                                    //  Added remarks in test case header if test case has encountered a failed step.
-                                    if (firstFail)
-                                    {
-                                        headerRemarkFail = rmrk;
-                                        firstFail = false;
-                                    }
-
-                                    Property.FinalExecutionStatus = ExecutionStatus.Fail;
-                                }
-                                else if (stats == ExecutionStatus.Warning)
-                                {
-                                    Common.Property.TotalStepWarning++;
-
-                                    if (finalStatus != ExecutionStatus.Fail)
-                                        finalStatus = ExecutionStatus.Warning;
-                                    if (finalStatusColor != failColor)
-                                        finalStatusColor = warningColor;
-                                    finalHtml = finalHtml.Replace("$TestStepstatusColor", warningColor);
-
-                                    //  Added remarks in test case header if test case has encountered a warning step.
-                                    if (firstWarning)
-                                    {
-                                        headerRemarkWarning = rmrk;
-                                        firstWarning = false;
-                                    }
-
-                                }
-                                else
-                                {
-                                    Common.Property.TotalStepPass++;
-
-                                    // Html Start + Expand/Collapse sign + individual TestCase Step (Inintializing Cell Style)
-                                    finalHtml = finalHtml.Replace("$TestStepstatusColor", passColor);
-                                }
-
-                                rowNo++;
-                            }
-
-                            #endregion
-
-                            // Html Start + Expand/Collapse sign + individual TestCase Step (Status)
-                            // Updating TestCase Status and style
-
-                            finalHtml = finalHtml.Replace("$finalStatus", finalStatus);
-                            //  set remarks in test case header
-                            if (finalStatus == ExecutionStatus.Fail)
-                            {
-                                finalHtml = finalHtml.Replace("$Header_TC_Remarks", headerRemarkFail);
-                                Property.TotalCaseFail++;
-                            }
-                            else if (finalStatus == ExecutionStatus.Pass)
-                            {
-                                finalHtml = finalHtml.Replace("$Header_TC_Remarks", "");
-                                Property.TotalCasePass++;
+                                populatedTr = populatedTr.Replace("$trBackground",
+                                    Utility.GetParameter(
+                                        "ReportTableAlternateRowColor"));
                             }
                             else
                             {
-                                finalHtml = finalHtml.Replace("$Header_TC_Remarks", headerRemarkWarning);
-                                Property.TotalCaseWarning++;
+                                populatedTr = populatedTr.Replace("$trBackground",
+                                    Utility.GetParameter("ReportTableRowColor"));
                             }
 
-                            temp = "style='color: " + finalStatusColor + ";'";
-                            // Html Start + Expand/Collapse sign + individual TestCase Step (Assigning Cell Style)
-                            finalHtml = finalHtml.Replace("style='color: $FinalStatusColor;'", temp);
-                            // Html Start + Expand/Collapse sign + individual TestCase Step (Updating Data Cell)
-                            finalHtml = finalHtml + newTestCaseBodyEnd;
-
-                            // Restoring the default value of finalStatus and finalStatusColor
-                            finalStatus = ExecutionStatus.Pass;
-                            finalStatusColor = passColor;
 
 
+                            temp = "[" + stpnmb + "] " + temp2;
+                            // 
+                            populatedTr = populatedTr.Replace("$stepNo", temp);
 
-                            // Clearing the dataset
-                            dsStore.Clear();
-                            // Increasing the count for Expand/Collapse and TestCase Table ID
-                            count++;
 
-                            #endregion
+                            // update comments
+                            if (string.IsNullOrWhiteSpace(com) == false)
+                            {
+                                populatedTr = populatedTr.Replace("$TC_Comments", com);
+                                populatedTr = populatedTr.Replace("$TC_Des_only", string.Empty);
+                            }
+                            // update step description
+                            else
+                            {
+                                populatedTr = populatedTr.Replace("$TC_Comments", string.Empty);
+                                populatedTr = populatedTr.Replace("$TC_Des_only", stpdesp);
+                            }
+
+                            string htmlAttach = string.Empty;
+
+                            // if Attachment (Screenshot) is present, Status should act as link
+                            if (string.IsNullOrWhiteSpace(attch) == false)
+                            {
+                                temp = "<a target='_blank' href='" + attch +
+                                       "'><font style='color: $TestStepstatusColor; font-weight: " +
+                                       Utility.GetParameter("ReportFailResultFontWeight") + ";'> " + stats +
+                                       "</font></a>"; 
+                            }
+                            if (string.IsNullOrWhiteSpace(htmlattch) == false)
+                            {
+                                htmlAttach = "<a target='_blank' href='" + htmlattch +
+                                             "'><font style='color: $TestStepstatusColor; font-weight: normal;'> (html)</font></a>";
+                            }
+                            if (string.IsNullOrWhiteSpace(attch) && string.IsNullOrWhiteSpace(htmlattch))
+                            {
+                                temp = "<font style='color: $TestStepstatusColor; font-weight: " +
+                                       Utility.GetParameter("ReportPassResultFontWeight") + ";'>" + stats +
+                                       "</font>";
+                            }
+
+                            // Update Status
+                            populatedTr = populatedTr.Replace("$TC_Status", temp);
+
+                            //view html link
+                            populatedTr = populatedTr.Replace("$ViewHtml", htmlAttach);
+
+                            // Update Execution Date and Time
+                            temp = exedt + string.Empty + exetm;
+                                
+                            populatedTr = populatedTr.Replace("$TC_ExecutionTime_Date", temp);
+
+                            // Update Remarks
+                            temp = rmrk;
+                            populatedTr = populatedTr.Replace("$TC_Remarks", temp);
+
+                            // Html Start + Expand/Collapse sign + individual TestCase Step (Initializing Cell Data)
+                            finalHtml.Append(populatedTr);
+
+                            // updating each TestStep Status Tag Style
+                            if (stats == ExecutionStatus.Fail)
+                            {
+                                Property.TotalStepFail++;
+
+                                // If Current TestCase Step is fail (means complete TestCase status will be fail)
+                                finalStatus = ExecutionStatus.Fail;
+                                finalStatusColor = failColor;
+                                // Html Start + Expand/Collapse sign + individual TestCase Step (Inintializing Cell Style)
+                                finalHtml = finalHtml.Replace("$TestStepstatusColor", failColor);
+
+                                //  Added remarks in test case header if test case has encountered a failed step.
+                                if (firstFail)
+                                {
+                                    headerRemarkFail = rmrk;
+                                    firstFail = false;
+                                }
+
+                                Property.FinalExecutionStatus = ExecutionStatus.Fail;
+                            }
+                            else if (stats == ExecutionStatus.Warning)
+                            {
+                                Property.TotalStepWarning++;
+
+                                if (finalStatus != ExecutionStatus.Fail)
+                                    finalStatus = ExecutionStatus.Warning;
+                                if (finalStatusColor != failColor)
+                                    finalStatusColor = warningColor;
+                                finalHtml = finalHtml.Replace("$TestStepstatusColor", warningColor);
+
+                                //  Added remarks in test case header if test case has encountered a warning step.
+                                if (firstWarning)
+                                {
+                                    headerRemarkWarning = rmrk;
+                                    firstWarning = false;
+                                }
+                            }
+                            else
+                            {
+                                Property.TotalStepPass++;
+                                // Html Start + Expand/Collapse sign + individual TestCase Step (Inintializing Cell Style)
+                                finalHtml = finalHtml.Replace("$TestStepstatusColor", passColor);
+                            }
+                            rowNo++;
                         }
-                        catch
+
+                        #endregion
+
+                        // Html Start + Expand/Collapse sign + individual TestCase Step (Status)
+                        // Updating TestCase Status and style
+
+                        finalHtml = finalHtml.Replace("$finalStatus", finalStatus);
+                        //  set remarks in test case header
+                        if (finalStatus == ExecutionStatus.Fail)
                         {
-                            Console.WriteLine(Utility.GetCommonMsgVariable("KRYPTONERRCODE0006"));
+                            finalHtml = finalHtml.Replace("$Header_TC_Remarks", headerRemarkFail);
+                            Property.TotalCaseFail++;
                         }
+                        else if (finalStatus == ExecutionStatus.Pass)
+                        {
+                            finalHtml = finalHtml.Replace("$Header_TC_Remarks", string.Empty);
+                            Property.TotalCasePass++;
+                        }
+                        else
+                        {
+                            finalHtml = finalHtml.Replace("$Header_TC_Remarks", headerRemarkWarning);
+                            Property.TotalCaseWarning++;
+                        }
+
+                        temp = "style='color: " + finalStatusColor + ";'";
+                        // Html Start + Expand/Collapse sign + individual TestCase Step (Assigning Cell Style)
+                        finalHtml = finalHtml.Replace("style='color: $FinalStatusColor;'", temp);
+                        // Html Start + Expand/Collapse sign + individual TestCase Step (Updating Data Cell)
+                        finalHtml.Append(newTestCaseBodyEnd);
+
+                        // Restoring the default value of finalStatus and finalStatusColor
+                        finalStatus = ExecutionStatus.Pass;
+                        finalStatusColor = passColor;
+
+
+
+                        // Clearing the dataset
+                        dsStore.Clear();
+                        // Increasing the count for Expand/Collapse and TestCase Table ID
+                        count++;
+
+                        #endregion
                     }
-                }
-
-                finalHtml = finalHtml.Replace("$TotalCaseExecuted", Common.Property.TotalCaseExecuted.ToString());
-                finalHtml = finalHtml.Replace("$TotalCasePass", Common.Property.TotalCasePass.ToString());
-                finalHtml = finalHtml.Replace("$TotalCaseFail", Common.Property.TotalCaseFail.ToString());
-                finalHtml = finalHtml.Replace("$TotalCaseWarning", Common.Property.TotalCaseWarning.ToString());
-
-
-                // Ending Html Report
-                finalHtml = finalHtml + htmlEnd;
-                // Adding Complete Suit execution time
-
-
-
-
-                TimeSpan time = executionEndTime - executionStartTime;
-
-
-                finalHtml = finalHtml.Replace("$totalRunDuration", time.ToString());
-
-                if (File.Exists(finalHtml)) File.Delete(finalHtml);
-
-                StreamWriter sWriter = new StreamWriter(htmlFileLocation, false, Encoding.UTF8);
-                // Saving Final Html Report
-                sWriter.WriteLine(finalHtml);
-                sWriter.Close();
-
-                try
-                {
-                    if (File.Exists(companyLogo))
-                    File.Copy(companyLogo, Common.Property.HtmlFileLocation + "\\" + generalLogoLocation);
-                }
-                catch
-                {
-
-                }
-                //
-                //compress all files into a zip file
-                try
-                {
-                    using (ZipFile zip = new ZipFile())
+                    catch
                     {
-                        foreach (string xmlLocation in xmlFilesLocation)
-                        {
-                            // Path to directory of files to compress and decompress.
-
-                            string directory = Path.GetDirectoryName(xmlLocation);
-
-                            FileInfo fileInfo = new FileInfo(xmlLocation);
-                            zip.AddDirectory(directory, fileInfo.Directory.Parent.Name + "/" + fileInfo.Directory.Name);
-                        }
-                        zip.AddFile(Common.Property.HtmlFileLocation + "\\HtmlReport.html", "./");
-                        if (File.Exists(Common.Property.HtmlFileLocation + "\\" + generalLogoLocation))
-                        zip.AddFile(Common.Property.HtmlFileLocation + "\\" + generalLogoLocation, "./");
-                        if (File.Exists(Common.Property.HtmlFileLocation + "\\" + Property.ReportZipFileName))//delete zip file if already exists
-                            File.Delete(Common.Property.HtmlFileLocation + "\\" + Property.ReportZipFileName);
-                        zip.Save(Common.Property.HtmlFileLocation + "\\" + Property.ReportZipFileName);
-
-
+                        Console.WriteLine(Utility.GetCommonMsgVariable("KRYPTONERRCODE0006"));
                     }
                 }
-                catch (Exception ex1)
-                {
-                    throw ex1;
-                }
+            }
 
+            finalHtml = finalHtml.Replace("$TotalCaseExecuted", Property.TotalCaseExecuted.ToString());
+            finalHtml = finalHtml.Replace("$TotalCasePass", Property.TotalCasePass.ToString());
+            finalHtml = finalHtml.Replace("$TotalCaseFail", Property.TotalCaseFail.ToString());
+            finalHtml = finalHtml.Replace("$TotalCaseWarning", Property.TotalCaseWarning.ToString());
+            // Ending Html Report
+            finalHtml.Append( htmlEnd);
+            // Adding Complete Suit execution time
+            TimeSpan time = executionEndTime - executionStartTime;
+            finalHtml = finalHtml.Replace("$totalRunDuration", time.ToString());
+
+            if (File.Exists(Convert.ToString(finalHtml))) File.Delete(Convert.ToString(finalHtml));
+
+            StreamWriter sWriter = new StreamWriter(htmlFileLocation, false, Encoding.UTF8);
+            // Saving Final Html Report
+            sWriter.WriteLine(finalHtml);
+            sWriter.Close();
+
+            try
+            {
+                if (File.Exists(companyLogo))
+                    File.Copy(companyLogo, Property.HtmlFileLocation + "\\" + generalLogoLocation);
             }
             catch
             {
-                throw;
+                // ignored
+            }
+            //
+            //compress all files into a zip file
+            using (ZipFile zip = new ZipFile())
+            {
+                foreach (string xmlLocation in xmlFilesLocation)
+                {
+                    // Path to directory of files to compress and decompress.
+
+                    string directory = Path.GetDirectoryName(xmlLocation);
+
+                    FileInfo fileInfo = new FileInfo(xmlLocation);
+                    zip.AddDirectory(directory, fileInfo.Directory.Parent.Name + "/" + fileInfo.Directory.Name);
+                }
+                zip.AddFile(Property.HtmlFileLocation + "\\HtmlReport.html", "./");
+                if (File.Exists(Property.HtmlFileLocation + "\\" + generalLogoLocation))
+                    zip.AddFile(Property.HtmlFileLocation + "\\" + generalLogoLocation, "./");
+                if (File.Exists(Property.HtmlFileLocation + "\\" + Property.ReportZipFileName))//delete zip file if already exists
+                    File.Delete(Property.HtmlFileLocation + "\\" + Property.ReportZipFileName);
+                zip.Save(Property.HtmlFileLocation + "\\" + Property.ReportZipFileName);
+
+
             }
         }
 
@@ -801,23 +778,16 @@ namespace Reporting
         ///  Creating Html Report from various XMLs
         /// </summary>
         /// <param></param>
+        /// <param name="htmlFilename"></param>
+        /// <param name="zipRequired"></param>
+        /// <param name="logoUpload"></param>
+        /// <param name="sauceFlag"></param>
         /// <returns></returns>    
         public static void CreateHtmlReport(string htmlFilename, bool zipRequired, bool logoUpload, bool sauceFlag)
         {
             try
             {
-                string reportDestination = string.Empty;
-                if (string.IsNullOrWhiteSpace(htmlFilename)) 
-                { 
-                    htmlFilename = "HtmlReport.html";
-                    reportDestination = Common.Property.ResultsDestinationPath.ToString(); 
-                }
-                else 
-                { 
-                    reportDestination = Common.Property.HtmlFileLocation + "\\" + htmlFilename;
-                }
-                Common.Property.TIME = "HH:mm:ss";
-
+                Property.Time = "HH:mm:ss";
                 DateTime executionStartTime = DateTime.Now;
                 DateTime executionEndTime = DateTime.Now;
                 DateTime currentTime = executionEndTime;
@@ -825,29 +795,20 @@ namespace Reporting
                 string passColor = Utility.GetParameter("ReportPassResultFontColor");
                 string failColor = Utility.GetParameter("ReportFailResultFontColor");
                 string warningColor = Utility.GetParameter("ReportWarningResultFontColor");
-                string[] xmlFilesLocation = allXmlFilesLocation.Split(';');
+                string[] xmlFilesLocation = AllXmlFilesLocation.Split(';');
 
-                DataSet dsStore = new DataSet();
                 string tcName = string.Empty;
-                string tcID = string.Empty;
+                string tcId = string.Empty;
                 string tcBrowser = string.Empty;
                 string tcMachine = string.Empty;
                 string tcStartTime = string.Empty;
                 string tcEndTime = string.Empty;
                 string tcDuration = string.Empty;
-
                 string tcJobResultLocation = @"javascript:void(0)";
-
-                string companyLogo = Property.CompanyLogo;
-                string htmlFileLocation = Common.Property.HtmlFileLocation + "/" + htmlFilename;
                 string finalStatus = ExecutionStatus.Pass;
                 Property.FinalExecutionStatus = ExecutionStatus.Pass;
                 string finalStatusColor = Utility.GetParameter("ReportPassResultFontColor");
-                string populatedTr = string.Empty;
-                string finalHtml = string.Empty;
-                string temp = string.Empty;
-                string tblID = string.Empty;
-                string expander = string.Empty;
+                StringBuilder finalHtml = new StringBuilder();
                 string temp2 = string.Empty;
                 string htmlStart =
                     @"<html>
@@ -914,7 +875,7 @@ namespace Reporting
                     Utility.GetParameter("ReportHeaderValueFontStyle") + @"; font-family: " +
                     Utility.GetParameter("ReportFont") + @"; color: " +
                     Utility.GetParameter("ReportHeaderValueFontColor") + @";'>" +
-                    Common.Utility.GetParameter(Common.Property.ENVIRONMENT) +
+                    Utility.GetParameter(Property.Environment) +
                     @"</font>
   <font style='font-weight: " +
                     Utility.GetParameter("ReportHeaderTextFontWeight") + @"; font-size: " +
@@ -929,7 +890,7 @@ namespace Reporting
                     Utility.GetParameter("ReportHeaderValueFontStyle") + @"; font-family: " +
                     Utility.GetParameter("ReportFont") + @"; color: " +
                     Utility.GetParameter("ReportHeaderValueFontColor") + @";'>" +
-                    Property.KRYPTONVERSION +
+                    Property.KryptonVersion +
                     @"</font> 
                    <font style='font-weight: " +
                     Utility.GetParameter("ReportHeaderTextFontWeight") + @"; font-size: " +
@@ -944,7 +905,7 @@ namespace Reporting
                     Utility.GetParameter("ReportHeaderValueFontStyle") + @"; font-family: " +
                     Utility.GetParameter("ReportFont") + @"; color: " +
                     Utility.GetParameter("ReportHeaderValueFontColor") + @";'>" +
-                    Common.Utility.GetParameter("TestSuite").Trim() +
+                    Utility.GetParameter("TestSuite").Trim() +
                       @"</font>
                         <img style='float: right;width:90px; float: right; margin-top: 6px;' src='" + generalLogoLocation + @"'/>
                          </p>
@@ -1055,23 +1016,9 @@ namespace Reporting
 
                 // added remarks in each test case header
                 //                     Added date/time of execution in each test case header
-                string newTestCaseBodyStart = @"<table width='100%' style='table-layout:fixed'>
-                                            <tr style='font-family: " + Utility.GetParameter("ReportFont") + @"; background-color: " + Utility.GetParameter("ReportTestCaseBackgroundColor") + @"'>
-                                             <td width='2%' style='font-weight: " + Utility.GetParameter("ReportFontWeight") + @"; font-size: " + Utility.GetParameter("ReportFontSize") + @"; font-style:" + Utility.GetParameter("ReportFontStyle") + @"; color: " + Utility.GetParameter("ReportFontColor") + @"'><a id='$xn' href='javascript:doMenu($TblID,$xn)'>[+]</a></td>
-                                             <td width='35%' style='font-weight: " + Utility.GetParameter("ReportFontWeight") + @"; font-size: " + Utility.GetParameter("ReportFontSize") + @"; font-style:" + Utility.GetParameter("ReportFontStyle") + @"; color: " + Utility.GetParameter("ReportFontColor") + @"'>[$TCId] $TCName</td>                                             
-                                             <td width='8%' style='font-weight: " + Utility.GetParameter("ReportTestCaseStatusWeight") + @"; font-size: " + Utility.GetParameter("ReportFontSize") + @"; font-style:" + Utility.GetParameter("ReportFontStyle") + @"; '><span id='span_1' style='color: $FinalStatusColor;'>$finalStatus</span></td>
-                                             <td width='5%' style='font-weight: " + Utility.GetParameter("ReportFontWeight") + @"; font-size: " + Utility.GetParameter("ReportFontSize") + @"; font-style:" + Utility.GetParameter("ReportFontStyle") + @"; color: " + Utility.GetParameter("ReportFontColor") + @"'>$Header_TC_Browser</td>
-                                            <td width='10%' style='font-weight: " + Utility.GetParameter("ReportFontWeight") + @"; font-size: " + Utility.GetParameter("ReportFontSize") + @"; font-style:" + Utility.GetParameter("ReportFontStyle") + @"; color: " + Utility.GetParameter("ReportFontColor") + @"'>$Header_TC_Machine</td>
-                                             <td width='15%' style='font-weight: " + Utility.GetParameter("ReportFontWeight") + @"; font-size: " + Utility.GetParameter("ReportFontSize") + @"; font-style:" + Utility.GetParameter("ReportFontStyle") + @"; color: " + Utility.GetParameter("ReportFontColor") + @"'>$Header_TC_ExecutionTime_Date</td>
-                                             <td width='25%' style='font-weight: " + Utility.GetParameter("ReportRemarksFontWeight") + @"; font-size: " + Utility.GetParameter("ReportFontSize") + @"; font-style:" + Utility.GetParameter("ReportRemarksFontStyle") + @"; color: " + Utility.GetParameter("ReportRemarksFontColor") + @"'>$Header_TC_Remarks</td>                                            
-                                            </tr>
-                                           </table>
-                                           <div id='$TblID' style='display:none'>";
 
                 //forcing to always use this header
-                if ((sauceFlag) || (true))
-                {
-                    newTestCaseBodyStart = @"<table width='100%' style='table-layout:fixed'>
+                var newTestCaseBodyStart = @"<table width='100%' style='table-layout:fixed'>
                                             <tr style='font-family: " + Utility.GetParameter("ReportFont") + @"; background-color: " + Utility.GetParameter("ReportTestCaseBackgroundColor") + @"'>
                                              <td width='2%' style='font-weight: " + Utility.GetParameter("ReportFontWeight") + @"; font-size: " + Utility.GetParameter("ReportFontSize") + @"; font-style:" + Utility.GetParameter("ReportFontStyle") + @"; color: " + Utility.GetParameter("ReportFontColor") + @"'><a id='$xn' href='javascript:doMenu($TblID,$xn)'>[+]</a></td>
                                              <td width='35%' title='$TCId' style='font-weight: " + Utility.GetParameter("ReportFontWeight") + @"; font-size: " + Utility.GetParameter("ReportFontSize") + @"; font-style:" + Utility.GetParameter("ReportFontStyle") + @"; color: " + Utility.GetParameter("ReportFontColor") + @"'><b>$TCName</b></td>                                             
@@ -1083,7 +1030,6 @@ namespace Reporting
                                             </tr>
                                            </table>
                                            <div id='$TblID' style='display:none'>";
-                }
                 // Introduction of one more column (only Description)-
                 string trStructure = @"<table width='100%' style='word-wrap: break-word; table-layout: fixed;'> 
                                         <tr style='font-family: " + Utility.GetParameter("ReportFont") + @"; background-color: $trBackground;'>
@@ -1107,13 +1053,17 @@ namespace Reporting
                 //
 
                 // Html Start
-                finalHtml = htmlStart;
+                finalHtml.Append(htmlStart);
 
                 int count = 0;
 
 
                 foreach (string xmlLocation in xmlFilesLocation)
                 {
+                    //using (StreamWriter sw = new StreamWriter(Property.ErrorLog))
+                    //{
+                    //    sw.WriteLine("Logfile Foreach 1");
+                    //}
                     if (File.Exists(xmlLocation))
                     {
                         string rootFolderName = new FileInfo(xmlLocation).Directory.Parent.Name;
@@ -1127,7 +1077,7 @@ namespace Reporting
                         }
                         catch
                         {
-
+                            // ignored
                         }
                         Property.TotalCaseExecuted++;
 
@@ -1135,18 +1085,17 @@ namespace Reporting
                         {
                             #region Individual TestCase
 
-                            dsStore = new DataSet();
+                            var dsStore = new DataSet();
                             // copying all data from XML to datatable
                             dsStore.ReadXml(xmlLocation);
-                            DataTable dtTemp = new DataTable();
 
-                            dtTemp = dsStore.Tables[0];
+                            var dtTemp = dsStore.Tables[0];
 
                             // getting TestCase Name and ID from extended properties
                             if (dtTemp.ExtendedProperties["TestCase Name"] != null)
                                 tcName = dtTemp.ExtendedProperties["TestCase Name"].ToString();
                             if (dtTemp.ExtendedProperties["TestCase Id"] != null)
-                                tcID = dtTemp.ExtendedProperties["TestCase Id"].ToString();
+                                tcId = dtTemp.ExtendedProperties["TestCase Id"].ToString();
                             if (dtTemp.ExtendedProperties["Browser"] != null)
                                 tcBrowser = dtTemp.ExtendedProperties["Browser"].ToString();
                             if (dtTemp.ExtendedProperties["RCMachineId"] != null)
@@ -1162,13 +1111,11 @@ namespace Reporting
                             if (dtTemp.ExtendedProperties["ExecutionDuration"] != null)
                                 tcDuration = dtTemp.ExtendedProperties["ExecutionDuration"].ToString();
 
-
-
                             #region Updating calculation of start and end date time, section below commented
                             try
                             {
-                                DateTime xmlStartTime = DateTime.ParseExact(tcStartTime.ToString(), Property.DATE_TIME, null);
-                                DateTime xmlEndTime = DateTime.ParseExact(tcEndTime.ToString(), Property.DATE_TIME, null);
+                                DateTime xmlStartTime = DateTime.ParseExact(tcStartTime, Property.Date_Time, null);
+                                DateTime xmlEndTime = DateTime.ParseExact(tcEndTime, Property.Date_Time, null);
                                 //Set start time
                                 if (executionStartTime > xmlStartTime)
                                     executionStartTime = xmlStartTime;
@@ -1179,19 +1126,21 @@ namespace Reporting
                             }
                             catch
                             {
+                                // ignored
                             }
+
                             #endregion
 
-                            tblID = "tblID_" + count;
-                            expander = "x_" + count;
+                            var tblId = "tblID_" + count;
+                            var expander = "x_" + count;
 
-                            temp = newTestCaseBodyStart;
+                            var temp = newTestCaseBodyStart;
                             temp = temp.Replace("$TCName", tcName);
-                            temp = temp.Replace("$TCId", tcID);
-                            temp = temp.Replace("$TblID", tblID);
+                            temp = temp.Replace("$TCId", tcId);
+                            temp = temp.Replace("$TblID", tblId);
                             temp = temp.Replace("$xn", expander);
                             // Html Start + Expand/Collapse sign (for each TestCase)
-                            finalHtml = finalHtml + temp;
+                            finalHtml.Append(temp);
 
                            
 
@@ -1207,14 +1156,7 @@ namespace Reporting
                             string headerRemarkWarning = string.Empty;
 
                             //  added start date/time in test case header
-                            if (tcDuration == string.Empty)
-                            {
-                                finalHtml = finalHtml.Replace("$Header_TC_ExecutionTime_Date", dtTemp.Rows[0][3].ToString() + " : " + dtTemp.Rows[0][4].ToString());
-                            }
-                            else
-                            {
-                                finalHtml = finalHtml.Replace("$Header_TC_ExecutionTime_Date", tcDuration);
-                            }
+                            finalHtml = tcDuration == string.Empty ? finalHtml.Replace("$Header_TC_ExecutionTime_Date", dtTemp.Rows[0][3] + " : " + dtTemp.Rows[0][4]) : finalHtml.Replace("$Header_TC_ExecutionTime_Date", tcDuration);
 
                             //update browser info
                             finalHtml = finalHtml.Replace("$Header_TC_Browser", tcBrowser);
@@ -1230,10 +1172,14 @@ namespace Reporting
 
                             foreach (DataRow tcRow in dtTemp.Rows) // Loop over the rows.
                             {
-                                Common.Property.TotalStepExecuted++;
+                                //using (StreamWriter sw = new StreamWriter(Property.ErrorLog))
+                                //{
+                                //    sw.WriteLine("Logfile Foreach 2");
+                                //}
+                                Property.TotalStepExecuted++;
 
                                 // taking basic TR structure
-                                populatedTr = trStructure;
+                                var populatedTr = trStructure;
 
                                 // populating row with data (present in Xml row)
                                 string stpnmb = tcRow.ItemArray[0].ToString();
@@ -1244,7 +1190,6 @@ namespace Reporting
                                 string rmrk = tcRow.ItemArray[5].ToString();
                                 string attch = tcRow.ItemArray[6].ToString();
                                 string htmlattch = tcRow.ItemArray[7].ToString();
-                                string objhigh = tcRow.ItemArray[8].ToString();
                                 string com = tcRow.ItemArray[9].ToString();
                                 string attachurl = tcRow.ItemArray[10].ToString();
 
@@ -1255,7 +1200,10 @@ namespace Reporting
                                         attch = attch.Substring(0, attch.IndexOf('\\')) + rootFolderExt +
                                                 attch.Substring(attch.IndexOf('\\'), attch.Length - attch.IndexOf('\\'));
                                     }
-                                    catch { }
+                                    catch
+                                    {
+                                        // ignored
+                                    }
                                 }
                                 if (string.IsNullOrWhiteSpace(htmlattch) == false)
                                 {
@@ -1265,14 +1213,12 @@ namespace Reporting
                                                     htmlattch.Substring(htmlattch.IndexOf('\\'),
                                                                         htmlattch.Length - htmlattch.IndexOf('\\'));
                                     }
-                                    catch { }
+                                    catch
+                                    {
+                                        // ignored
+                                    }
                                 }
-
-
-
-
-
-                                int outParam = 0;
+                                int outParam;
                                 Math.DivRem(rowNo, 2, out outParam);
                                 if (outParam > 0)
                                 {
@@ -1307,7 +1253,6 @@ namespace Reporting
                                 }
 
                                 string htmlAttach = string.Empty;
-                                string htmlAttachPath = string.Empty;
 
                                 // if Attachment (Screenshot) is present, Status should act as link
                                 if (string.IsNullOrWhiteSpace(attch) == false)
@@ -1335,7 +1280,10 @@ namespace Reporting
                                     }
 
                                 }
-                                catch { }
+                                catch
+                                {
+                                    // ignored
+                                }
                                 if (string.IsNullOrWhiteSpace(attch) && string.IsNullOrWhiteSpace(htmlattch))
                                 {
                                     temp = "<font style='color: $TestStepstatusColor; font-weight: " +
@@ -1357,12 +1305,12 @@ namespace Reporting
                                 temp = rmrk;
                                 populatedTr = populatedTr.Replace("$TC_Remarks", temp);
 
-                                finalHtml = finalHtml + populatedTr;
+                                finalHtml.Append(populatedTr);
 
                                 // updating each TestStep Status Tag Style
                                 if (stats == ExecutionStatus.Fail)
                                 {
-                                    Common.Property.TotalStepFail++;
+                                    Property.TotalStepFail++;
 
                                     // If Current TestCase Step is fail (means complete TestCase status will be fail)
                                     finalStatus = ExecutionStatus.Fail;
@@ -1381,7 +1329,7 @@ namespace Reporting
                                 }
                                 else if (stats == ExecutionStatus.Warning)
                                 {
-                                    Common.Property.TotalStepWarning++;
+                                    Property.TotalStepWarning++;
 
                                     if (finalStatus != ExecutionStatus.Fail)
                                         finalStatus = ExecutionStatus.Warning;
@@ -1399,9 +1347,7 @@ namespace Reporting
                                 }
                                 else
                                 {
-                                    Common.Property.TotalStepPass++;
-
-                                    
+                                    Property.TotalStepPass++;
                                     finalHtml = finalHtml.Replace("$TestStepstatusColor", passColor);
                                 }
 
@@ -1411,7 +1357,6 @@ namespace Reporting
                             #endregion
 
                             // Updating TestCase Status and style
-
                             finalHtml = finalHtml.Replace("$finalStatus", finalStatus);
                             if (finalStatus.Equals(ExecutionStatus.Pass)) { finalHtml = finalHtml.Replace("$TestHeadertatusColor", passColor); }
                             else if (finalStatus.Equals(ExecutionStatus.Fail)) { finalHtml = finalHtml.Replace("$TestHeadertatusColor", failColor); }
@@ -1426,8 +1371,7 @@ namespace Reporting
                             else if (finalStatus == ExecutionStatus.Pass)
                             {
                                 finalHtml = finalHtml.Replace("$Header_TC_Remarks", string.Empty);
-                                Property.TotalCasePass++;
-                                
+                                Property.TotalCasePass++;   
                             }
                             else
                             {
@@ -1439,7 +1383,7 @@ namespace Reporting
                             
                             finalHtml = finalHtml.Replace("style='color: $FinalStatusColor;'", temp);
                             
-                            finalHtml = finalHtml + newTestCaseBodyEnd;
+                            finalHtml.Append(newTestCaseBodyEnd);
 
                             // Restoring the default value of finalStatus and finalStatusColor
                             finalStatus = ExecutionStatus.Pass;
@@ -1460,12 +1404,16 @@ namespace Reporting
                     }
                 }
 
-                finalHtml = finalHtml.Replace("$TotalCaseExecuted", Common.Property.TotalCaseExecuted.ToString());
-                finalHtml = finalHtml.Replace("$TotalCasePass", Common.Property.TotalCasePass.ToString());
-                finalHtml = finalHtml.Replace("$TotalCaseFail", Common.Property.TotalCaseFail.ToString());
-                finalHtml = finalHtml.Replace("$TotalCaseWarning", Common.Property.TotalCaseWarning.ToString());
+                //using (StreamWriter sw = new StreamWriter(Property.ErrorLog))
+                //{
+                //    sw.WriteLine("Logfile outside Foreach ");
+                //}
+                finalHtml = finalHtml.Replace("$TotalCaseExecuted", Property.TotalCaseExecuted.ToString());
+                finalHtml = finalHtml.Replace("$TotalCasePass", Property.TotalCasePass.ToString());
+                finalHtml = finalHtml.Replace("$TotalCaseFail", Property.TotalCaseFail.ToString());
+                finalHtml = finalHtml.Replace("$TotalCaseWarning", Property.TotalCaseWarning.ToString());
                 // Ending Html Report
-                finalHtml = finalHtml + htmlEnd;
+                finalHtml.Append(htmlEnd);
                 // Adding Complete Suit execution time
 
                 finalHtml = finalHtml.Replace("$ExecutionStartTime", executionStartTime.ToString(Utility.GetParameter("DateTimeFormat")));
@@ -1473,24 +1421,22 @@ namespace Reporting
 
                 TimeSpan time = executionEndTime - executionStartTime;
 
-                Common.Property.ExecutionStartDateTime = executionStartTime.ToString(Utility.GetParameter("DateTimeFormat"));
-                Common.Property.ExecutionEndDateTime = executionEndTime.ToString(Utility.GetParameter("DateTimeFormat"));
-                Common.Utility.SetVariable("ExecutionStartDateTime", Common.Property.ExecutionStartDateTime);
-                Common.Utility.SetVariable("ExecutionEndDateTime", Common.Property.ExecutionEndDateTime);
+                Property.ExecutionStartDateTime = executionStartTime.ToString(Utility.GetParameter("DateTimeFormat"));
+                Property.ExecutionEndDateTime = executionEndTime.ToString(Utility.GetParameter("DateTimeFormat"));
+                Utility.SetVariable("ExecutionStartDateTime", Property.ExecutionStartDateTime);
+                Utility.SetVariable("ExecutionEndDateTime", Property.ExecutionEndDateTime);
 
 
                 finalHtml = finalHtml.Replace("$totalRunDuration", time.ToString());
 
-                Common.Property.ReportSummaryBody = finalHtml;
+                Property.ReportSummaryBody = Convert.ToString(finalHtml);
             }
             catch (Exception exception)
             {
-                throw exception;
+                Console.WriteLine(exception.StackTrace.Substring(exception.StackTrace.LastIndexOf(' ')));
+                Console.WriteLine(exception.Message);
             }
         }
-
-
-
     }
 
 }

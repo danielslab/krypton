@@ -7,28 +7,24 @@
 ** Description: Read the Parameters for the Reporting 
 *****************************************************************************/
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Net.Mime;
-using System.Text;
 using Common;
 using Reporting;
-using PreMailer.Net;
 using System.Windows.Forms;
 
 namespace KRYPTONCreateReport
 {
     class Program
     {
-        public static string xmlFileName = string.Empty;
-        public static string htmlFileName = string.Empty;
-        public static string environment = string.Empty;
-        public static string emailFor = "end";
-        public static string testSuite = string.Empty;
-        public static string emailRequired = "no";
-        public static string currentProjectpath = string.Empty;
-        public static string xmlrootFolderPath = string.Empty;
+        public static string XmlFileName = string.Empty;
+        public static string HtmlFileName = string.Empty;
+        public static string Environment = string.Empty;
+        public static string EmailFor = "end";
+        public static string TestSuite = string.Empty;
+        public static string EmailRequired = "no";
+        public static string CurrentProjectpath = string.Empty;
+        public static string XmlrootFolderPath = string.Empty;
 
 
         static void Main(string[] args)
@@ -36,43 +32,43 @@ namespace KRYPTONCreateReport
 
             //setting the application path
             string applicationPath = Application.ExecutablePath;
-            int applicationFilePath = applicationPath.LastIndexOf("\\");
+            int applicationFilePath = applicationPath.LastIndexOf("\\", StringComparison.Ordinal);
 
             if (applicationFilePath >= 0)
             {
-                Common.Property.ApplicationPath = applicationPath.Substring(0, applicationFilePath + 1);
+                Property.ApplicationPath = applicationPath.Substring(0, applicationFilePath + 1);
             }
             else
             {
                 DirectoryInfo dr = new DirectoryInfo("./");
-                Common.Property.ApplicationPath = dr.FullName;
+                Property.ApplicationPath = dr.FullName;
             }
 
             try
             {
 
-                using (StreamReader sr = new StreamReader(Path.Combine(Common.Property.ApplicationPath, "root.ini")))
+                using (StreamReader sr = new StreamReader(Path.Combine(Property.ApplicationPath, "root.ini")))
                 {
-                    string currentProjectName = string.Empty;
+                    string currentProjectName;
                     while ((currentProjectName = sr.ReadLine()) != null)
                     {
                         if (currentProjectName.ToLower().Contains("projectpath"))
                         {
-                            currentProjectpath = currentProjectName.Substring(currentProjectName.IndexOf(':') + 1).Trim();
+                            CurrentProjectpath = currentProjectName.Substring(currentProjectName.IndexOf(':') + 1).Trim();
                             break;
                         }
                     }
                 }
-                if (!Path.IsPathRooted(currentProjectpath))
-                    currentProjectpath = Path.Combine(Common.Property.ApplicationPath, currentProjectpath);
-                Common.Property.IniPath = Path.GetFullPath(currentProjectpath);
-                if (!Directory.Exists(Common.Property.IniPath))
-                    Common.Property.IniPath = Common.Property.ApplicationPath;
+                if (!Path.IsPathRooted(CurrentProjectpath))
+                    CurrentProjectpath = Path.Combine(Property.ApplicationPath, CurrentProjectpath);
+                Property.IniPath = Path.GetFullPath(CurrentProjectpath);
+                if (!Directory.Exists(Property.IniPath))
+                    Property.IniPath = Property.ApplicationPath;
 
             }
-            catch (Exception es)
+            catch (Exception)
             {
-                Common.Property.IniPath = Common.Property.ApplicationPath;
+                Property.IniPath = Property.ApplicationPath;
             }
 
 
@@ -87,58 +83,62 @@ namespace KRYPTONCreateReport
             }
             try
             {
-                if (File.Exists(Common.Property.ApplicationPath + "xmlFiles.txt"))
+                if (File.Exists(Property.ApplicationPath + "xmlFiles.txt"))
                 {
-                    StreamReader xmlTextFileRead = new StreamReader(Common.Property.ApplicationPath + "xmlFiles.txt");
-                    xmlFileName = xmlTextFileRead.ReadToEnd();
+                    StreamReader xmlTextFileRead = new StreamReader(Property.ApplicationPath + "xmlFiles.txt");
+                    XmlFileName = xmlTextFileRead.ReadToEnd();
                     xmlTextFileRead.Close();
                 }
             }
             catch
             {
-
+                // ignored
             }
-            environment = Common.Utility.GetParameter("Environment");
+            Environment = Utility.GetParameter("Environment");
             ReadCommandLineArguments(args);
-            Common.Utility.SetParameter(Common.Property.ENVIRONMENT, environment);
-            xmlFileName = xmlFileName.Replace("\n", ",");
-            xmlFileName = xmlFileName.Replace("\r", string.Empty);
-            xmlFileName = xmlFileName.Replace("\t", string.Empty);
+            Utility.SetParameter(Property.Environment, Environment);
+            XmlFileName = XmlFileName.Replace("\n", ",");
+            XmlFileName = XmlFileName.Replace("\r", string.Empty);
+            XmlFileName = XmlFileName.Replace("\t", string.Empty);
 
 
             string htmlFile = string.Empty;
-            bool IsSummaryRequiredinResultsFolder = false;
-            bool CallFromKryptonVBScriptGrid = true;
-            if (xmlrootFolderPath.Length > 0)
+            bool isSummaryRequiredinResultsFolder = false;
+            bool callFromKryptonVbScriptGrid = true;
+            if (XmlrootFolderPath.Length > 0)
             {
-                IsSummaryRequiredinResultsFolder = Utility.GetParameter("SummaryReportRequired").ToLower().Equals("true");
-                CallFromKryptonVBScriptGrid = false;
+                isSummaryRequiredinResultsFolder = Utility.GetParameter("SummaryReportRequired").ToLower().Equals("true");
+                callFromKryptonVbScriptGrid = false;
             }
-            if (!emailFor.Equals("start", StringComparison.OrdinalIgnoreCase))
+            if (!EmailFor.Equals("start", StringComparison.OrdinalIgnoreCase))
             {
-                if (xmlrootFolderPath.Length > 0)
+                if (XmlrootFolderPath.Length > 0)
                 {
-                    LogFile.allXmlFilesLocation = GetFileNames(xmlrootFolderPath);
-                    Property.HtmlFileLocation = Path.Combine("", xmlrootFolderPath);
+                    LogFile.AllXmlFilesLocation = GetFileNames(XmlrootFolderPath);
+                    Property.HtmlFileLocation = Path.Combine("", XmlrootFolderPath);
 
                 }
                 else
                 {
 
-                    LogFile.allXmlFilesLocation = string.Empty;
+                    LogFile.AllXmlFilesLocation = string.Empty;
 
-                    string[] xmlFiles = xmlFileName.Split(',');
+                    string[] xmlFiles = XmlFileName.Split(',');
 
                     for (int cntXml = 0; cntXml < xmlFiles.Length; cntXml++)
                     {
-                        if (string.IsNullOrWhiteSpace(LogFile.allXmlFilesLocation))
-                            LogFile.allXmlFilesLocation = xmlFiles[cntXml];
+                        if (string.IsNullOrWhiteSpace(LogFile.AllXmlFilesLocation))
+                            LogFile.AllXmlFilesLocation = xmlFiles[cntXml];
                         else
-                            LogFile.allXmlFilesLocation = LogFile.allXmlFilesLocation + ";" + xmlFiles[cntXml];
+                            LogFile.AllXmlFilesLocation = LogFile.AllXmlFilesLocation + ";" + xmlFiles[cntXml];
                     }
                     try
                     {
-                        Common.Property.HtmlFileLocation = new FileInfo(xmlFiles[0]).Directory.Parent.Parent.FullName;
+                        var directoryInfo = new FileInfo(xmlFiles[0]).Directory;
+                        if (directoryInfo != null)
+                            if (directoryInfo.Parent != null)
+                                if (directoryInfo.Parent.Parent != null)
+                                    Property.HtmlFileLocation = directoryInfo.Parent.Parent.FullName;
                     }
                     catch (Exception e)
                     {
@@ -155,37 +155,32 @@ namespace KRYPTONCreateReport
             try
             {
                 htmlFile = string.Empty;
-                if (!string.IsNullOrWhiteSpace(LogFile.allXmlFilesLocation))
+                if (!string.IsNullOrWhiteSpace(LogFile.AllXmlFilesLocation))
                 {
-                    Common.Property.DATE_TIME = Common.Utility.GetParameter("DateTimeFormat").Replace("/", "\\/");
-                    htmlFile = "HtmlReport-" + htmlFileName + "-" + DateTime.Now.ToString("ddMMyyhhmmss") +
+                    Property.Date_Time = Utility.GetParameter("DateTimeFormat").Replace("/", "\\/");
+                    htmlFile = "HtmlReport-" + HtmlFileName + "-" + DateTime.Now.ToString("ddMMyyhhmmss") +
                                         ".html";
-                    if (Path.IsPathRooted(Common.Utility.GetParameter("CompanyLogo")))
-                        Common.Property.CompanyLogo = Common.Utility.GetParameter("CompanyLogo");
-                    else
-                        Common.Property.CompanyLogo = string.Concat(Common.Property.IniPath, Common.Utility.GetParameter("CompanyLogo"));
-                    if (!File.Exists(Common.Property.CompanyLogo))
-                        Common.Property.CompanyLogo = string.Empty;
-                    LogFile.CreateHtmlReport(htmlFile, false, false, Property.isSauceLabExecution);
+                    Property.CompanyLogo = Path.IsPathRooted(Utility.GetParameter("CompanyLogo")) ? Utility.GetParameter("CompanyLogo") : string.Concat(Property.IniPath, Utility.GetParameter("CompanyLogo"));
+                    if (!File.Exists(Property.CompanyLogo))
+                        Property.CompanyLogo = string.Empty;
+                    LogFile.CreateHtmlReport(htmlFile, false, false, Property.IsSauceLabExecution);
                     //Always create summpary report because it is called from grid and this summary report is used in grid to send email.
-                    Reporting.HTMLReport.CreateHtmlReport(htmlFile, false, false, Property.isSauceLabExecution, IsSummaryRequiredinResultsFolder, true, CallFromKryptonVBScriptGrid, true);
+                    HtmlReport.CreateHtmlReport(htmlFile, false, false, Property.IsSauceLabExecution, isSummaryRequiredinResultsFolder, true, callFromKryptonVbScriptGrid, true);
                 }
                 htmlFile = htmlFile.Replace(".html", "smail.html"); // to send mail
                 htmlFile = Path.Combine(Property.HtmlFileLocation, htmlFile);
-                if (xmlrootFolderPath.Length > 0)
-                    emailRequired = (Utility.GetParameter("EmailNotification").Equals("true", StringComparison.OrdinalIgnoreCase)) ? "yes" : "no";
+                if (XmlrootFolderPath.Length > 0)
+                    EmailRequired = (Utility.GetParameter("EmailNotification").Equals("true", StringComparison.OrdinalIgnoreCase)) ? "yes" : "no";
 
-                if (string.Equals(emailRequired, "yes"))
+                if (string.Equals(EmailRequired, "yes"))
                 {
                     try
                     {
-                        Common.Utility.EmailNotification(emailFor, false, htmlFile);
-
+                        Utility.EmailNotification(EmailFor, false, htmlFile);
                     }
                     catch (Exception e)
                     {
                         Console.WriteLine(e.Message);
-
                     }
                 }
             }
@@ -201,11 +196,13 @@ namespace KRYPTONCreateReport
                 {
                     try
                     {
-                        if (!CallFromKryptonVBScriptGrid)
+                        if (!callFromKryptonVbScriptGrid)
                             File.Delete(htmlFile);
                     }
-                    catch { }
-
+                    catch
+                    {
+                        // ignored
+                    }
                 }
             }
         }
@@ -217,50 +214,49 @@ namespace KRYPTONCreateReport
                 string[] arguments = args[i].Split('=');
                 if (arguments[0].Trim().Equals("xmlFiles", StringComparison.OrdinalIgnoreCase))
                 {
-                    if (arguments[1].Trim().IndexOf(".txt") < 0)
+                    if (arguments[1].Trim().IndexOf(".txt", StringComparison.Ordinal) < 0)
                     {
-                        xmlFileName = arguments[1].Trim();
+                        XmlFileName = arguments[1].Trim();
                     }
                     else
                     {
                         try
                         {
                             StreamReader xmlTextFileRead = new StreamReader(arguments[1].Trim());
-                            xmlFileName = xmlTextFileRead.ReadToEnd();
+                            XmlFileName = xmlTextFileRead.ReadToEnd();
                             xmlTextFileRead.Close();
                         }
                         catch (Exception e)
                         {
-
                             Console.WriteLine(e.Message);
                         }
                     }
                 }
                 if (arguments[0].Trim().Equals("environment", StringComparison.OrdinalIgnoreCase))
                 {
-                    environment = arguments[1];
+                    Environment = arguments[1];
                 }
                 if (arguments[0].ToLower().Trim().Equals("xmlrootfolderpath", StringComparison.OrdinalIgnoreCase))
                 {
-                    xmlrootFolderPath = arguments[1].Trim(); 
+                    XmlrootFolderPath = arguments[1].Trim(); 
                 }
                 if (arguments[0].Trim().Equals("htmlFileName", StringComparison.OrdinalIgnoreCase))
                 {
-                    htmlFileName = arguments[1];
+                    HtmlFileName = arguments[1];
                 }
                 if (arguments[0].Trim().Equals("emailFor", StringComparison.OrdinalIgnoreCase))
                 {
-                    emailFor = arguments[1];
+                    EmailFor = arguments[1];
                 }
                 if (arguments[0].Trim().Equals("testSuite", StringComparison.OrdinalIgnoreCase))
                 {
-                    testSuite = arguments[1];
-                    Common.Utility.SetParameter("TestSuite", testSuite);
-                    Common.Utility.SetParameter("TestCaseId", string.Empty);
+                    TestSuite = arguments[1];
+                    Utility.SetParameter("TestSuite", TestSuite);
+                    Utility.SetParameter("TestCaseId", string.Empty);
                 }
                 if (arguments[0].Trim().Equals("emailRequired", StringComparison.OrdinalIgnoreCase))
                 {
-                    emailRequired = arguments[1];
+                    EmailRequired = arguments[1];
 
                 }
             }
@@ -268,28 +264,19 @@ namespace KRYPTONCreateReport
 
         public static void ReadIniFiles()
         {
-            FileInfo reportSettingsFileInfo = new FileInfo(Path.Combine(Common.Property.ApplicationPath, Property.ReportSettingsFile));
-            StreamReader reportSettingsReader = new StreamReader(reportSettingsFileInfo.FullName);
-            Common.Utility.StoreReaderContent(reportSettingsReader);
+            FileInfo reportSettingsFileInfo = new FileInfo(Path.Combine(Property.ApplicationPath, Property.ReportSettingsFile));
+            using(StreamReader reportSettingsReader = new StreamReader(reportSettingsFileInfo.FullName))
+            Utility.StoreReaderContent(reportSettingsReader);
 
-            FileInfo paramSettingsFileInfo = new FileInfo(Path.Combine(Common.Property.IniPath, Property.ParameterFileName));
-            StreamReader paramSettingsReader = new StreamReader(paramSettingsFileInfo.FullName);
-            Common.Utility.StoreReaderContent(paramSettingsReader);
+            FileInfo paramSettingsFileInfo = new FileInfo(Path.Combine(Property.IniPath, Property.ParameterFileName));
+            using(StreamReader paramSettingsReader = new StreamReader(paramSettingsFileInfo.FullName))
+            Utility.StoreReaderContent(paramSettingsReader);
 
-            FileInfo emailFileInfo = new FileInfo(Path.Combine(Common.Property.IniPath, Property.EmailNotificationFile));
-            StreamReader emailReader = new StreamReader(emailFileInfo.FullName);
-            Common.Utility.StoreReaderContent(emailReader);
-
-
-            if (Path.IsPathRooted(Common.Utility.GetParameter("EmailStartTemplate")))
-                Common.Property.EmailStartTemplate = Common.Utility.GetParameter("EmailStartTemplate");
-            else
-                Common.Property.EmailStartTemplate = string.Concat(Common.Property.IniPath, Common.Utility.GetParameter("EmailStartTemplate"));
-
-            if (Path.IsPathRooted(Common.Utility.GetParameter("EmailEndTemplate")))
-                Common.Property.EmailEndTemplate = Common.Utility.GetParameter("EmailEndTemplate");
-            else
-                Common.Property.EmailEndTemplate = string.Concat(Common.Property.IniPath, Common.Utility.GetParameter("EmailEndTemplate"));
+            FileInfo emailFileInfo = new FileInfo(Path.Combine(Property.IniPath, Property.EmailNotificationFile));
+            using(StreamReader emailReader = new StreamReader(emailFileInfo.FullName))
+            Utility.StoreReaderContent(emailReader);
+            Property.EmailStartTemplate = Path.IsPathRooted(Utility.GetParameter("EmailStartTemplate")) ? Utility.GetParameter("EmailStartTemplate") : string.Concat(Property.IniPath, Utility.GetParameter("EmailStartTemplate"));
+            Property.EmailEndTemplate = Path.IsPathRooted(Utility.GetParameter("EmailEndTemplate")) ? Utility.GetParameter("EmailEndTemplate") : string.Concat(Property.IniPath, Utility.GetParameter("EmailEndTemplate"));
         }
 
         private static string GetFileNames(string xmlPath)
@@ -298,8 +285,7 @@ namespace KRYPTONCreateReport
             if (Directory.Exists(xmlPath))
             {
                 string[] xmlfiles = Directory.GetFiles(xmlPath, "*.xml", SearchOption.AllDirectories);
-                foreach (string xmlfile in xmlfiles)
-                    combinedPath = combinedPath + ";" + xmlfile;
+                combinedPath = xmlfiles.Aggregate(combinedPath, (current, xmlfile) => current + ";" + xmlfile);
             }
             return combinedPath;
         }

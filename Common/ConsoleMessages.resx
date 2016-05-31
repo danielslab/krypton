@@ -141,4 +141,34 @@
   <data name="MSG_UPLOADING_LOG" xml:space="preserve">
     <value>Uploading log file(s)..</value>
   </data>
+  <data name="INVALID_ARGUMNETS" xml:space="preserve">
+    <value>KRYPTONPrallelRecovery : invalid arguments</value>
+  </data>
+  <data name="REGISTER_AUTOIT" xml:space="preserve">
+    <value>Please register AutoIt dll</value>
+  </data>
+  <data name="PARALLEL_rECOVERY" xml:space="preserve">
+    <value>KRYPTONPrallelRecovery : </value>
+  </data>
+  <data name="FOD" xml:space="preserve">
+    <value>File Not Found:  </value>
+  </data>
+  <data name="EMAIL_NOTIFICATION_ABORTED" xml:space="preserve">
+    <value>Warning: "EmailNotificationFrom" parameter is invalid! Email notification process aborted</value>
+  </data>
+  <data name="EMAIL_TEMPLETE_MISSING" xml:space="preserve">
+    <value>Warning: Email StartTemplate file is missing! Email notification process aborted</value>
+  </data>
+  <data name="COULD_NOT_READ_PROJECT_LOGO" xml:space="preserve">
+    <value>Warning: Coluld not read project logo file. Using default logo of Krypton Report.</value>
+  </data>
+  <data name="EXCEPTION_WHILE_DELETING_TEST_RUNS" xml:space="preserve">
+    <value>Exception while trying to delete older test runs. Error: </value>
+  </data>
+  <data name="WEB_PAGE_FAILE_LOAD" xml:space="preserve">
+    <value>Web page Fail to Load</value>
+  </data>
+  <data name="THINKSYSLOGO" xml:space="preserve">
+    <value>data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAALwAAAA1CAMAAADMKHGJAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAPBQTFRFAAAAAK7vCT1g////CT1gCT1gCT1gAK7vCT1gAK7vCT1gAK7vCT1gAK7vCT1gAK7vAK7vCT1gAK7vCT1gCT1gAK7vCT1gCT1gAK7vCT1gCT1gAK7vCT1gAK7vAK7vCT1gAK7vAK7vCT1gCT1gCT1gAK7vCT1gAK7vCT1gCT1gAK7vCT1gCT1gAK7vCT1gAK7vCT1gCT1gAK7vCT1gAK7vCT1gCT1gAK7vAK7vCT1gCT1gAK7vCT1gCT1gCT1gAK7vAK7vCT1gCT1gAK7vCT1gCT1gAK7vCT1gCT1gAK7vCT1gCT1gAK7vCT1gAK7vCT1gYRXGaAAAAE50Uk5TAAAAAAMJDBAQEhIeHiAgISotMDA8QEBLUFBUWlpdYGBpcHB1eICAgYeKj4+WmZmfn6Worq+vtLe/v8DDw8bJzM/P0t/f4eTk7e/v9vz8KLY2iAAAAwNJREFUaN7t2H170jAQAPBYnMUp6FphTCdMttbJVFBBmc4XLL7AXPn+38bkjiZpmrasbNA+T++vW9orv+y5pm1IpcBBSnyJL/EFwtvNaNQJIXXIiAh+pApZFUdtTalarV6q1ohEjQ6bkJniPAsGln9EaxoVcr6IhktPdiGT8PxIEzLAuPNI7dQmavWE5aPgOi3Pj0ab8SBriF8cwwDLzL6mxlsP39HULuZVpdqGvBP8231dmMl4nd3vrYcf6fBwRK4+41Ni8ULnGJJk/ExXZK2HP9fiu0r1lKWD4DKOH9M1SXhdjUduA69UY9ccJOLNDPgexXdciAH8xAD/aF4HPxFLTVeHx64hYXx42bDIKvh+uMik+GAhFEsIxsr4c2k11eHnoa5Z4okm0vCOWnD7+APlwoXCQz9OSTHx0DVnxcRj19hbweuWwdXxIkb1pKXSa2VYKvvmpvCLuZ20zvvW9fH+cGP4xSQR72TA+5vDB9e2UvB9h4fH8cNt44PnVC8ZHwmYsZcF74rIgA9K8R0oeK+stR05VsHTg6Ga8Ur4G3g94ONdog2O1zfUTFfjbBCPb8XTFDz5ocOPt47vqFfX4mvjXOKryqulHq/GOB94fD3jt2zB8HV+y8Y/pDA8Xdtke0jdFB5PnabjLT+HeP5NkoLv5RHP9xD0+HZc1/j9WLy3Oby7vGWd2H0bbdd4Zhx+1uD4OjzH6xIEBuRfD/YVxKmw89CRbkt+TqSaVGHEVp7zGJb4IFGOtHDrUlPTZrsH5RZ3ic+Cv5OfqFQMEXIeEwz/+Hsu4iXg7/6FZekn4D/gd8xDmh5iemxIOcMf+bmIZ4B/grBXhpjILwZ+h+N7cs7w73Nh/3cf8KcI2zfERF4z8B8xD54z/O9c4D9hz38F2OUOw58g/in17i0/hA05p/hH+eiaI8DvXgHsM9ywF5Bf7VLwMYIPDTmn+Of5wD8A/PJePGH4eziRCwb+KOYhcop/kwv7F1wq3yLeZvh9zE+pd+cS0m9GKC+fsCW+xJf4Ep8a/wFiva9qhW3zQwAAAABJRU5ErkJggg==</value>
+  </data>
 </root>

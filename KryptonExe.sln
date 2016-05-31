@@ -1,6 +1,8 @@
 ﻿
-Microsoft Visual Studio Solution File, Format Version 11.00
-# Visual Studio 2010
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 14
+VisualStudioVersion = 14.0.24720.0
+MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestDriver", "TestDriver\TestDriver.csproj", "{466A8BB9-D979-4FFF-A708-4E7C4D7BB9CF}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SeleniumDriver", "SeleniumDriver\SeleniumDriver.csproj", "{78DCA1E3-459B-4E44-A826-C04BE1A06BCC}"
@@ -16,8 +18,6 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KryptonParallelRecovery", "KryptonParallelRecovery\KryptonParallelRecovery.csproj", "{F27C4E89-CCD5-4AC6-B193-AAC4005DD8C8}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KryptonCreateReport", "KryptonCreateReport\KryptonCreateReport.csproj", "{6EA8D7E1-4592-4CAA-A920-851E369704C4}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Krypton", "Krypton\Krypton.csproj", "{35465970-A171-4799-8D44-46A6BC05B999}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Common", "Common\Common.csproj", "{B49316E7-E015-4EDC-907C-B7375658D134}"
 EndProject
@@ -50,10 +50,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Dlls", "Dlls", "{89DAA1CD-E
 		Dlls\WebDriver.Support.dll = Dlls\WebDriver.Support.dll
 	EndProjectSection
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Krypton", "Krypton\Krypton.csproj", "{35465970-A171-4799-8D44-46A6BC05B999}"
+EndProject
 Global
-	GlobalSection(TestCaseManagementSettings) = postSolution
-		CategoryFile = Krypton.vsmdi
-	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		CD_ROM|Any CPU = CD_ROM|Any CPU
 		CD_ROM|Mixed Platforms = CD_ROM|Mixed Platforms
@@ -276,33 +275,6 @@ Global
 		{6EA8D7E1-4592-4CAA-A920-851E369704C4}.SingleImage|Mixed Platforms.ActiveCfg = Release|Any CPU
 		{6EA8D7E1-4592-4CAA-A920-851E369704C4}.SingleImage|Mixed Platforms.Build.0 = Release|Any CPU
 		{6EA8D7E1-4592-4CAA-A920-851E369704C4}.SingleImage|x86.ActiveCfg = Release|Any CPU
-		{35465970-A171-4799-8D44-46A6BC05B999}.CD_ROM|Any CPU.ActiveCfg = Release|Any CPU
-		{35465970-A171-4799-8D44-46A6BC05B999}.CD_ROM|Any CPU.Build.0 = Release|Any CPU
-		{35465970-A171-4799-8D44-46A6BC05B999}.CD_ROM|Mixed Platforms.ActiveCfg = Release|Any CPU
-		{35465970-A171-4799-8D44-46A6BC05B999}.CD_ROM|Mixed Platforms.Build.0 = Release|Any CPU
-		{35465970-A171-4799-8D44-46A6BC05B999}.CD_ROM|x86.ActiveCfg = Release|Any CPU
-		{35465970-A171-4799-8D44-46A6BC05B999}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{35465970-A171-4799-8D44-46A6BC05B999}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{35465970-A171-4799-8D44-46A6BC05B999}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
-		{35465970-A171-4799-8D44-46A6BC05B999}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
-		{35465970-A171-4799-8D44-46A6BC05B999}.Debug|x86.ActiveCfg = Debug|x86
-		{35465970-A171-4799-8D44-46A6BC05B999}.Debug|x86.Build.0 = Debug|x86
-		{35465970-A171-4799-8D44-46A6BC05B999}.DVD-5|Any CPU.ActiveCfg = Debug|Any CPU
-		{35465970-A171-4799-8D44-46A6BC05B999}.DVD-5|Any CPU.Build.0 = Debug|Any CPU
-		{35465970-A171-4799-8D44-46A6BC05B999}.DVD-5|Mixed Platforms.ActiveCfg = Debug|Any CPU
-		{35465970-A171-4799-8D44-46A6BC05B999}.DVD-5|Mixed Platforms.Build.0 = Debug|Any CPU
-		{35465970-A171-4799-8D44-46A6BC05B999}.DVD-5|x86.ActiveCfg = Debug|Any CPU
-		{35465970-A171-4799-8D44-46A6BC05B999}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{35465970-A171-4799-8D44-46A6BC05B999}.Release|Any CPU.Build.0 = Release|Any CPU
-		{35465970-A171-4799-8D44-46A6BC05B999}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
-		{35465970-A171-4799-8D44-46A6BC05B999}.Release|Mixed Platforms.Build.0 = Release|Any CPU
-		{35465970-A171-4799-8D44-46A6BC05B999}.Release|x86.ActiveCfg = Release|x86
-		{35465970-A171-4799-8D44-46A6BC05B999}.Release|x86.Build.0 = Release|x86
-		{35465970-A171-4799-8D44-46A6BC05B999}.SingleImage|Any CPU.ActiveCfg = Release|Any CPU
-		{35465970-A171-4799-8D44-46A6BC05B999}.SingleImage|Any CPU.Build.0 = Release|Any CPU
-		{35465970-A171-4799-8D44-46A6BC05B999}.SingleImage|Mixed Platforms.ActiveCfg = Release|Any CPU
-		{35465970-A171-4799-8D44-46A6BC05B999}.SingleImage|Mixed Platforms.Build.0 = Release|Any CPU
-		{35465970-A171-4799-8D44-46A6BC05B999}.SingleImage|x86.ActiveCfg = Release|Any CPU
 		{B49316E7-E015-4EDC-907C-B7375658D134}.CD_ROM|Any CPU.ActiveCfg = Release|Any CPU
 		{B49316E7-E015-4EDC-907C-B7375658D134}.CD_ROM|Any CPU.Build.0 = Release|Any CPU
 		{B49316E7-E015-4EDC-907C-B7375658D134}.CD_ROM|Mixed Platforms.ActiveCfg = Release|Any CPU
@@ -328,8 +300,96 @@ Global
 		{B49316E7-E015-4EDC-907C-B7375658D134}.SingleImage|Mixed Platforms.ActiveCfg = Release|Any CPU
 		{B49316E7-E015-4EDC-907C-B7375658D134}.SingleImage|Mixed Platforms.Build.0 = Release|Any CPU
 		{B49316E7-E015-4EDC-907C-B7375658D134}.SingleImage|x86.ActiveCfg = Release|Any CPU
+		{35465970-A171-4799-8D44-46A6BC05B999}.CD_ROM|Any CPU.ActiveCfg = Release|Any CPU
+		{35465970-A171-4799-8D44-46A6BC05B999}.CD_ROM|Any CPU.Build.0 = Release|Any CPU
+		{35465970-A171-4799-8D44-46A6BC05B999}.CD_ROM|Mixed Platforms.ActiveCfg = Release|x86
+		{35465970-A171-4799-8D44-46A6BC05B999}.CD_ROM|Mixed Platforms.Build.0 = Release|x86
+		{35465970-A171-4799-8D44-46A6BC05B999}.CD_ROM|x86.ActiveCfg = Release|x86
+		{35465970-A171-4799-8D44-46A6BC05B999}.CD_ROM|x86.Build.0 = Release|x86
+		{35465970-A171-4799-8D44-46A6BC05B999}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{35465970-A171-4799-8D44-46A6BC05B999}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{35465970-A171-4799-8D44-46A6BC05B999}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
+		{35465970-A171-4799-8D44-46A6BC05B999}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
+		{35465970-A171-4799-8D44-46A6BC05B999}.Debug|x86.ActiveCfg = Debug|x86
+		{35465970-A171-4799-8D44-46A6BC05B999}.Debug|x86.Build.0 = Debug|x86
+		{35465970-A171-4799-8D44-46A6BC05B999}.DVD-5|Any CPU.ActiveCfg = Debug|Any CPU
+		{35465970-A171-4799-8D44-46A6BC05B999}.DVD-5|Any CPU.Build.0 = Debug|Any CPU
+		{35465970-A171-4799-8D44-46A6BC05B999}.DVD-5|Mixed Platforms.ActiveCfg = Debug|x86
+		{35465970-A171-4799-8D44-46A6BC05B999}.DVD-5|Mixed Platforms.Build.0 = Debug|x86
+		{35465970-A171-4799-8D44-46A6BC05B999}.DVD-5|x86.ActiveCfg = Debug|x86
+		{35465970-A171-4799-8D44-46A6BC05B999}.DVD-5|x86.Build.0 = Debug|x86
+		{35465970-A171-4799-8D44-46A6BC05B999}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{35465970-A171-4799-8D44-46A6BC05B999}.Release|Any CPU.Build.0 = Release|Any CPU
+		{35465970-A171-4799-8D44-46A6BC05B999}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{35465970-A171-4799-8D44-46A6BC05B999}.Release|Mixed Platforms.Build.0 = Release|Any CPU
+		{35465970-A171-4799-8D44-46A6BC05B999}.Release|x86.ActiveCfg = Release|x86
+		{35465970-A171-4799-8D44-46A6BC05B999}.Release|x86.Build.0 = Release|x86
+		{35465970-A171-4799-8D44-46A6BC05B999}.SingleImage|Any CPU.ActiveCfg = Release|Any CPU
+		{35465970-A171-4799-8D44-46A6BC05B999}.SingleImage|Any CPU.Build.0 = Release|Any CPU
+		{35465970-A171-4799-8D44-46A6BC05B999}.SingleImage|Mixed Platforms.ActiveCfg = Release|x86
+		{35465970-A171-4799-8D44-46A6BC05B999}.SingleImage|Mixed Platforms.Build.0 = Release|x86
+		{35465970-A171-4799-8D44-46A6BC05B999}.SingleImage|x86.ActiveCfg = Release|x86
+		{35465970-A171-4799-8D44-46A6BC05B999}.SingleImage|x86.Build.0 = Release|x86
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		EnterpriseLibraryConfigurationToolBinariesPath = packages\Unity.2.1.505.2\lib\NET35
+	EndGlobalSection
+	GlobalSection(TeamFoundationVersionControl) = preSolution
+		SccNumberOfProjects = 10
+		SccEnterpriseProvider = {4CA58AB2-18FA-4F8D-95D4-32DDF27D184C}
+		SccTeamFoundationServer = http://tfs-srv1.thinksys.com:8080/tfs/products
+		SccProjectUniqueName0 = TestDriver\\TestDriver.csproj
+		SccProjectName0 = TestDriver
+		SccAuxPath0 = http://tfs-srv1.thinksys.com:8080/tfs/products
+		SccLocalPath0 = TestDriver
+		SccProvider0 = {4CA58AB2-18FA-4F8D-95D4-32DDF27D184C}
+		SccProjectUniqueName1 = SeleniumDriver\\SeleniumDriver.csproj
+		SccProjectName1 = SeleniumDriver
+		SccAuxPath1 = http://tfs-srv1.thinksys.com:8080/tfs/products
+		SccLocalPath1 = SeleniumDriver
+		SccProvider1 = {4CA58AB2-18FA-4F8D-95D4-32DDF27D184C}
+		SccProjectUniqueName2 = Reporting\\Reporting.csproj
+		SccProjectName2 = Reporting
+		SccAuxPath2 = http://tfs-srv1.thinksys.com:8080/tfs/products
+		SccLocalPath2 = Reporting
+		SccProvider2 = {4CA58AB2-18FA-4F8D-95D4-32DDF27D184C}
+		SccProjectUniqueName3 = TestManager\\TestManager.csproj
+		SccProjectName3 = TestManager
+		SccAuxPath3 = http://tfs-srv1.thinksys.com:8080/tfs/products
+		SccLocalPath3 = TestManager
+		SccProvider3 = {4CA58AB2-18FA-4F8D-95D4-32DDF27D184C}
+		SccProjectUniqueName4 = TMQC\\TMQC.csproj
+		SccProjectName4 = TMQC
+		SccAuxPath4 = http://tfs-srv1.thinksys.com:8080/tfs/products
+		SccLocalPath4 = TMQC
+		SccProvider4 = {4CA58AB2-18FA-4F8D-95D4-32DDF27D184C}
+		SccProjectUniqueName5 = VSTM\\VSTM.csproj
+		SccProjectName5 = VSTM
+		SccAuxPath5 = http://tfs-srv1.thinksys.com:8080/tfs/products
+		SccLocalPath5 = VSTM
+		SccProvider5 = {4CA58AB2-18FA-4F8D-95D4-32DDF27D184C}
+		SccProjectUniqueName6 = KryptonParallelRecovery\\KryptonParallelRecovery.csproj
+		SccProjectName6 = KryptonParallelRecovery
+		SccAuxPath6 = http://tfs-srv1.thinksys.com:8080/tfs/products
+		SccLocalPath6 = KryptonParallelRecovery
+		SccProvider6 = {4CA58AB2-18FA-4F8D-95D4-32DDF27D184C}
+		SccProjectUniqueName7 = KryptonCreateReport\\KryptonCreateReport.csproj
+		SccProjectName7 = KryptonCreateReport
+		SccAuxPath7 = http://tfs-srv1.thinksys.com:8080/tfs/products
+		SccLocalPath7 = KryptonCreateReport
+		SccProvider7 = {4CA58AB2-18FA-4F8D-95D4-32DDF27D184C}
+		SccProjectUniqueName8 = Krypton\\Krypton.csproj
+		SccProjectName8 = Krypton
+		SccAuxPath8 = http://tfs-srv1.thinksys.com:8080/tfs/products
+		SccLocalPath8 = Krypton
+		SccProvider8 = {4CA58AB2-18FA-4F8D-95D4-32DDF27D184C}
+		SccProjectUniqueName9 = Common\\Common.csproj
+		SccProjectName9 = Common
+		SccAuxPath9 = http://tfs-srv1.thinksys.com:8080/tfs/products
+		SccLocalPath9 = Common
+		SccProvider9 = {4CA58AB2-18FA-4F8D-95D4-32DDF27D184C}
 	EndGlobalSection
 EndGlobal

@@ -8,19 +8,14 @@
 *****************************************************************************/
 
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using Microsoft.Win32;
-using System.Data;
-using System.IO;
 
 namespace Common
 {
 
     public interface validation
     {
-        string validationProcess();
+        string ValidationProcess();
     }
 
     /// <summary>
@@ -28,13 +23,13 @@ namespace Common
     /// </summary>
     class ValidateSeleniumSetup : validation
     {
-        public string validationProcess()
+        public string ValidationProcess()
         {
-            Common.Property.StepComments = "Selenium driver installed?";
-            string JSoftware = CommonValidationMethods.validateJavaSoftwareInstalled();
+            Property.StepComments = "Selenium driver installed?";
+            string JSoftware = CommonValidationMethods.ValidateJavaSoftwareInstalled();
             string Jversion = CommonValidationMethods.validateJavaVersion();
             string BrowserInstalled;
-            BrowserInstalled = Common.BrowserManager.browser.validateBrowserInstalled();
+            BrowserInstalled = BrowserManager.Browser.ValidateBrowserInstalled();
 
             if (JSoftware.Equals(ExecutionStatus.Fail) || Jversion.Equals(ExecutionStatus.Fail) || BrowserInstalled.Equals(ExecutionStatus.Fail))
                 return ExecutionStatus.Fail;
@@ -48,9 +43,9 @@ namespace Common
     /// </summary>
     class ValidateQTPSetup : validation
     {
-        public string validationProcess()
+        public string ValidationProcess()
         {
-            Common.Property.StepComments = "QTP driver installed?";
+            Property.StepComments = "QTP driver installed?";
             // QTP related software validation will add here.
             return ExecutionStatus.Pass;
         }
@@ -62,13 +57,13 @@ namespace Common
     public class Validate
     {
         public static validation validate;
-        public static validation getDriverValidation(string driver)
+        public static validation GetDriverValidation(string driver)
         {
-            if (driver.Equals(Property.SELENIUM))
+            if (driver.Equals(Property.Selenium))
             {
                 validate = new ValidateSeleniumSetup();
             }
-            else if (driver.Equals(Property.QTP))
+            else if (driver.Equals(Property.Qtp))
             {
                 validate = new ValidateQTPSetup();
             }
@@ -86,13 +81,13 @@ namespace Common
         /// Validate whether Java is installed in execution system.
         /// </summary>
         /// <returns></returns>
-        public static string validateJavaSoftwareInstalled()
+        public static string ValidateJavaSoftwareInstalled()
         {
             int flagJava = 0;
-            string SoftwareKey = Property.JavaKeyString;
+            string softwareKey = Property.JavaKeyString;
             try
             {
-                using (RegistryKey rk = Registry.LocalMachine.OpenSubKey(SoftwareKey))
+                using (RegistryKey rk = Registry.LocalMachine.OpenSubKey(softwareKey))
                 {
                     foreach (string skName in rk.GetSubKeyNames())
                     {
@@ -101,13 +96,12 @@ namespace Common
                     }
                     if (flagJava == 1)
                         return ExecutionStatus.Pass;
-                    else
-                        return ExecutionStatus.Fail;
+                    return ExecutionStatus.Fail;
                 }
             }
             catch (Exception e)
             {
-                throw new Common.KryptonException(Utility.GetCommonMsgVariable("KRYPTONERRCODE0004").Replace("{MSG}", e.Message));
+                throw new KryptonException(Utility.GetCommonMsgVariable("KRYPTONERRCODE0004").Replace("{MSG}", e.Message));
             }
         }
 
@@ -118,7 +112,7 @@ namespace Common
         public static string validateJavaVersion()
         {
             bool isAbove = false;
-            string SoftwareKey = Property.JavaRunTimeEnvironment_KeyString;
+            string SoftwareKey = Property.JavaRunTimeEnvironmentKeyString;
             try
             {
                 using (RegistryKey rk = Registry.LocalMachine.OpenSubKey(SoftwareKey))
@@ -141,7 +135,7 @@ namespace Common
             }
             catch (Exception e)
             {
-                throw new Common.KryptonException(Utility.GetCommonMsgVariable("KRYPTONERRCODE0005").Replace("{MSG}", e.Message));
+                throw new KryptonException(Utility.GetCommonMsgVariable("KRYPTONERRCODE0005").Replace("{MSG}", e.Message));
             }
         }
 

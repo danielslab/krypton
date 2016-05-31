@@ -6,10 +6,7 @@
 ** Developed by: ThinkSys Software
 ** Description: File to Interact with Quality Center.
 *****************************************************************************/
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+
 using TDAPIOLELib;
 
 
@@ -19,13 +16,13 @@ namespace Krypton
     {
 
         //Assign all Quality Center related variables here. These will be used in methods written below
-        private static string qcServerName = "da0itas049";
+        private static string qcServerName = "";
         private static string qcServer = "http://" + qcServerName + "/qcbin";
         private static string strDomainName = "DEFAULT";
-        private static string strProjectName = "Match_Domestic_Automation";
-        private static string strQCUserName = "qcuserv1";
-        private static string strQCUserPassword = "Uxr<Fx5%";
-        private static string LocalFileLocation = string.Empty;
+        private static string strProjectName = "";
+        private static string strQCUserName = "";
+        private static string strQCUserPassword = "";
+        private static string _localFileLocation = string.Empty;
 
         /// <summary>
         /// This method will download an attachment from a folder in Quality Center
@@ -64,13 +61,13 @@ namespace Krypton
                         if (otaAttachment.FileName.ToLower() == strFileName.ToLower())
                         {
                             attStorage = otaAttachment.AttachmentStorage();
-                            LocalFileLocation = otaAttachment.DirectLink;
+                            _localFileLocation = otaAttachment.DirectLink;
 
                             //Load method will download file to local workstation. true to used for synchronised download.
-                            attStorage.Load(LocalFileLocation, true);
+                            attStorage.Load(_localFileLocation, true);
 
                             //Client path refers to local path where file has been downloaded
-                            LocalFileLocation = attStorage.ClientPath;
+                            _localFileLocation = attStorage.ClientPath;
                             break;
                         }
                     }
@@ -80,10 +77,10 @@ namespace Krypton
             //Return empty string if connection to QC was not successfull.
             else
             {
-                LocalFileLocation = string.Empty;
+                _localFileLocation = string.Empty;
             }
 
-            return LocalFileLocation;
+            return _localFileLocation;
         }
 
 

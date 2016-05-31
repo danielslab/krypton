@@ -1,6 +1,6 @@
 ﻿/***************************************************************************
 ** Application: Krypton: ThinkSys Automation Generic System
-** File Name: Common.Utility.cs
+** File Name: cs
 ** Copyright 2012, ThinkSys Software
 ** All rights reserved
 ** Developed by: ThinkSys Software 
@@ -28,7 +28,7 @@ namespace Common
     public class Utility
     {
 
-        public static Dictionary<int, string> driverKeydic = new Dictionary<int, string>();
+        public static Dictionary<int, string> DriverKeydic = new Dictionary<int, string>();
 
         /// <summary>
         /// Match the expected and actual values based on options specified.
@@ -36,20 +36,21 @@ namespace Common
         /// <param name="expectedValue"> string expected value to match.</param>
         /// <param name="actualValue"> string actual value to match.</param>
         /// <returns>bool result of match.</returns>
-        public static bool doKeywordMatch(string expectedValue, string actualValue)
+        public static bool DoKeywordMatch(string expectedValue, string actualValue)
         {
 
-            if (driverKeydic.ContainsValue("ignorespace"))
+            if (DriverKeydic.ContainsValue("ignorespace"))
             {
                 expectedValue = Regex.Replace(expectedValue, @"[\s]", String.Empty).ToLower();
                 actualValue = Regex.Replace(actualValue, @"[\s]", String.Empty).ToLower();
             }
-            if (driverKeydic.ContainsValue("ignorecase"))
+            if (DriverKeydic.ContainsValue("ignorecase"))
             {
                 expectedValue = expectedValue.ToLower();
                 actualValue = actualValue.ToLower();
             }
-            if (!driverKeydic.ContainsValue("partialmatch") && !driverKeydic.ContainsValue("partmatch") && driverKeydic.ContainsValue("exactmatch"))
+            if (!DriverKeydic.ContainsValue("partialmatch") && !DriverKeydic.ContainsValue("partmatch") &&
+                DriverKeydic.ContainsValue("exactmatch"))
                 return actualValue.Equals(expectedValue);
             else
                 return actualValue.Contains(expectedValue);
@@ -58,17 +59,16 @@ namespace Common
         /// <summary>
         ///  Generates a unique character string for the specified length
         /// </summary>
-        /// <param name="CharCount">Length of string to be generated,by default it is 10.</param>
+        /// <param name="charCount">Length of string to be generated,by default it is 10.</param>
         /// <returns>Unique string with specified length.</returns>
-        public static string GenerateUniqueString(int CharCount = 10)
+        public static string GenerateUniqueString(int charCount = 10)
         {
             Random random = new Random();
-            int randomnum;
             string randomString = string.Empty;
-            for (int i = 0; i < CharCount; i++)
+            for (int i = 0; i < charCount; i++)
             {
-                randomnum = random.Next(97, 123);
-                randomString = randomString + (char)randomnum;
+                var randomnum = random.Next(97, 123);
+                randomString = randomString + (char) randomnum;
             }
             return randomString;
         }
@@ -76,27 +76,26 @@ namespace Common
         /// <summary>
         /// Generate a numeral string such as zip code or mobile number
         /// </summary>
-        /// <param name="CharCount"> Length of number to be generated,by default it is 5,</param>
+        /// <param name="charCount"> Length of number to be generated,by default it is 5,</param>
         /// <returns>Unique number with specified length in string format.</returns>
-        public static string GenerateUniqueNumeral(int CharCount = 5)
+        public static string GenerateUniqueNumeral(int charCount = 5)
         {
             Random random = new Random();
-            int randomnum;
             string randomString = string.Empty;
-            for (int i = 0; i < CharCount; i++)
+            for (int i = 0; i < charCount; i++)
             {
-                randomnum = random.Next(1, 9);
+                var randomnum = random.Next(1, 9);
                 randomString = randomString + randomnum;
             }
             return randomString;
         }
 
-        public static string GetOSVersion()
+        public static string GetOsVersion()
         {
-            string osName = "";
+            string osName;
             try
             {
-                string s = System.Environment.OSVersion.ToString();
+                string s = Environment.OSVersion.ToString();
                 if (s.Contains("5.1"))
                     osName = "Windows XP";
                 else if (s.Contains("5.2"))
@@ -112,7 +111,7 @@ namespace Common
             }
             catch (Exception e)
             {
-                throw new KryptonException(Utility.GetCommonMsgVariable("KRYPTONERRCODE0039").Replace("{MSG}", e.Message));
+                throw new KryptonException(GetCommonMsgVariable("KRYPTONERRCODE0039").Replace("{MSG}", e.Message));
             }
             return osName;
         }
@@ -126,38 +125,37 @@ namespace Common
         public static void SetVariable(string varName, string varValue)
         {
             varName = varName.ToLower();
-            if (Common.Property.runtimedic.ContainsKey(varName))
-                Common.Property.runtimedic[varName] = varValue;
+            if (Property.Runtimedic.ContainsKey(varName))
+                Property.Runtimedic[varName] = varValue;
             else
-                Common.Property.runtimedic.Add(varName, varValue);
+                Property.Runtimedic.Add(varName, varValue);
         }
-
 
         /// <summary>
         /// Retrives value of variable from run time dictionary. Return ZERO length string if variable
-        ///             could not be found in dictionary.
+        /// could not be found in dictionary.
         /// </summary>
         /// <param name="varName"></param>
         /// <returns></returns>
         public static string GetVariable(string varName)
         {
             varName = varName.ToLower();
-            if (!Common.Property.runtimedic.ContainsKey(varName))
+            if (!Property.Runtimedic.ContainsKey(varName))
                 return varName;
 
-            if (string.IsNullOrEmpty(Property.runtimedic[varName]))
-                return Property.runtimedic[varName];
+            if (string.IsNullOrEmpty(Property.Runtimedic[varName]))
+                return Property.Runtimedic[varName];
 
 
             if (varName == "firefoxprofilepath")
             {
-                if (!Path.IsPathRooted(Common.Property.runtimedic[varName]))
+                if (!Path.IsPathRooted(Property.Runtimedic[varName]))
                 {
-                    Common.Property.runtimedic[varName] = string.Concat(Common.Property.IniPath, Common.Property.runtimedic[varName]);
-                    Common.Property.runtimedic[varName] = Path.GetFullPath(Common.Property.runtimedic[varName]);
+                    Property.Runtimedic[varName] = string.Concat(Property.IniPath, Property.Runtimedic[varName]);
+                    Property.Runtimedic[varName] = Path.GetFullPath(Property.Runtimedic[varName]);
                 }
             }
-            return Common.Property.runtimedic[varName];
+            return Property.Runtimedic[varName];
         }
 
         /// <summary>
@@ -169,19 +167,20 @@ namespace Common
         {
 
             parameterName = parameterName.ToLower();
-            if (!Common.Property.parameterdic.ContainsKey(parameterName))
+            if (!Property.Parameterdic.ContainsKey(parameterName))
                 return parameterName;
-            if (string.IsNullOrEmpty(Property.parameterdic[parameterName]))
-                return Property.runtimedic[parameterName];
+            if (string.IsNullOrEmpty(Property.Parameterdic[parameterName]))
+                return Property.Runtimedic[parameterName];
             if (parameterName == "firefoxprofilepath")
             {
-                if (!Path.IsPathRooted(Common.Property.parameterdic[parameterName]))
+                if (!Path.IsPathRooted(Property.Parameterdic[parameterName]))
                 {
-                    Common.Property.parameterdic[parameterName] = string.Concat(Common.Property.IniPath, Common.Property.parameterdic[parameterName]);
-                    Common.Property.parameterdic[parameterName] = Path.GetFullPath(Common.Property.parameterdic[parameterName]);
+                    Property.Parameterdic[parameterName] = string.Concat(Property.IniPath,
+                        Property.Parameterdic[parameterName]);
+                    Property.Parameterdic[parameterName] = Path.GetFullPath(Property.Parameterdic[parameterName]);
                 }
             }
-            return Common.Property.parameterdic[parameterName];
+            return Property.Parameterdic[parameterName];
 
         }
 
@@ -193,22 +192,22 @@ namespace Common
         public static void SetParameter(string paramName, string paramValue)
         {
             paramName = paramName.ToLower();
-            if (Common.Property.parameterdic.ContainsKey(paramName))
-                Common.Property.parameterdic[paramName] = paramValue;
+            if (Property.Parameterdic.ContainsKey(paramName))
+                Property.Parameterdic[paramName] = paramValue;
             else
-                Common.Property.parameterdic.Add(paramName, paramValue);
+                Property.Parameterdic.Add(paramName, paramValue);
         }
 
         /// <summary>
         /// Return all processes started.
         /// </summary>
         /// <returns>string array of processes.</returns>
-        public static string[] getAllProcesses()
+        public static string[] GetAllProcesses()
         {
-            string[] processes = new string[Common.Property.processLists.Count];
-            for (int i = 0; i < Common.Property.processLists.Count; i++)
+            string[] processes = new string[Property.ProcessLists.Count];
+            for (int i = 0; i < Property.ProcessLists.Count; i++)
             {
-                processes[i] = Common.Property.processLists[i].ToString();
+                processes[i] = Property.ProcessLists[i].ToString();
             }
             return processes;
         }
@@ -217,51 +216,46 @@ namespace Common
         /// Set process string top global arraylist.
         /// </summary>
         /// <param name="processName">string process name to add.</param>
-        public static void setProcessParameter(string processName)
+        public static void SetProcessParameter(string processName)
         {
-            Common.Property.processLists.Add(processName);
+            Property.ProcessLists.Add(processName);
         }
 
         /// <summary>
         /// Replaces variables in a string. Variables are used with a convention of {$varName}.
-        ///             Variable is not replaced if its values could not be found.
-        ///Replace variable by {$varName} after discussion
+        /// Variable is not replaced if its values could not be found.
+        /// Replace variable by {$varName} after discussion
         /// </summary>
         /// <param name="inString">Input string, in which variable needs to be replaced.</param>
         /// <returns>String with variables replaced</returns>
         public static string ReplaceVariablesInString(string inString)
         {
-            int stindex;
-            int endindex;
-            stindex = 0;
-            endindex = 0;
-            for (int v = 0; ; v++)
+            var endindex = 0;
+            for (int v = 0;; v++)
             {
                 if (inString.Contains("{$"))
                 {
-
-                    stindex = inString.IndexOf("{$", endindex);
+                    var stindex = inString.IndexOf("{$", endindex, StringComparison.Ordinal);
                     //Break if no more variables found the string
                     if (stindex < 0)
                     {
                         break;
                     }
 
-                    endindex = inString.IndexOf("}", stindex);
+                    endindex = inString.IndexOf("}", stindex, StringComparison.Ordinal);
                     //Break if end } is not there in the string
                     if (endindex < 0)
                     {
                         break;
                     }
-                    string KeyVariable = inString.Substring(stindex + 2, (endindex - stindex - 2));
-
+                    string keyVariable = inString.Substring(stindex + 2, (endindex - stindex - 2));
                     //Retrieve value of variable from run time dictionary
-                    string value = GetVariable(KeyVariable);
+                    string value = GetVariable(keyVariable);
 
                     //If variable name and returned value are same, consider no variable found, and do not replace original string
-                    if (value.ToLower().Equals(KeyVariable.ToLower()) == false)
+                    if (value.ToLower().Equals(keyVariable.ToLower()) == false)
                     {
-                        inString = inString.Replace("{$" + KeyVariable + "}", value);
+                        inString = inString.Replace("{$" + keyVariable + "}", value);
                     }
                     endindex = stindex + 1;
                 }
@@ -280,49 +274,62 @@ namespace Common
         public static void CollectkeyValuePairs()
         {
             StreamReader reader = null;
+            StreamReader reportSettingsReader = null;
+            StreamReader sauceLabsReader = null;
             try
             {
-                FileInfo parameterFileInfo = new FileInfo(Path.Combine(Common.Property.IniPath, Common.Property.ParameterFileName));
+                FileInfo parameterFileInfo = new FileInfo(Path.Combine(Property.IniPath, Property.ParameterFileName));
                 reader = new StreamReader(parameterFileInfo.FullName);
                 StoreReaderContent(reader);
 
                 // Retreiving the content of report settings in INI file
                 try
                 {
-                    FileInfo reportSettingsFileInfo = new FileInfo(Common.Property.ApplicationPath + Property.ReportSettingsFile);
-                    StreamReader reportSettingsReader = new StreamReader(reportSettingsFileInfo.FullName);
+                    FileInfo reportSettingsFileInfo =
+                        new FileInfo(Property.ApplicationPath + Property.ReportSettingsFile);
+                    reportSettingsReader = new StreamReader(reportSettingsFileInfo.FullName);
                     StoreReaderContent(reportSettingsReader);
                 }
                 catch (Exception e)
                 {
-                    throw new Common.KryptonException(Utility.GetCommonMsgVariable("KRYPTONERRCODE0042"), e.Message);
+                    throw new KryptonException(GetCommonMsgVariable("KRYPTONERRCODE0042"), e.Message);
                 }
 
                 // Retreiving the contents of SauceLabs.ini file
-                if (Property.parameterdic[Property.BrowserString].ToLower() == Property.SAUCELABS.ToLower())
+                if (Property.Parameterdic[Property.BrowserString].ToLower() == Property.SauceLabs.ToLower())
                 {
                     try
                     {
-                        if (File.Exists(Path.Combine(Common.Property.IniPath, Property.SAUCELABS_PARAMETER_FILE)))
+                        if (File.Exists(Path.Combine(Property.IniPath, Property.SauceLabsParameterFile)))
                         {
-                            FileInfo SauceLabsFileInfo = new FileInfo(Path.Combine(Common.Property.IniPath, Property.SAUCELABS_PARAMETER_FILE));
-                            StreamReader SauceLabsReader = new StreamReader(SauceLabsFileInfo.FullName);
-                            StoreReaderContent(SauceLabsReader);
+                            FileInfo sauceLabsFileInfo =
+                                new FileInfo(Path.Combine(Property.IniPath, Property.SauceLabsParameterFile));
+                            sauceLabsReader = new StreamReader(sauceLabsFileInfo.FullName);
+                            StoreReaderContent(sauceLabsReader);
                         }
                         else
-                            throw new Common.KryptonException(Utility.GetCommonMsgVariable("KRYPTONERRCODE0037"), "saucelabs.ini");
+                            throw new KryptonException(GetCommonMsgVariable("KRYPTONERRCODE0037"), "saucelabs.ini");
                     }
                     catch (Exception e)
                     {
 
-                        throw new Common.KryptonException(Utility.GetCommonMsgVariable("KRYPTONERRCODE0059"), e.Message);
+                        throw new KryptonException(GetCommonMsgVariable("KRYPTONERRCODE0059"), e.Message);
                     }
                 }
                 //END of sauce file access code
             }
             catch (Exception e)
             {
-                throw new Common.KryptonException(Utility.GetCommonMsgVariable("KRYPTONERRCODE0044"), e.Message);
+                throw new KryptonException(GetCommonMsgVariable("KRYPTONERRCODE0044"), e.Message);
+            }
+            finally
+            {
+                if (sauceLabsReader != null)
+                {
+                    sauceLabsReader.Close();
+                }
+                if (reportSettingsReader != null) reportSettingsReader.Close();
+                if (reader != null) reader.Close();
             }
         }
 
@@ -338,200 +345,227 @@ namespace Common
                 // in Parameter.ini file
                 try
                 {
-                    FileInfo databaseFileInfo = new FileInfo(Path.Combine(Common.Property.EnvironmentFileLocation, GetParameter(Property.ENVIRONMENT) + ".ini"));
-                    StreamReader dbreader = new StreamReader(databaseFileInfo.FullName);
-                    StoreReaderContent(dbreader);
+                    FileInfo databaseFileInfo =
+                        new FileInfo(Path.Combine(Property.EnvironmentFileLocation,
+                            GetParameter(Property.Environment) + ".ini"));
+                    using (StreamReader dbreader = new StreamReader(databaseFileInfo.FullName))
+                        StoreReaderContent(dbreader);
                 }
                 catch (Exception e)
                 {
-                    throw new Common.KryptonException(Utility.GetCommonMsgVariable("KRYPTONERRCODE0041"), e.Message);
+                    throw new KryptonException(GetCommonMsgVariable("KRYPTONERRCODE0041"), e.Message);
                 }
 
                 // Retreiving the content of test manager specific ini file
-                // This file will be named as QC.ini, XStudio.ini or MSTestManager.ini etc
+                // This file will be named as QC.ini, MSTestManager.ini etc
                 {
-                    FileInfo databaseFileInfo = new FileInfo(Path.Combine(Common.Property.ApplicationPath, GetParameter("ManagerType") + ".ini"));
+                    FileInfo databaseFileInfo =
+                        new FileInfo(Path.Combine(Property.ApplicationPath, GetParameter("ManagerType") + ".ini"));
                     if (File.Exists(databaseFileInfo.FullName))
                     {
-                        StreamReader dbreader = new StreamReader(databaseFileInfo.FullName);
-                        StoreReaderContent(dbreader);
+                        using (StreamReader dbreader = new StreamReader(databaseFileInfo.FullName))
+                            StoreReaderContent(dbreader);
                     }
                 }
                 //Parsing any other extra ini file, that can be passed as iniFiles=TestManager.ini, Custom.ini etc.
                 //This section is highly powerfull, using which you can pass on any ini file to be parsed
-                string extraIniFiles = Common.Utility.GetVariable("iniFiles");
+                string extraIniFiles = GetVariable("iniFiles");
                 string[] arrIniFiles = extraIniFiles.Split(',');
                 foreach (string iniFile in arrIniFiles)
                 {
-                    string iniFileLocation = Path.Combine(Common.Property.ApplicationPath, iniFile.Trim());
+                    string iniFileLocation = Path.Combine(Property.ApplicationPath, iniFile.Trim());
                     if (File.Exists(iniFileLocation))
                     {
                         FileInfo databaseFileInfo = new FileInfo(iniFileLocation);
-                        StreamReader dbreader = new StreamReader(databaseFileInfo.FullName);
-                        StoreReaderContent(dbreader);
+                        using (StreamReader dbreader = new StreamReader(databaseFileInfo.FullName))
+                            StoreReaderContent(dbreader);
                     }
                 }
             }
             catch (Exception e)
             {
-                throw new Common.KryptonException(Utility.GetCommonMsgVariable("KRYPTONERRCODE0044"), e.Message);
+                throw new KryptonException(GetCommonMsgVariable("KRYPTONERRCODE0044"), e.Message);
             }
         }
+
         /// <summary>
         /// Generate string (in executable arguments format ) from specified Dictionary.
         /// </summary>
-        /// <param name="dicToProcess">Dictionary to process ie. Dictionary<string,string></param>
+        /// <param name="dicToProcess">Dictionary to process ie. Dictionary<string>
+        ///         <string></string>
+        ///     </string>
+        /// </param>
         /// <returns>String</returns>
-        public static string generateDictionaryContentInArgumentsFormat(Dictionary<string, string> dicToProcess)
+        public static string GenerateDictionaryContentInArgumentsFormat(Dictionary<string, string> dicToProcess)
         {
             string argumentString = string.Empty;
             try
             {
                 foreach (KeyValuePair<string, string> keyValuePair in dicToProcess)
                 {
-                    if (argumentString.Equals(string.Empty)) { argumentString = argumentString + "\"" + keyValuePair.Key + "=" + keyValuePair.Value + "\""; }
-                    else argumentString = argumentString + " " + "\"" + keyValuePair.Key + "=" + keyValuePair.Value + "\"";
+                    if (argumentString.Equals(string.Empty))
+                    {
+                        argumentString = argumentString + "\"" + keyValuePair.Key + "=" + keyValuePair.Value + "\"";
+                    }
+                    else
+                        argumentString = argumentString + " " + "\"" + keyValuePair.Key + "=" + keyValuePair.Value +
+                                         "\"";
                 }
 
 
             }
-            catch (Exception) { }
+            catch (Exception)
+            {
+                // ignored
+            }
             return argumentString;
         }
 
-        public static string createTempINIfile(Dictionary<string, string> dic, Dictionary<string, string> otherDic)
+        public static string CreateTempInIfile(Dictionary<string, string> dic, Dictionary<string, string> otherDic)
         {
             string tempFilePAth = string.Empty;
 
             //This will avoid sinking of dictionaries.
-            Dictionary<string, string> tempDIC = new Dictionary<string, string>(dic);
+            Dictionary<string, string> tempDic = new Dictionary<string, string>(dic);
 
             try
             {
-                foreach (KeyValuePair<string, string> KVPair in otherDic)
+                foreach (KeyValuePair<string, string> kvPair in otherDic)
                 {
-                    if (dic.ContainsKey(KVPair.Key)) { tempDIC[KVPair.Key] = otherDic[KVPair.Key]; }
-                    else { tempDIC.Add(KVPair.Key.ToLower(), KVPair.Value); }
+                    if (dic.ContainsKey(kvPair.Key))
+                    {
+                        tempDic[kvPair.Key] = otherDic[kvPair.Key];
+                    }
+                    else
+                    {
+                        tempDic.Add(kvPair.Key.ToLower(), kvPair.Value);
+                    }
                 }
-                tempFilePAth = Property.ApplicationPath + "//" + Property.TEMPINIFILENAME + ".ini";
+                tempFilePAth = Property.ApplicationPath + "//" + Property.TempiniFileName + ".ini";
                 FileStream stream = File.Create(tempFilePAth);
                 StreamWriter writer = new StreamWriter(stream, Encoding.UTF8);
                 // for merging mobile build
-                foreach (KeyValuePair<string, string> keyValuePair in tempDIC)
+                foreach (KeyValuePair<string, string> keyValuePair in tempDic)
                 {
                     writer.WriteLine(keyValuePair.Key + " : " + keyValuePair.Value);
                 }
                 writer.Dispose();
                 stream.Dispose();
             }
-            catch (Exception e)
+            catch (Exception)
             {
                 // Console.WriteLine(e.Message);
             }
             return tempFilePAth;
         }
 
-        /// <summary>
-        ///Verify the presence of all the parameters in parameters.ini file
-        ///It also checks for the values of the mandatory parameters.
-        /// </summary>
-        /// <param name="reader">StreamReader object of parameters.ini</param>
+        ///  <summary>
+        /// Verify the presence of all the parameters in parameters.ini file
+        /// It also checks for the values of the mandatory parameters.
+        ///  </summary>
         public static void ValidateParameters()
         {
             bool validation = true;
             //    testCaseOrSuite;
             string errorMessage = string.Empty;
-            Dictionary<String, int> allParameters = new Dictionary<string, int>();
+            Dictionary<String, int> allParameters = new Dictionary<string, int>
+            {
+                {"browser", 0},
+                {"driver", 0},
+                {"testcaselocation", 1},
+                {"testdatalocation", 1},
+                {"testcasefileextension", 0},
+                {"reusabledefaultfile", 0},
+                {"orlocation", 1},
+                {"orfilename", 1},
+                {"recoverfrompopuplocation", 1},
+                {"recoverfrompopupfilename", 1},
+                {"recoverfrombrowserlocation", 1},
+                {"recoverfrombrowserfilename", 1},
+                {"dbtestdatalocation", 1},
+                {"logdestinationfolder", 1},
+                {"testcaseid", 2},
+                {"testsuite", 2},
+                {"managertype", 0},
+                {"timeformat", 0},
+                {"dateformat", 0},
+                {"datetimeformat", 0},
+                {"companylogo", 0},
+                {"failedcountforexit", 0},
+                {"endexecutionwaitrequired", 0},
+                {"dbconnectionstring", 1},
+                {"defaultdb", 1},
+                {"dbserver", 1},
+                {"dbqueryfilepath", 1},
+                {"debugmode", 0},
+                {"errorcaptureas", 0},
+                {"environment", 0},
+                {"environmentsetupbatch", 0},
+                {"testcaseidseperator", 0},
+                {"testcaseidparameter", 0},
+                {"snapshotoption", 0},
+                {"runremoteexecution", 0},
+                {"runonremotebrowserurl", 0},
+                {"emailnotification", 0},
+                {"emailnotificationfrom", 0},
+                {"emailsmtpserver", 0},
+                {"emailsmtpport", 0},
+                {"emailsmtpusername", 0},
+                {"emailsmtppassword", 0},
+                {"emailstarttemplate", 1},
+                {"emailendtemplate", 1},
+                {"keepreporthistory", 0},
+                {"validatesetup", 0},
+                {"objecttimeout", 0},
+                {"globaltimeout", 0},
+                {"testmode", 0},
+                {"closebrowseroncompletion", 0},
+                {"firefoxprofilepath", 0},
+                {"addonspath", 0},
+                {"applicationurl", 1},
+                {"maxtimeoutforpageload", 0},
+                {"mintimeoutforpageload", 0},
+                {"scriptlanguage", 0},
+                {"recoverycount", 0},
+                {"parallelrecoverysheetname", 1},
+                {"environmentfilelocation", 1},
+                {"startparallelrecovery", 2}
+            };
 
             //Please make an entry if added a new parameter in parameters.ini file
-            allParameters.Add("browser", 0);
-            allParameters.Add("driver", 0);
-            allParameters.Add("testcaselocation", 1);
-            allParameters.Add("testdatalocation", 1);
-            allParameters.Add("testcasefileextension", 0);
-            allParameters.Add("reusabledefaultfile", 0);
-            allParameters.Add("orlocation", 1);
-            allParameters.Add("orfilename", 1);
-            allParameters.Add("recoverfrompopuplocation", 1);
-            allParameters.Add("recoverfrompopupfilename", 1);
-            allParameters.Add("recoverfrombrowserlocation", 1);
-            allParameters.Add("recoverfrombrowserfilename", 1);
-            allParameters.Add("dbtestdatalocation", 1);
-            allParameters.Add("logdestinationfolder", 1);
-            allParameters.Add("testcaseid", 2); // verified in conjunction
-            allParameters.Add("testsuite", 2);  // verified in conjunction
-            allParameters.Add("managertype", 0);
-            allParameters.Add("timeformat", 0);
-            allParameters.Add("dateformat", 0);
-            allParameters.Add("datetimeformat", 0);
-            allParameters.Add("companylogo", 0);
-            allParameters.Add("failedcountforexit", 0);
-            allParameters.Add("endexecutionwaitrequired", 0);
-            allParameters.Add("dbconnectionstring", 1);
-            allParameters.Add("defaultdb", 1);
-            allParameters.Add("dbserver", 1);
-            allParameters.Add("dbqueryfilepath", 1);
-            allParameters.Add("debugmode", 0);
-            allParameters.Add("errorcaptureas", 0);
-            allParameters.Add("environment", 0);
-            allParameters.Add("environmentsetupbatch", 0);
-            allParameters.Add("testcaseidseperator", 0);
-            allParameters.Add("testcaseidparameter", 0);
-            allParameters.Add("snapshotoption", 0);
-            allParameters.Add("runremoteexecution", 0);
-            allParameters.Add("runonremotebrowserurl", 0);
-            allParameters.Add("emailnotification", 0);
-            allParameters.Add("emailnotificationfrom", 0);
-            allParameters.Add("emailsmtpserver", 0);
-            allParameters.Add("emailsmtpport", 0);
-            allParameters.Add("emailsmtpusername", 0);
-            allParameters.Add("emailsmtppassword", 0);
-            allParameters.Add("emailstarttemplate", 1);
-            allParameters.Add("emailendtemplate", 1);
-            allParameters.Add("keepreporthistory", 0);
-            allParameters.Add("validatesetup", 0);
-            allParameters.Add("objecttimeout", 0);
-            allParameters.Add("globaltimeout", 0);
-            allParameters.Add("testmode", 0);
-            allParameters.Add("closebrowseroncompletion", 0);
-            allParameters.Add("firefoxprofilepath", 0);
-            allParameters.Add("addonspath", 0);
-            allParameters.Add("applicationurl", 1);
-            allParameters.Add("maxtimeoutforpageload", 0);
-            allParameters.Add("mintimeoutforpageload", 0);
-            allParameters.Add("scriptlanguage", 0);
-            allParameters.Add("recoverycount", 0);
-            allParameters.Add("parallelrecoverysheetname", 1);
-            allParameters.Add("environmentfilelocation", 1);
-            allParameters.Add("startparallelrecovery", 2);
+            // verified in conjunction
+            // verified in conjunction
             // allParameters.Add("Waitforalert", 0);
             try
             {
                 for (int i = 0; i < allParameters.Count; i++)
                 {
-                    if (Property.parameterdic.ContainsKey(allParameters.ElementAt(i).Key) == false)
+                    if (Property.Parameterdic.ContainsKey(allParameters.ElementAt(i).Key) == false)
                     {
                         validation = false;
-                        errorMessage = Utility.GetCommonMsgVariable("KRYPTONERRCODE0045").Replace("{MSG}", allParameters.ElementAt(i).Key);
+                        errorMessage = GetCommonMsgVariable("KRYPTONERRCODE0045")
+                            .Replace("{MSG}", allParameters.ElementAt(i).Key);
                         break;
                     }
 
                     if (allParameters.ElementAt(i).Value == 0) continue;
-                    else if (allParameters.ElementAt(i).Value == 1)
+                    if (allParameters.ElementAt(i).Value == 1)
                     {
                         if (string.IsNullOrWhiteSpace(GetParameter(allParameters.ElementAt(i).Key)))
                         {
                             validation = false;
-                            errorMessage = Utility.GetCommonMsgVariable("KRYPTONERRCODE0046").Replace("{MSG}", allParameters.ElementAt(i).Key);
+                            errorMessage = GetCommonMsgVariable("KRYPTONERRCODE0046")
+                                .Replace("{MSG}", allParameters.ElementAt(i).Key);
                             break;
                         }
                     }
                     else if (allParameters.ElementAt(i).Value == 2)
                     {
-                        if (string.IsNullOrWhiteSpace(GetParameter("TestCaseId")) && string.IsNullOrWhiteSpace(GetParameter("TestSuite")))
+                        if (string.IsNullOrWhiteSpace(GetParameter("TestCaseId")) &&
+                            string.IsNullOrWhiteSpace(GetParameter("TestSuite")))
                         {
                             validation = false;
-                            errorMessage = Utility.GetCommonMsgVariable("KRYPTONERRCODE0047");
+                            errorMessage = GetCommonMsgVariable("KRYPTONERRCODE0047");
                             break;
                         }
                     }
@@ -544,8 +578,8 @@ namespace Common
             }
             catch (Exception e)
             {
-                Common.KryptonException.writeexception(e);
-                throw new Common.KryptonException(e.Message);
+                KryptonException.Writeexception(e);
+                throw new KryptonException(e.Message);
             }
         }
 
@@ -560,10 +594,10 @@ namespace Common
                 string line;
                 while ((line = reader.ReadLine()) != null)
                 {
-                    int seperatorPos = line.IndexOf(Common.Property.KeyValueDistinctionKeyword);
+                    int seperatorPos = line.IndexOf(Property.KeyValueDistinctionKeyword);
                     if (seperatorPos > 0)
                     {
-                        string[] param = line.Split(Common.Property.KeyValueDistinctionKeyword);
+                        string[] param = line.Split(Property.KeyValueDistinctionKeyword);
 
                         string val = string.Empty;
                         if (param.Length > 2)
@@ -571,7 +605,7 @@ namespace Common
                             for (int paramIndex = 1; paramIndex < param.Length; paramIndex++)
                             {
                                 if (string.IsNullOrWhiteSpace(val)) val = param[paramIndex];
-                                else val = val + Common.Property.KeyValueDistinctionKeyword + param[paramIndex];
+                                else val = val + Property.KeyValueDistinctionKeyword + param[paramIndex];
                             }
                         }
                         else
@@ -584,37 +618,33 @@ namespace Common
 
                         try
                         {
-
-                            if (Common.Property.parameterdic.ContainsKey(param[0].ToLower().Trim()))
+                            if (Property.Parameterdic.ContainsKey(param[0].ToLower().Trim()))
                             {
-                                Common.Property.parameterdic[param[0].ToLower().Trim()] = val.Trim();
-                                Common.Property.runtimedic[param[0].ToLower().Trim()] = val.Trim();
+                                Property.Parameterdic[param[0].ToLower().Trim()] = val.Trim();
+                                Property.Runtimedic[param[0].ToLower().Trim()] = val.Trim();
                             }
                             else
                             {
-                                Common.Property.parameterdic.Add(param[0].ToLower().Trim(), val.Trim());
-                                Common.Property.runtimedic.Add(param[0].ToLower().Trim(), val.Trim());
+                                Property.Parameterdic.Add(param[0].ToLower().Trim(), val.Trim());
+                                Property.Runtimedic.Add(param[0].ToLower().Trim(), val.Trim());
                             }
                         }
                         catch
                         {
                             //No throw
                         }
-
-
                     }
                 }
-
-                if (Utility.GetParameter("projectpath").ToLower().Equals("true"))  // set projectPath variable for using it as a variable anywhere
+                // set projectPath variable for using it as a variable anywhere
+                if (GetParameter("projectpath").ToLower().Equals("true"))
                 {
                     SetParameter("projectpath", Property.IniPath);
                     SetVariable("projectpath", Property.IniPath);
                 }
-
             }
-            catch (Exception ex)
+            finally
             {
-                throw ex;
+                reader.Close();
             }
         }
 
@@ -624,7 +654,7 @@ namespace Common
         /// <param name="browserrun">Browser on which execution will run.</param>
         public static void InitializeBrowser(string browserrun)
         {
-            BrowserManager.getBrowser(browserrun);
+            BrowserManager.GetBrowser(browserrun);
         }
 
         /// <summary>
@@ -633,99 +663,101 @@ namespace Common
         /// <returns>true on success</returns>
         private static bool ValidateEmail()
         {
-            long num;
             if (GetParameter("EmailNotification").Equals("true", StringComparison.OrdinalIgnoreCase))
             {
-                if (GetParameter("EmailNotificationFrom") == string.Empty || !GetParameter("EmailNotificationFrom").Contains("@"))
+                if (GetParameter("EmailNotificationFrom") == string.Empty ||
+                    !GetParameter("EmailNotificationFrom").Contains("@"))
                 {
-                    Console.WriteLine("Warning: \"EmailNotificationFrom\" parameter is invalid! Email notification process aborted");
+                    Console.WriteLine(ConsoleMessages.EMAIL_NOTIFICATION_ABORTED);
                     Console.WriteLine(ConsoleMessages.MSG_DASHED);
                     return false;
                 }
 
                 if (GetParameter("EmailSMTPServer") == string.Empty || !GetParameter("EmailSMTPServer").Contains("."))
                 {
-                    Console.WriteLine("Warning: \"EmailSMTPServer\" parameter is invalid! Email notification process aborted");
+                    Console.WriteLine(ConsoleMessages.EMAIL_NOTIFICATION_ABORTED);
                     Console.WriteLine(ConsoleMessages.MSG_DASHED);
                     return false;
                 }
 
-                if (GetParameter("EmailSMTPPort") == string.Empty || !long.TryParse(GetParameter("EmailSMTPPort"), out num))
+                long num;
+                if (GetParameter("EmailSMTPPort") == string.Empty ||
+                    !long.TryParse(GetParameter("EmailSMTPPort"), out num))
                 {
-                    Console.WriteLine("Warning: \"EmailSMTPPort\" parameter is invalid! Email notification process aborted");
+                    Console.WriteLine(ConsoleMessages.EMAIL_NOTIFICATION_ABORTED);
                     Console.WriteLine(ConsoleMessages.MSG_DASHED);
                     return false;
                 }
 
-                if (GetParameter("EmailSMTPUsername") == string.Empty || !GetParameter("EmailSMTPUsername").Contains("@"))
+                if (GetParameter("EmailSMTPUsername") == string.Empty ||
+                    !GetParameter("EmailSMTPUsername").Contains("@"))
                 {
-                    Console.WriteLine("Warning: \"EmailSMTPUsername\" parameter is invalid! Email notification process aborted");
+                    Console.WriteLine(ConsoleMessages.EMAIL_NOTIFICATION_ABORTED);
                     Console.WriteLine(ConsoleMessages.MSG_DASHED);
                     return false;
                 }
 
                 if (GetParameter("EmailSMTPPassword") == string.Empty)
                 {
-                    Console.WriteLine("Warning: \"EmailSMTPPassword\" parameter is invalid! Email notification process aborted");
+                    Console.WriteLine(ConsoleMessages.EMAIL_NOTIFICATION_ABORTED);
                     Console.WriteLine(ConsoleMessages.MSG_DASHED);
                     return false;
                 }
                 // so that templates folder will accept both absolute and relative paths.
-                //-----------------------------Start Modifiaction---------------------------------
                 string startTemplatePath = Property.EmailStartTemplate;
                 if (!File.Exists(startTemplatePath))
                 {
-                    startTemplatePath = Common.Property.ApplicationPath + GetParameter("EmailStartTemplate");
+                    startTemplatePath = Property.ApplicationPath + GetParameter("EmailStartTemplate");
                 }
                 if (!File.Exists(startTemplatePath))
                 {
-                    Console.WriteLine("Warning: Email StartTemplate file is missing! Email notification process aborted");
-                    Console.WriteLine("------------------------------------------------");
+                    Console.WriteLine(ConsoleMessages.EMAIL_TEMPLETE_MISSING);
+                    Console.WriteLine(ConsoleMessages.MSG_DASHED);
                     return false;
                 }
 
                 string endTemplatePath = Property.EmailEndTemplate;
                 if (!File.Exists(endTemplatePath))
                 {
-                    endTemplatePath = Common.Property.ApplicationPath + GetParameter("EmailEndTemplate");
+                    endTemplatePath = Property.ApplicationPath + GetParameter("EmailEndTemplate");
                 }
                 if (!File.Exists(endTemplatePath))
                 {
-                    Console.WriteLine("Warning: Email EndTemplate file is missing! Email notification process aborted");
-                    Console.WriteLine("------------------------------------------------");
+                    Console.WriteLine(ConsoleMessages.EMAIL_TEMPLETE_MISSING);
+                    Console.WriteLine(ConsoleMessages.MSG_DASHED);
                     return false;
                 }
                 string startTemplate = File.ReadAllText(startTemplatePath);
                 if (!startTemplate.ToLower().Contains("subject::") || !startTemplate.ToLower().Contains("body::"))
                 {
-                    Console.WriteLine("Warning: Email StartTemplate format is invalid! Email notification process aborted");
-                    Console.WriteLine("------------------------------------------------");
+                    Console.WriteLine(ConsoleMessages.EMAIL_TEMPLETE_MISSING);
+                    Console.WriteLine(ConsoleMessages.MSG_DASHED);
                     return false;
                 }
                 string endTemplate = File.ReadAllText(endTemplatePath);
                 if (!endTemplate.ToLower().Contains("subject::") || !endTemplate.ToLower().Contains("body::"))
                 {
-                    Console.WriteLine("Warning: Email EndTemplate format is invalid! Email notification process aborted");
-                    Console.WriteLine("------------------------------------------------");
+                    Console.WriteLine(ConsoleMessages.EMAIL_TEMPLETE_MISSING);
+                    Console.WriteLine(ConsoleMessages.MSG_DASHED);
                     return false;
                 }
-                //-----------------------------end Modifiaction---------------------------------
-                string emailNotif = File.ReadAllText(Path.Combine(Common.Property.IniPath, "EmailNotification.ini"));
+                string emailNotif = File.ReadAllText(Path.Combine(Property.IniPath, "EmailNotification.ini"));
                 if (!emailNotif.Trim().ToLower().Contains("recipient"))
                 {
-                    Console.WriteLine("Warning: EmailNotification.ini format is invalid! Email notification process aborted");
+                    Console.WriteLine(ConsoleMessages.EMAIL_TEMPLETE_MISSING);
                     Console.WriteLine(ConsoleMessages.MSG_DASHED);
                     return false;
                 }
             }
-
             return true;
         }
 
-        /// <summary>
-        ///Email Notification method for different stages
-        /// </summary>
-        /// <param name="stage">stage/state of execution</param>
+        ///  <summary>
+        /// Email Notification method for different stages
+        ///  </summary>
+        ///  <param name="stage">stage/state of execution</param>
+        /// <param name="zipAttch"></param>
+        /// <param name="reportFileName"></param>
         public static void EmailNotificationOld(string stage, bool zipAttch, string reportFileName = null)
         {
             if (ValidateEmail() == false) return;
@@ -736,7 +768,6 @@ namespace Common
 
             try
             {
-                string templateFileName = string.Empty;
                 string[] emailStr = null;
                 switch (stage.ToLower())
                 {
@@ -747,8 +778,6 @@ namespace Common
                     case "end":
                         emailStr = EmailTemplate(Property.EmailEndTemplate);
                         break;
-                    default:
-                        break;
                 }
 
                 MailMessage message = new MailMessage();
@@ -757,67 +786,68 @@ namespace Common
 
                 message.From = mailFrom;
 
-                string mailSubject = string.Empty;
-                mailSubject = emailStr[1];
-                if (string.IsNullOrWhiteSpace(GetParameter("TestSuite")) == false)
-                    mailSubject = mailSubject.Replace("[Test Suite]", GetParameter("TestSuite"));
-                else
-                    mailSubject = mailSubject.Replace("[Test Suite]", string.Empty);
-                if (Property.FinalExecutionStatus.ToLower().Equals("pass"))
+                if (emailStr != null)
                 {
-                    Property.FinalExecutionStatus = "Passed";
-                }
-                if (Property.FinalExecutionStatus.ToLower().Equals("fail"))
-                {
-                    Property.FinalExecutionStatus = "Failed";
-                }
-                mailSubject = mailSubject.Replace("[Result]", Property.FinalExecutionStatus);
-                mailSubject = mailSubject.Replace("[StartTime]", Property.ExecutionStartDateTime);
-                mailSubject = mailSubject.Replace("[EndTime]", Property.ExecutionEndDateTime);
-
-                mailSubject = mailSubject.Replace("[TotalStepExecuted]", Property.TotalStepExecuted.ToString());
-                mailSubject = mailSubject.Replace("[TotalStepPass]", Property.TotalStepPass.ToString());
-                mailSubject = mailSubject.Replace("[TotalStepFail]", Property.TotalStepFail.ToString());
-                mailSubject = mailSubject.Replace("[TotalStepWarning]", Property.TotalStepWarning.ToString());
-
-                mailSubject = mailSubject.Replace("[TotalCaseExecuted]", Property.TotalCaseExecuted.ToString());
-                emailStr[3] = emailStr[3].Replace("[TotalCaseExecuted]", Property.TotalCaseExecuted.ToString());
-                if (Property.FinalExecutionStatus.ToLower().Equals("passed"))
-                    mailSubject = mailSubject.Replace("[TotalCaseFail]/", string.Empty);
-                else
-                    mailSubject = mailSubject.Replace("[TotalCaseFail]", Property.TotalCaseFail.ToString());
-
-                mailSubject = mailSubject.Replace("[TotalCasePass]", Property.TotalCasePass.ToString());
-                mailSubject = mailSubject.Replace("[TotalCaseWarning]", Property.TotalCaseWarning.ToString());
-                SmtpClient smtpClient = new SmtpClient(GetParameter("EmailSMTPServer"), int.Parse(GetParameter("EmailSMTPPort")));
-                NetworkCredential credential = new NetworkCredential(GetParameter("EmailSMTPUsername"), GetParameter("EmailSMTPPassword"));
-                smtpClient.Credentials = credential;
-                smtpClient.EnableSsl = true;
-                /// send mail to comma seperated email recipients -------
-                if (File.Exists(Path.Combine(Common.Property.IniPath, Property.EmailNotificationFile)))
-                {
-                    try
+                    var mailSubject = emailStr[1];
+                    mailSubject = mailSubject.Replace("[Test Suite]",
+                        string.IsNullOrWhiteSpace(GetParameter("TestSuite")) == false
+                            ? GetParameter("TestSuite")
+                            : string.Empty);
+                    if (Property.FinalExecutionStatus.ToLower().Equals("pass"))
                     {
-                        string allrecipients = File.ReadAllText(Path.Combine(Common.Property.IniPath, Property.EmailNotificationFile));
-                        allrecipients = allrecipients.Substring(allrecipients.IndexOf(':') + 1);
-                        string[] recipient = allrecipients.Split(',');
+                        Property.FinalExecutionStatus = "Passed";
+                    }
+                    if (Property.FinalExecutionStatus.ToLower().Equals("fail"))
+                    {
+                        Property.FinalExecutionStatus = "Failed";
+                    }
+                    mailSubject = mailSubject.Replace("[Result]", Property.FinalExecutionStatus);
+                    mailSubject = mailSubject.Replace("[StartTime]", Property.ExecutionStartDateTime);
+                    mailSubject = mailSubject.Replace("[EndTime]", Property.ExecutionEndDateTime);
+
+                    mailSubject = mailSubject.Replace("[TotalStepExecuted]", Property.TotalStepExecuted.ToString());
+                    mailSubject = mailSubject.Replace("[TotalStepPass]", Property.TotalStepPass.ToString());
+                    mailSubject = mailSubject.Replace("[TotalStepFail]", Property.TotalStepFail.ToString());
+                    mailSubject = mailSubject.Replace("[TotalStepWarning]", Property.TotalStepWarning.ToString());
+
+                    mailSubject = mailSubject.Replace("[TotalCaseExecuted]", Property.TotalCaseExecuted.ToString());
+                    emailStr[3] = emailStr[3].Replace("[TotalCaseExecuted]", Property.TotalCaseExecuted.ToString());
+                    if (Property.FinalExecutionStatus.ToLower().Equals("passed"))
+                        mailSubject = mailSubject.Replace("[TotalCaseFail]/", string.Empty);
+                    else
+                        mailSubject = mailSubject.Replace("[TotalCaseFail]", Property.TotalCaseFail.ToString());
+
+                    mailSubject = mailSubject.Replace("[TotalCasePass]", Property.TotalCasePass.ToString());
+                    mailSubject = mailSubject.Replace("[TotalCaseWarning]", Property.TotalCaseWarning.ToString());
+                    SmtpClient smtpClient = new SmtpClient(GetParameter("EmailSMTPServer"),
+                        int.Parse(GetParameter("EmailSMTPPort")));
+                    NetworkCredential credential = new NetworkCredential(GetParameter("EmailSMTPUsername"),
+                        GetParameter("EmailSMTPPassword"));
+                    smtpClient.Credentials = credential;
+                    smtpClient.EnableSsl = true;
+                    if (File.Exists(Path.Combine(Property.IniPath, Property.EmailNotificationFile)))
+                    {
+                        try
                         {
-                            foreach (string recipientAdd in recipient)
+                            string allrecipients =
+                                File.ReadAllText(Path.Combine(Property.IniPath, Property.EmailNotificationFile));
+                            allrecipients = allrecipients.Substring(allrecipients.IndexOf(':') + 1);
+                            string[] recipient = allrecipients.Split(',');
                             {
-                                if ((!string.IsNullOrWhiteSpace(recipientAdd)) && (!string.IsNullOrEmpty(recipientAdd)))
-                                    message.To.Add(new MailAddress(recipientAdd.Trim(), null));
+                                foreach (string recipientAdd in recipient)
+                                {
+                                    if ((!string.IsNullOrWhiteSpace(recipientAdd)) &&
+                                        (!string.IsNullOrEmpty(recipientAdd)))
+                                        message.To.Add(new MailAddress(recipientAdd.Trim(), null));
+                                }
                             }
                         }
-                    }
-                    catch (Exception e)
-                    {
-                        throw new Exception("Invalid Email format in EmailNotification.ini");
-                    }
+                        catch (Exception)
+                        {
+                            throw new Exception("Invalid Email format in EmailNotification.ini");
+                        }
 
-                }
-                try
-                {
-
+                    }
                     if (string.IsNullOrWhiteSpace(GetParameter("TestSuite")) == false)
                         emailStr[3] = emailStr[3].Replace("[Test Suite]", GetParameter("TestSuite"));
                     else
@@ -828,8 +858,10 @@ namespace Common
                     {
                         emailStr[3] = emailStr[3].Replace("[EndTime]", Property.ExecutionEndDateTime);
 
-                        DateTime executionStartTime = DateTime.ParseExact(Property.ExecutionStartDateTime, Common.Utility.GetParameter("DateTimeFormat"), null);
-                        DateTime executionEndTime = DateTime.ParseExact(Property.ExecutionEndDateTime, Common.Utility.GetParameter("DateTimeFormat"), null);
+                        DateTime executionStartTime = DateTime.ParseExact(Property.ExecutionStartDateTime,
+                            GetParameter("DateTimeFormat"), null);
+                        DateTime executionEndTime = DateTime.ParseExact(Property.ExecutionEndDateTime,
+                            GetParameter("DateTimeFormat"), null);
                         TimeSpan time = executionEndTime - executionStartTime;
 
                         emailStr[3] = emailStr[3].Replace("[ExecutionTime]", time.ToString());
@@ -856,35 +888,35 @@ namespace Common
                     emailStr[3] = emailStr[3].Replace("[TotalCaseWarning]", Property.TotalCaseWarning.ToString());
 
                     //Results Destination Path variable
-                    emailStr[3] = emailStr[3].Replace("[LogDestinationFolder]", Property.ResultsDestinationPath.Substring(0, Property.ResultsDestinationPath.LastIndexOf('\\')));
+                    emailStr[3] = emailStr[3].Replace("[LogDestinationFolder]",
+                        Property.ResultsDestinationPath.Substring(0, Property.ResultsDestinationPath.LastIndexOf('\\')));
 
-
-                    Attachment data = null;
 
                     if (stage == "end")
                     {
                         // Create  the file attachment for this e-mail message.
-                        string file = Common.Property.HtmlFileLocation + "/" + Property.ReportZipFileName;
+                        string file = Property.HtmlFileLocation + "/" + Property.ReportZipFileName;
 
                         int doStep = 0;
                         do
                         {
+                            Attachment data;
                             if (File.Exists(file) && zipAttch)
                             {
                                 FileInfo fileInfo = new FileInfo(file);
                                 long fileSize = fileInfo.Length;
-                                if (fileSize > 1024 * 1024 * 4)
+                                if (fileSize > 1024*1024*4)
                                 {
                                     emailStr[3] = emailStr[3] +
                                                   "\n---------------\n**NOTE: Not able to send attachement, size of the attachment is too big.**";
 
-                                    string htmlFile = Common.Property.HtmlFileLocation + "/HtmlReport.html";
+                                    string htmlFile = Property.HtmlFileLocation + "/HtmlReport.html";
                                     data = new Attachment(htmlFile, MediaTypeNames.Application.Octet);
                                     // Add time stamp information for the file.
                                     ContentDisposition htmlDisposition = data.ContentDisposition;
-                                    htmlDisposition.CreationDate = System.IO.File.GetCreationTime(htmlFile);
-                                    htmlDisposition.ModificationDate = System.IO.File.GetLastWriteTime(htmlFile);
-                                    htmlDisposition.ReadDate = System.IO.File.GetLastAccessTime(htmlFile);
+                                    htmlDisposition.CreationDate = File.GetCreationTime(htmlFile);
+                                    htmlDisposition.ModificationDate = File.GetLastWriteTime(htmlFile);
+                                    htmlDisposition.ReadDate = File.GetLastAccessTime(htmlFile);
                                     // Add the html file attachment to this e-mail message.
                                     message.Attachments.Add(data);
 
@@ -894,20 +926,20 @@ namespace Common
                                 data = new Attachment(file, MediaTypeNames.Application.Octet);
                                 // Add time stamp information for the file.
                                 ContentDisposition disposition = data.ContentDisposition;
-                                disposition.CreationDate = System.IO.File.GetCreationTime(file);
-                                disposition.ModificationDate = System.IO.File.GetLastWriteTime(file);
-                                disposition.ReadDate = System.IO.File.GetLastAccessTime(file);
+                                disposition.CreationDate = File.GetCreationTime(file);
+                                disposition.ModificationDate = File.GetLastWriteTime(file);
+                                disposition.ReadDate = File.GetLastAccessTime(file);
                                 // Add the zip file attachment to this e-mail message.
                                 message.Attachments.Add(data);
 
                                 break;
                             }
-                            else if (zipAttch == false)
+                            if (zipAttch == false)
                             {
-                                string htmlFile = string.Empty;
+                                string htmlFile;
                                 if (string.IsNullOrWhiteSpace(reportFileName))
                                 {
-                                    htmlFile = Common.Property.HtmlFileLocation + "/HtmlReportMail.html";
+                                    htmlFile = Property.HtmlFileLocation + "/HtmlReportMail.html";
 
                                 }
                                 else
@@ -918,28 +950,25 @@ namespace Common
                                 data = new Attachment(htmlFile, MediaTypeNames.Application.Octet);
                                 // Add time stamp information for the file.
                                 ContentDisposition htmlDisposition = data.ContentDisposition;
-                                htmlDisposition.CreationDate = System.IO.File.GetCreationTime(htmlFile);
-                                htmlDisposition.ModificationDate = System.IO.File.GetLastWriteTime(htmlFile);
-                                htmlDisposition.ReadDate = System.IO.File.GetLastAccessTime(htmlFile);
+                                htmlDisposition.CreationDate = File.GetCreationTime(htmlFile);
+                                htmlDisposition.ModificationDate = File.GetLastWriteTime(htmlFile);
+                                htmlDisposition.ReadDate = File.GetLastAccessTime(htmlFile);
                                 // Add the html file attachment to this e-mail message.
                                 message.Attachments.Add(data);
 
                                 break;
                             }
-                            else
-                            {
-                                doStep++;
-                                if (doStep < 5)
-                                    Thread.Sleep(5000); //wait for 5 sec.
-                            }
+                            doStep++;
+                            if (doStep < 5)
+                                Thread.Sleep(5000); //wait for 5 sec.
                         } while (doStep < 5);
 
                     }
 
                     message.Subject = mailSubject;
-                    if (!string.IsNullOrEmpty(Common.Property.ReportSummaryBody))
+                    if (!string.IsNullOrEmpty(Property.ReportSummaryBody))
                     {
-                        message.Body = Common.Property.ReportSummaryBody;
+                        message.Body = Property.ReportSummaryBody;
                         message.IsBodyHtml = true;
                     }
                     else
@@ -951,11 +980,6 @@ namespace Common
 
                     message.Dispose();
                     smtpClient.Dispose();
-
-                }
-                catch
-                {
-                    throw;
                 }
             }
             catch (Exception ex)
@@ -977,13 +1001,12 @@ namespace Common
 
             if (ValidateEmail() == false) return;
 
-            Console.WriteLine("------------------------------------------------");
+            Console.WriteLine(ConsoleMessages.MSG_DASHED);
             Console.WriteLine("Sending Email ....!!!");
-            Console.WriteLine("------------------------------------------------");
+            Console.WriteLine(ConsoleMessages.MSG_DASHED);
 
             try
             {
-                string templateFileName = string.Empty;
                 string[] emailStr = null;
                 switch (stage.ToLower())
                 {
@@ -994,8 +1017,6 @@ namespace Common
                     case "end":
                         emailStr = EmailTemplate(Property.EmailEndTemplate);
                         break;
-                    default:
-                        break;
                 }
 
 
@@ -1005,10 +1026,10 @@ namespace Common
                 CDO.IConfiguration configuration = message.Configuration;
                 ADODB.Fields fields = configuration.Fields;
                 ADODB.Field field = fields["http://schemas.microsoft.com/cdo/configuration/smtpserver"];
-                field.Value = GetParameter("EmailSMTPServer").Trim(); //"smtp.gmail.com"; 
+                field.Value = GetParameter("EmailSMTPServer").Trim();
 
                 field = fields["http://schemas.microsoft.com/cdo/configuration/smtpserverport"];
-                field.Value = int.Parse(GetParameter("EmailSMTPPort").Trim());// should be 465
+                field.Value = int.Parse(GetParameter("EmailSMTPPort").Trim());
 
                 field = fields["http://schemas.microsoft.com/cdo/configuration/sendusing"];
                 field.Value = CDO.CdoSendUsing.cdoSendUsingPort;
@@ -1017,10 +1038,10 @@ namespace Common
                 field.Value = CDO.CdoProtocolsAuthentication.cdoBasic;
 
                 field = fields["http://schemas.microsoft.com/cdo/configuration/sendusername"];
-                field.Value = GetParameter("EmailSMTPUsername").Trim(); //"krypton.thinksys@gmail.com";
+                field.Value = GetParameter("EmailSMTPUsername").Trim();
 
                 field = fields["http://schemas.microsoft.com/cdo/configuration/sendpassword"];
-                field.Value = GetParameter("EmailSMTPPassword").Trim(); //"Thinksys@123";  
+                field.Value = GetParameter("EmailSMTPPassword").Trim();
 
                 field = fields["http://schemas.microsoft.com/cdo/configuration/smtpusessl"];
                 field.Value = "true";
@@ -1030,12 +1051,12 @@ namespace Common
 
 
 
-                #region   Add attachments
+                #region  Add attachments
 
                 if (stage == "end")
                 {
                     // Create  the file attachment for this e-mail message.
-                    string file = Common.Property.HtmlFileLocation + "/" + Property.ReportZipFileName;
+                    string file = Property.HtmlFileLocation + "/" + Property.ReportZipFileName;
                     if (File.Exists(file) && zipAttch)
                     {
                         message.AddAttachment(file);
@@ -1043,17 +1064,15 @@ namespace Common
                     }
                     else if (!zipAttch)
                     {
-                        string htmlFile = string.Empty;
+                        string htmlFile;
                         if (string.IsNullOrWhiteSpace(reportFileName))
                         {
-                            htmlFile = Common.Property.HtmlFileLocation + "/HtmlReportMail.html";
-
+                            htmlFile = Property.HtmlFileLocation + "/HtmlReportMail.html";
                         }
                         else
                         {
                             htmlFile = reportFileName;
                         }
-
                         message.AddAttachment(htmlFile);
                     }
 
@@ -1061,21 +1080,23 @@ namespace Common
 
                 #endregion
 
-                if (!string.IsNullOrEmpty(Common.Property.ReportSummaryBody))
+                if (!string.IsNullOrEmpty(Property.ReportSummaryBody))
                 {
-                    message.HTMLBody = Common.Property.ReportSummaryBody;
+                    message.HTMLBody = Property.ReportSummaryBody;
 
                 }
                 else
                 {
-                    string mailTextBody = GetEmailTextBody(emailStr[3], stage);
-                    message.TextBody = mailTextBody;
-
+                    if (emailStr != null)
+                    {
+                        string mailTextBody = GetEmailTextBody(emailStr[3], stage);
+                        message.TextBody = mailTextBody;
+                    }
                 }
                 message.From = "KryptonAutomation";
                 message.Sender = GetParameter("EmailSMTPUsername").Trim();
                 message.To = GetRecipientList();
-                message.Subject = GetEmailSubjectMessage(emailStr[1]); ;
+                if (emailStr != null) message.Subject = GetEmailSubjectMessage(emailStr[1]);
                 message.Send();
             }
             catch (Exception ex)
@@ -1095,29 +1116,30 @@ namespace Common
         /// <returns></returns>
         private static string GetEmailTextBody(string emailTextBody, string stage)
         {
-            string EmailTextBody = string.Empty;
+            var EmailTextBody = emailTextBody.Replace("[LogDestinationFolder]",
+                Property.ResultsDestinationPath.Substring(0, Property.ResultsDestinationPath.LastIndexOf('\\')));
             try
             {
-                if (string.IsNullOrWhiteSpace(GetParameter("TestSuite")) == false)
-                    emailTextBody = emailTextBody.Replace("[Test Suite]", GetParameter("TestSuite"));
-                else
-                    emailTextBody = emailTextBody.Replace("[Test Suite]", string.Empty);
+                emailTextBody = emailTextBody.Replace("[Test Suite]",
+                    string.IsNullOrWhiteSpace(GetParameter("TestSuite")) == false
+                        ? GetParameter("TestSuite")
+                        : string.Empty);
                 emailTextBody = emailTextBody.Replace("[Result]", Property.FinalExecutionStatus);
                 emailTextBody = emailTextBody.Replace("[StartTime]", Property.ExecutionStartDateTime);
                 if (stage == "end")
                 {
                     emailTextBody = emailTextBody.Replace("[EndTime]", Property.ExecutionEndDateTime);
 
-                    DateTime executionStartTime = DateTime.ParseExact(Property.ExecutionStartDateTime, Common.Utility.GetParameter("DateTimeFormat"), null);
-                    DateTime executionEndTime = DateTime.ParseExact(Property.ExecutionEndDateTime, Common.Utility.GetParameter("DateTimeFormat"), null);
+                    DateTime executionStartTime = DateTime.ParseExact(Property.ExecutionStartDateTime,
+                        GetParameter("DateTimeFormat"), null);
+                    DateTime executionEndTime = DateTime.ParseExact(Property.ExecutionEndDateTime,
+                        GetParameter("DateTimeFormat"), null);
                     TimeSpan time = executionEndTime - executionStartTime;
 
                     emailTextBody = emailTextBody.Replace("[ExecutionTime]", time.ToString());
                 }
-                if (GetParameter("RunRemoteExecution") == "true")
-                    emailTextBody = emailTextBody.Replace("[RemoteUrl]", GetParameter("RunOnRemoteBrowserUrl"));
-                else
-                    emailTextBody = emailTextBody.Replace("[RemoteUrl]", "localhost");
+                emailTextBody = emailTextBody.Replace("[RemoteUrl]",
+                    GetParameter("RunRemoteExecution") == "true" ? GetParameter("RunOnRemoteBrowserUrl") : "localhost");
 
                 emailTextBody = emailTextBody.Replace("[Environment]", GetParameter("Environment"));
 
@@ -1127,40 +1149,35 @@ namespace Common
                 emailTextBody = emailTextBody.Replace("[TotalStepWarning]", Property.TotalStepWarning.ToString());
 
                 emailTextBody = emailTextBody.Replace("[TotalCaseExecuted]", Property.TotalCaseExecuted.ToString());
-                if (Property.FinalExecutionStatus.ToLower().Equals("passed"))
-                    emailTextBody = emailTextBody.Replace("[TotalCaseFail]/", string.Empty);
-                else
-                    emailTextBody = emailTextBody.Replace("[TotalCaseFail]", Property.TotalCaseFail.ToString());
+                emailTextBody = Property.FinalExecutionStatus.ToLower().Equals("passed")
+                    ? emailTextBody.Replace("[TotalCaseFail]/", string.Empty)
+                    : emailTextBody.Replace("[TotalCaseFail]", Property.TotalCaseFail.ToString());
 
                 emailTextBody = emailTextBody.Replace("[TotalCasePass]", Property.TotalCasePass.ToString());
-                emailTextBody = emailTextBody.Replace("[TotalCaseWarning]", Property.TotalCaseWarning.ToString());
+                // ReSharper disable once ReturnValueOfPureMethodIsNotUsed
+                emailTextBody.Replace("[TotalCaseWarning]", Property.TotalCaseWarning.ToString());
 
                 //Results Destination Path variable
-                EmailTextBody = emailTextBody = emailTextBody.Replace("[LogDestinationFolder]", Property.ResultsDestinationPath.Substring(0, Property.ResultsDestinationPath.LastIndexOf('\\')));
                 return EmailTextBody;
             }
             catch
             {
-
                 return string.Empty;
             }
-
         }
+
         /// <summary>
         ///Return Email Subject
         /// </summary>
-        /// <param name="EmailMessage"></param>
+        /// <param name="emailMessage"></param>
         /// <returns></returns>
-        private static string GetEmailSubjectMessage(string EmailMessage)
+        private static string GetEmailSubjectMessage(string emailMessage)
         {
-            string mailSubject = string.Empty;
             try
             {
-                mailSubject = EmailMessage;
-                if (string.IsNullOrWhiteSpace(GetParameter("TestSuite")) == false)
-                    mailSubject = mailSubject.Replace("[Test Suite]", GetParameter("TestSuite"));
-                else
-                    mailSubject = mailSubject.Replace("[Test Suite]", "");
+                var mailSubject = emailMessage;
+                mailSubject = mailSubject.Replace("[Test Suite]",
+                    string.IsNullOrWhiteSpace(GetParameter("TestSuite")) == false ? GetParameter("TestSuite") : "");
                 if (Property.FinalExecutionStatus.ToLower().Equals("pass"))
                 {
                     Property.FinalExecutionStatus = "Passed";
@@ -1178,10 +1195,9 @@ namespace Common
                 mailSubject = mailSubject.Replace("[TotalStepFail]", Property.TotalStepFail.ToString());
                 mailSubject = mailSubject.Replace("[TotalStepWarning]", Property.TotalStepWarning.ToString());
                 mailSubject = mailSubject.Replace("[TotalCaseExecuted]", Property.TotalCaseExecuted.ToString());
-                if (Property.FinalExecutionStatus.ToLower().Equals("passed"))
-                    mailSubject = mailSubject.Replace("[TotalCaseFail]/", string.Empty);
-                else
-                    mailSubject = mailSubject.Replace("[TotalCaseFail]", Property.TotalCaseFail.ToString());
+                mailSubject = Property.FinalExecutionStatus.ToLower().Equals("passed")
+                    ? mailSubject.Replace("[TotalCaseFail]/", string.Empty)
+                    : mailSubject.Replace("[TotalCaseFail]", Property.TotalCaseFail.ToString());
                 mailSubject = mailSubject.Replace("[TotalCasePass]", Property.TotalCasePass.ToString());
                 mailSubject = mailSubject.Replace("[TotalCaseWarning]", Property.TotalCaseWarning.ToString());
                 return mailSubject;
@@ -1200,29 +1216,29 @@ namespace Common
         /// <returns> Comma Seperated email recepients list</returns>
         private static string GetRecipientList()
         {
-            string RecipientList = string.Empty;
-            if (File.Exists(Path.Combine(Common.Property.IniPath, Property.EmailNotificationFile)))
+            string recipientList = string.Empty;
+            if (File.Exists(Path.Combine(Property.IniPath, Property.EmailNotificationFile)))
             {
                 try
                 {
-                    string allrecipients = File.ReadAllText(Path.Combine(Common.Property.IniPath, Property.EmailNotificationFile));
+                    string allrecipients =
+                        File.ReadAllText(Path.Combine(Property.IniPath, Property.EmailNotificationFile));
                     allrecipients = allrecipients.Substring(allrecipients.IndexOf(':') + 1);
                     string[] recipient = allrecipients.Split(',');
                     {
-                        foreach (string recipientAdd in recipient)
-                        {
-                            if ((!string.IsNullOrWhiteSpace(recipientAdd)) && (!string.IsNullOrEmpty(recipientAdd)))
-                                RecipientList = RecipientList + "," + recipientAdd.Trim();
-
-                        }
+                        recipientList =
+                            recipient.Where(
+                                recipientAdd =>
+                                    (!string.IsNullOrWhiteSpace(recipientAdd)) && (!string.IsNullOrEmpty(recipientAdd)))
+                                .Aggregate(recipientList, (current, recipientAdd) => current + "," + recipientAdd.Trim());
                     }
                 }
-                catch (Exception e)
+                catch (Exception)
                 {
                     throw new Exception("Invalid Email format in EmailNotification.ini");
                 }
             }
-            return RecipientList;
+            return recipientList;
         }
 
         /// <summary>
@@ -1251,22 +1267,25 @@ namespace Common
 
             try
             {
-                for (int v = 0; ; v++)
+                for (int v = 0;; v++)
                 {
                     if (optionValue.Contains("{"))
                     {
-                        int stindex = optionValue.IndexOf("{");
+                        int stindex = optionValue.IndexOf("{", StringComparison.Ordinal);
                         optionValue = optionValue.Remove(stindex, 1);
 
-                        int endindex = optionValue.IndexOf("}");
+                        int endindex = optionValue.IndexOf("}", StringComparison.Ordinal);
                         if (endindex < 0) break;
 
-                        string KeyVariable = optionValue.Substring(stindex, (endindex - stindex));
+                        string keyVariable = optionValue.Substring(stindex, (endindex - stindex));
                         // Modified to check the existence of 'script' or 'testmode' keywords before '=' only.
-                        if (KeyVariable.IndexOf(optionType, StringComparison.OrdinalIgnoreCase) >= 0 && KeyVariable.Contains("="))
-                            if (KeyVariable.IndexOf(optionType, StringComparison.OrdinalIgnoreCase) < KeyVariable.IndexOf("="))
-                                testModeStr = KeyVariable.Split('=')[0].Trim().Replace("\"", "") + "," + KeyVariable.Split('=')[1].Trim().Replace("\"", "");
-                        stindex = optionValue.IndexOf("}");
+                        if (keyVariable.IndexOf(optionType, StringComparison.OrdinalIgnoreCase) >= 0 &&
+                            keyVariable.Contains("="))
+                            if (keyVariable.IndexOf(optionType, StringComparison.OrdinalIgnoreCase) <
+                                keyVariable.IndexOf("=", StringComparison.Ordinal))
+                                testModeStr = keyVariable.Split('=')[0].Trim().Replace("\"", "") + "," +
+                                              keyVariable.Split('=')[1].Trim().Replace("\"", "");
+                        stindex = optionValue.IndexOf("}", StringComparison.Ordinal);
                         optionValue = optionValue.Remove(stindex, 1);
                     }
                     else
@@ -1284,7 +1303,7 @@ namespace Common
         }
 
         // get OR row in form of Dictionary
-        public static Dictionary<string, string> GetTestOrData(string parent, string testObj, DataSet ORTestData)
+        public static Dictionary<string, string> GetTestOrData(string parent, string testObj, DataSet orTestData)
         {
             Dictionary<string, string> orDataRow = new Dictionary<string, string>();
             if (orDataRow.ContainsKey("logical_name"))
@@ -1295,43 +1314,39 @@ namespace Common
                 orDataRow[KryptonConstants.WHAT] = string.Empty;
                 orDataRow[KryptonConstants.MAPPING] = string.Empty;
             }
-            try
+            foreach (
+                DataRow drData in
+                    orTestData.Tables[0].Rows.Cast<DataRow>()
+                        .Where(drData => drData["parent"].ToString().Equals(parent, StringComparison.OrdinalIgnoreCase)
+                                         &&
+                                         drData[KryptonConstants.TEST_OBJECT].ToString()
+                                             .Equals(testObj, StringComparison.OrdinalIgnoreCase)))
             {
-
-                foreach (DataRow drData in ORTestData.Tables[0].Rows)
+                if (orDataRow.ContainsKey("logical_name") == false)
                 {
-
-                    if (drData["parent"].ToString().Equals(parent, StringComparison.OrdinalIgnoreCase)
-                        && drData[KryptonConstants.TEST_OBJECT].ToString().Equals(testObj, StringComparison.OrdinalIgnoreCase)
-                        )
-                    {
-                        if (orDataRow.ContainsKey("logical_name") == false)
-                        {
-                            orDataRow.Add("parent", Common.Utility.ReplaceVariablesInString(drData["parent"].ToString().Trim()));
-                            orDataRow.Add("logical_name", Common.Utility.ReplaceVariablesInString(drData["logical_name"].ToString().Trim()));
-                            orDataRow.Add(KryptonConstants.OBJ_TYPE, Common.Utility.ReplaceVariablesInString(drData[KryptonConstants.OBJ_TYPE].ToString().Trim()));
-                            orDataRow.Add(KryptonConstants.HOW, Common.Utility.ReplaceVariablesInString(drData[KryptonConstants.HOW].ToString().Trim()));
-                            orDataRow.Add(KryptonConstants.WHAT, Common.Utility.ReplaceVariablesInString(drData[KryptonConstants.WHAT].ToString().Trim()));
-                            orDataRow.Add(KryptonConstants.MAPPING, Common.Utility.ReplaceVariablesInString(drData[KryptonConstants.MAPPING].ToString().Trim()));
-                        }
-                        else
-                        {
-                            orDataRow.Add("parent", Common.Utility.ReplaceVariablesInString(drData["parent"].ToString().Trim()));
-                            orDataRow["logical_name"] = Common.Utility.ReplaceVariablesInString(drData["logical_name"].ToString());
-                            orDataRow[KryptonConstants.OBJ_TYPE] = Common.Utility.ReplaceVariablesInString(drData[KryptonConstants.OBJ_TYPE].ToString());
-                            orDataRow[KryptonConstants.HOW] = Common.Utility.ReplaceVariablesInString(drData[KryptonConstants.HOW].ToString());
-                            orDataRow[KryptonConstants.WHAT] = Common.Utility.ReplaceVariablesInString(drData[KryptonConstants.WHAT].ToString());
-                            orDataRow[KryptonConstants.MAPPING] = Common.Utility.ReplaceVariablesInString(drData[KryptonConstants.MAPPING].ToString());
-                        }
-                    }
-
+                    orDataRow.Add("parent", ReplaceVariablesInString(drData["parent"].ToString().Trim()));
+                    orDataRow.Add("logical_name", ReplaceVariablesInString(drData["logical_name"].ToString().Trim()));
+                    orDataRow.Add(KryptonConstants.OBJ_TYPE,
+                        ReplaceVariablesInString(drData[KryptonConstants.OBJ_TYPE].ToString().Trim()));
+                    orDataRow.Add(KryptonConstants.HOW,
+                        ReplaceVariablesInString(drData[KryptonConstants.HOW].ToString().Trim()));
+                    orDataRow.Add(KryptonConstants.WHAT,
+                        ReplaceVariablesInString(drData[KryptonConstants.WHAT].ToString().Trim()));
+                    orDataRow.Add(KryptonConstants.MAPPING,
+                        ReplaceVariablesInString(drData[KryptonConstants.MAPPING].ToString().Trim()));
+                }
+                else
+                {
+                    orDataRow.Add("parent", ReplaceVariablesInString(drData["parent"].ToString().Trim()));
+                    orDataRow["logical_name"] = ReplaceVariablesInString(drData["logical_name"].ToString());
+                    orDataRow[KryptonConstants.OBJ_TYPE] =
+                        ReplaceVariablesInString(drData[KryptonConstants.OBJ_TYPE].ToString());
+                    orDataRow[KryptonConstants.HOW] = ReplaceVariablesInString(drData[KryptonConstants.HOW].ToString());
+                    orDataRow[KryptonConstants.WHAT] = ReplaceVariablesInString(drData[KryptonConstants.WHAT].ToString());
+                    orDataRow[KryptonConstants.MAPPING] =
+                        ReplaceVariablesInString(drData[KryptonConstants.MAPPING].ToString());
                 }
             }
-            catch (Exception e)
-            {
-                throw e;
-            }
-
 
             return orDataRow;
         }
@@ -1344,35 +1359,30 @@ namespace Common
         /// <returns>true on successful copy</returns>
         public static bool CopyAll(DirectoryInfo source, DirectoryInfo target)
         {
-            try
+            //check whether target directory exists and create it if not present.
+            if (Directory.Exists(target.FullName) == false)
             {
-                //check whether target directory exists and create it if not present.
-                if (Directory.Exists(target.FullName) == false)
-                {
-                    Directory.CreateDirectory(target.FullName);
-                }
+                Directory.CreateDirectory(target.FullName);
+            }
 
-                //copy all the files into source directory to target directory.
-                foreach (FileInfo fi in source.GetFiles())
+            //copy all the files into source directory to target directory.
+            foreach (FileInfo fi in source.GetFiles())
+            {
+                try
                 {
-                    try
-                    {
-                        fi.CopyTo(Path.Combine(target.ToString(), fi.Name), true);
-                    }
-                    catch
-                    { /*leave the locked files as they are not required for profile*/ }
+                    fi.CopyTo(Path.Combine(target.ToString(), fi.Name), true);
                 }
-
-                //find all the directories into source directory and make a recursive call to copy its file to destination folder.
-                foreach (DirectoryInfo diSourceSubDir in source.GetDirectories())
+                catch
                 {
-                    DirectoryInfo nextTargetSubDir = target.CreateSubdirectory(diSourceSubDir.Name);
-                    CopyAll(diSourceSubDir, nextTargetSubDir);
+                    /*leave the locked files as they are not required for profile*/
                 }
             }
-            catch (Exception exception)
+
+            //find all the directories into source directory and make a recursive call to copy its file to destination folder.
+            foreach (DirectoryInfo diSourceSubDir in source.GetDirectories())
             {
-                throw exception;
+                DirectoryInfo nextTargetSubDir = target.CreateSubdirectory(diSourceSubDir.Name);
+                CopyAll(diSourceSubDir, nextTargetSubDir);
             }
 
             return true;
@@ -1382,9 +1392,10 @@ namespace Common
         ///Method to make a backup of firefox profile after execution of test case completed.
         ///This is used to keep the cookies stored after completion of test case.
         /// </summary>
-        public static void firefoxBackup()
+        public static void FirefoxBackup()
         {
-            if (GetParameter("FirefoxProfilePath").Length != 0 && GetParameter("Browser").Equals("firefox", StringComparison.OrdinalIgnoreCase))
+            if (GetParameter("FirefoxProfilePath").Length != 0 &&
+                GetParameter("Browser").Equals("firefox", StringComparison.OrdinalIgnoreCase))
             {
                 // Create backup of firefox profile
                 DirectoryInfo ffProfile = new DirectoryInfo(GetParameter("FirefoxProfilePath"));
@@ -1397,16 +1408,18 @@ namespace Common
         /// <summary>
         ///Method to clean up the temporary profile and addons directories after completion of test case.
         /// </summary>
-        public static void firefoxCleanup()
+        public static void FirefoxCleanup()
         {
-            if (GetParameter("FirefoxProfilePath").Length != 0 && GetParameter("Browser").Equals("firefox", StringComparison.OrdinalIgnoreCase))
+            if (GetParameter("FirefoxProfilePath").Length != 0 &&
+                GetParameter("Browser").Equals("firefox", StringComparison.OrdinalIgnoreCase))
             {
                 //we are reverting back to b3
-                if (Directory.Exists(Common.Utility.GetParameter("tmpFFProfileDir")))
-                    Directory.Delete(Common.Utility.GetParameter("tmpFFProfileDir"), true);
+                if (Directory.Exists(GetParameter("tmpFFProfileDir")))
+                    Directory.Delete(GetParameter("tmpFFProfileDir"), true);
             }
 
-            if (GetParameter("AddonsPath").Length != 0 && GetParameter("Browser").Equals("firefox", StringComparison.OrdinalIgnoreCase))
+            if (GetParameter("AddonsPath").Length != 0 &&
+                GetParameter("Browser").Equals("firefox", StringComparison.OrdinalIgnoreCase))
             {
                 DirectoryInfo addonDir = new DirectoryInfo("AddonsTemp");
                 if (addonDir.Exists)
@@ -1426,23 +1439,23 @@ namespace Common
             string testModeStr = string.Empty;
 
 
-            for (int v = 0; ; v++)
+            for (int v = 0;; v++)
             {
                 if (optionValue.Contains("{"))
                 {
-                    int stindex = optionValue.IndexOf("{");
+                    int stindex = optionValue.IndexOf("{", StringComparison.Ordinal);
                     if (stindex > -1)
                     {
                         optionValue = optionValue.Remove(stindex, 1);
-                        int endindex = optionValue.IndexOf("}");
+                        int endindex = optionValue.IndexOf("}", StringComparison.Ordinal);
                         if (endindex > -1)
                         {
-                            string KeyVariable = optionValue.Substring(stindex, (endindex - stindex));
-                            if (KeyVariable.IndexOf(optionType, StringComparison.OrdinalIgnoreCase) >= 0)
+                            string keyVariable = optionValue.Substring(stindex, (endindex - stindex));
+                            if (keyVariable.IndexOf(optionType, StringComparison.OrdinalIgnoreCase) >= 0)
                             {
-                                testModeStr = KeyVariable;
+                                testModeStr = keyVariable;
                             }
-                            stindex = optionValue.IndexOf("}");
+                            stindex = optionValue.IndexOf("}", StringComparison.Ordinal);
                             optionValue = optionValue.Remove(stindex, 1);
                         }
                     }
@@ -1460,10 +1473,8 @@ namespace Common
         /// </summary>
         public static void ClearRunTimeDic()
         {
-            Property.runtimedic.Clear();
-            Property.runtimedic = new Dictionary<string, string>(Property.parameterdic);
-
-            return;
+            Property.Runtimedic.Clear();
+            Property.Runtimedic = new Dictionary<string, string>(Property.Parameterdic);
         }
 
         /// <summary>
@@ -1473,12 +1484,10 @@ namespace Common
         /// <returns></returns>
         public static string GetTemporaryFile(string extn)
         {
-            string response = string.Empty;
-
             if (!extn.StartsWith("."))
                 extn = "." + extn;
 
-            response = System.IO.Path.GetTempPath() + Guid.NewGuid().ToString() + extn;
+            var response = Path.GetTempPath() + Guid.NewGuid() + extn;
 
             return response;
         }
@@ -1492,39 +1501,39 @@ namespace Common
         /// <returns>Dataset containing Test Data.</returns>
         public static void GetCommonMessageData()
         {
-            string oriFilePath = Common.Property.ApplicationPath + Property.GlobalCommentsFile;
-            string tmpFileName = string.Empty;
-            tmpFileName = Utility.GetTemporaryFile(".txt");
+            string oriFilePath = Property.ApplicationPath + Property.GlobalCommentsFile;
+            var tmpFileName = GetTemporaryFile(".txt");
             if (File.Exists(oriFilePath))
             {
                 File.Copy(oriFilePath, tmpFileName);
 
                 if (File.Exists(tmpFileName))
                 {
-                    FileStream fileStream = new FileStream(tmpFileName, FileMode.Open, FileAccess.Read, FileShare.None);
-                    StreamReader streamReader = new StreamReader(fileStream);
-                    string readLine;
-                    while ((readLine = streamReader.ReadLine()) != null)
+                    using (
+                        FileStream fileStream = new FileStream(tmpFileName, FileMode.Open, FileAccess.Read,
+                            FileShare.None))
+                    using (StreamReader streamReader = new StreamReader(fileStream))
                     {
-                        int splitInd = readLine.IndexOf('|');
-                        string messageId = readLine.Substring(0, splitInd);
-                        string messageStr = readLine.Substring(splitInd + 1, readLine.Length - splitInd - 1);
-                        Utility.SetCommonMsgVariable(messageId, messageStr);
+                        string readLine;
+                        while ((readLine = streamReader.ReadLine()) != null)
+                        {
+                            int splitInd = readLine.IndexOf('|');
+                            string messageId = readLine.Substring(0, splitInd);
+                            string messageStr = readLine.Substring(splitInd + 1, readLine.Length - splitInd - 1);
+                            SetCommonMsgVariable(messageId, messageStr);
+                        }
                     }
-                    Property.listOfFilesInTempFolder.Add(tmpFileName);
+                    Property.ListOfFilesInTempFolder.Add(tmpFileName);
                 }
                 else
                 {
-                    throw new Common.KryptonException("Error", "File missing:" + tmpFileName);
+                    throw new KryptonException("Error", "File missing:" + tmpFileName);
                 }
-
             }
             else
             {
-                throw new Common.KryptonException("Error", "File missing:" + oriFilePath);
+                throw new KryptonException("Error", "File missing:" + oriFilePath);
             }
-
-
         }
 
         /// <summary>
@@ -1536,12 +1545,11 @@ namespace Common
         public static void SetCommonMsgVariable(string varName, string varValue)
         {
             varName = varName.ToLower();
-            if (Common.Property.commonMsgdic.ContainsKey(varName))
-                Common.Property.commonMsgdic[varName] = varValue;
+            if (Property.CommonMsgdic.ContainsKey(varName))
+                Property.CommonMsgdic[varName] = varValue;
             else
-                Common.Property.commonMsgdic.Add(varName, varValue);
+                Property.CommonMsgdic.Add(varName, varValue);
         }
-
 
         /// <summary>
         ///Retrives value of variable from common message dictionary. Return ZERO length string if variable
@@ -1552,14 +1560,14 @@ namespace Common
         public static string GetCommonMsgVariable(string varName)
         {
             varName = varName.ToLower();
-            string value = string.Empty;
+            string value;
             try
             {
-                value = Common.Property.commonMsgdic[varName];
+                value = Property.CommonMsgdic[varName];
             }
             catch (Exception)
             {
-                return varName;//return variable name itself if given varaible has no value.
+                return varName; //return variable name itself if given varaible has no value.
             }
             return value;
         }
@@ -1587,7 +1595,7 @@ namespace Common
             return inString;
         }
 
-        private static string[] getRegistryKey(string softwareKey)
+        private static string[] GetRegistryKey(string softwareKey)
         {
             RegistryKey rk = Registry.LocalMachine.OpenSubKey(softwareKey);
             return rk.GetSubKeyNames();
@@ -1597,13 +1605,13 @@ namespace Common
         /// Get Sub Key String For firefox browser.
         /// </summary>
         /// <returns>string : subKey String.</returns>
-        public static string getFFVersionString()
+        public static string GetFfVersionString()
         {
-            string softwareKey = Property.Browser_KeyString;
+            string softwareKey = Property.BrowserKeyString;
             string versionString = string.Empty;
             try
             {
-                string[] subKeys = getRegistryKey(softwareKey);
+                string[] subKeys = GetRegistryKey(softwareKey);
                 foreach (string key in subKeys)
                 {
                     if (key.Contains("Mozilla Firefox"))
@@ -1612,7 +1620,7 @@ namespace Common
                 //For Win 7 machines.
                 if (versionString.Equals(String.Empty))
                 {
-                    string[] keys = getRegistryKey(Property.Browser_KeyString_64bit);
+                    string[] keys = GetRegistryKey(Property.BrowserKeyString64Bit);
                     foreach (string key in keys)
                     {
                         if (key.Contains("Mozilla Firefox"))
@@ -1626,29 +1634,35 @@ namespace Common
                 return string.Empty;
             }
         }
+
         /// <summary>
         /// Register any dll on Application machine.
         /// </summary>
         /// <param name="dllPath">string : Path to Dll.</param>
-        public static void registerDll(string dllPath)
+        public static void RegisterDll(string dllPath)
         {
             //registering dll silentltly.
             string fileinfo = "/s" + " " + "\"" + dllPath + "\"";
             try
             {
-                Process reg = new Process();
-                reg.StartInfo.FileName = "regsvr32.exe";
-                reg.StartInfo.Arguments = fileinfo;
-                reg.StartInfo.UseShellExecute = false;
-                reg.StartInfo.CreateNoWindow = true;
-                reg.StartInfo.RedirectStandardOutput = true;
+                Process reg = new Process
+                {
+                    StartInfo =
+                    {
+                        FileName = "regsvr32.exe",
+                        Arguments = fileinfo,
+                        UseShellExecute = false,
+                        CreateNoWindow = true,
+                        RedirectStandardOutput = true
+                    }
+                };
                 reg.Start();
                 reg.WaitForExit();
                 reg.Close();
             }
             catch (Exception)
             {
-
+                // ignored
             }
         }
 
@@ -1659,33 +1673,30 @@ namespace Common
         /// <returns>number</returns>
         public static int GetNumberFromText(string text)
         {
-            string number = string.Empty;
-            foreach (char c in text)
-            {
-                int a = System.Convert.ToInt32(c);
-                if (a >= 48 && a <= 57)
-                {
-                    number = number + c.ToString();
-
-                }
-            }
+            string number =
+                (from c in text let a = Convert.ToInt32(c) where a >= 48 && a <= 57 select c).Aggregate(string.Empty,
+                    (current, c) => current + c.ToString());
 
             return Int32.Parse(number);
         }
 
         #region random number generation
+
         /// <summary>
         ///These steps need to be written to have syncronize random number generation
         /// so that number will be trully random
         /// </summary>
 
-        private static readonly Random random = new Random();
-        private static readonly object syncLock = new object();
+        private static readonly Random Random = new Random();
+
+        private static readonly object SyncLock = new object();
+
         public static int RandomNumber(int min, int max)
         {
-            lock (syncLock)
-            {   // synchronize
-                return random.Next(min, max);
+            lock (SyncLock)
+            {
+                // synchronize
+                return Random.Next(min, max);
             }
         }
 
@@ -1694,7 +1705,9 @@ namespace Common
             string randomStr = string.Empty;
             for (int chrCnt = 0; chrCnt < strLength; chrCnt++)
             {
-                randomStr = randomStr + Property.ListOfUniqueCharacters[RandomNumber(0, Property.ListOfUniqueCharacters.Length)].Trim();
+                randomStr = randomStr +
+                            Property.ListOfUniqueCharacters[RandomNumber(0, Property.ListOfUniqueCharacters.Length)]
+                                .Trim();
             }
             return randomStr.Trim();
         }
@@ -1728,15 +1741,15 @@ namespace Common
                 // EncoderParameter object in the array.
                 EncoderParameters myEncoderParameters = new EncoderParameters(1);
                 //Compression ratio for compressing the image
-                long compressionRatio = Common.Property.imageCompressionRatio;
+                long compressionRatio = Property.ImageCompressionRatio;
 
 
-                if (Common.Property.parameterdic.ContainsKey("ScreenshotCompressionRatio"))
+                if (Property.Parameterdic.ContainsKey("ScreenshotCompressionRatio"))
                 {
-                    float cr = float.Parse(Common.Utility.GetParameter("ScreenshotCompressionRatio"));
+                    float cr = float.Parse(GetParameter("ScreenshotCompressionRatio"));
                     if (cr >= 0.5 && cr <= 1)
                     {
-                        compressionRatio = (long)(cr * 100);
+                        compressionRatio = (long) (cr*100);
                     }
                 }
 
@@ -1766,19 +1779,13 @@ namespace Common
                 throw e;
             }
         }
+
         public static ImageCodecInfo GetEncoder(ImageFormat format)
         {
             try
             {
                 ImageCodecInfo[] codecs = ImageCodecInfo.GetImageDecoders();
-                foreach (ImageCodecInfo codec in codecs)
-                {
-                    if (codec.FormatID == format.Guid)
-                    {
-                        return codec;
-                    }
-                }
-                return null;
+                return codecs.FirstOrDefault(codec => codec.FormatID == format.Guid);
             }
             catch
             {
@@ -1794,21 +1801,31 @@ namespace Common
         /// <summary>
         /// Method to retrieve all TestCaseIds from given TestSuite File.
         /// </summary>
-        /// <param name="suiteFilePath">string </param>
+        /// <param name="suiteDataSet">DataSet</param>
         /// <returns>string</returns>
-        public static string GetTestCaseIdFromSuiteFile(string suiteFilePath)
+        public static string GetTestCaseIdFromSuiteDataset(DataSet suiteDataSet)
         {
-            string testCaseId = string.Empty;
-            suiteFilePath = suiteFilePath + ".suite";
-            string[] lines = System.IO.File.ReadAllLines(suiteFilePath);
-            foreach (var id in lines)
+            StringBuilder testcaseId = new StringBuilder();
+            List<object> testcaseIdList =
+                suiteDataSet.Tables[0].AsEnumerable()
+                    .Select(r => r["test_case_id"])
+                    .Where(x => x.ToString() != "")
+                    .ToList();
+            List<object> optionsList =
+                suiteDataSet.Tables[0].AsEnumerable().Select(opt => opt["options"]).Take(testcaseIdList.Count).ToList();
+            if (testcaseIdList[0].ToString().Contains("To enable"))
             {
-                if (id != string.Empty)
+                testcaseIdList.RemoveAt(0);
+                optionsList.RemoveAt(0);   
+            }
+            for (int i = 0; i < testcaseIdList.Count; i++)
+            {
+                if (optionsList[i].ToString() != "{skip}")
                 {
-                    testCaseId = testCaseId + "," + id;
+                    testcaseId.Append("," + testcaseIdList[i]);
                 }
             }
-            return testCaseId.Substring(1);
+            return testcaseId.ToString().Substring(1);
         }
     }
 }

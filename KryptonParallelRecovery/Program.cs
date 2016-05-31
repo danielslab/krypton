@@ -8,17 +8,13 @@
 *****************************************************************************/
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 using System.Data;
-using System.Data.OleDb;
 using System.Diagnostics;
 using System.IO;
 using System.Windows.Forms;
+using Common;
 using Excel;
-using System.Diagnostics;
-using AutoItX3Lib;
-using System.Runtime.Serialization.Formatters.Binary;
 
 
 namespace KRYPTONParallelRecovery
@@ -26,11 +22,11 @@ namespace KRYPTONParallelRecovery
     class Program
     {
         #region Static Member Variables.
-        static AutoItX3Lib.AutoItX3 objAutoit=null;
-        static string sheetName = string.Empty;
-        static string applicationPath = string.Empty;
-        static string parentProcessId = null;
-        static bool isParentProcessRunning = true;
+        static AutoItX3Lib.AutoItX3 _objAutoit=null;
+        static string _sheetName = string.Empty;
+        static string _applicationPath = string.Empty;
+        static string _parentProcessId = null;
+        static bool _isParentProcessRunning = true;
         #endregion
         #region Main Execution
         /// <summary>
@@ -43,41 +39,36 @@ namespace KRYPTONParallelRecovery
             {
                 string filePath = args[0].ToString();
                 Console.WriteLine("FilePath" + filePath);
-                applicationPath = Application.ExecutablePath;
-                dynamic windowsList = null;
-                List<string> windowTitleList = null;
-                int applicationFilePath = applicationPath.LastIndexOf("\\");
-                string WorkingDirectory = string.Empty;
-                Process parentProcess = null;
+                _applicationPath = Application.ExecutablePath;
+                int applicationFilePath = _applicationPath.LastIndexOf("\\", StringComparison.Ordinal);
+                string workingDirectory = string.Empty;
                 if (applicationFilePath >= 0)
                 {
-                    WorkingDirectory = applicationPath.Substring(0, applicationFilePath + 1);
+                    workingDirectory = _applicationPath.Substring(0, applicationFilePath + 1);
                 }
-
                 DataSet dataset = GetDataSet(filePath);
-
                 try
                 {
                     //Generate Autoit object.
-                    objAutoit = new AutoItX3Lib.AutoItX3();
+                    _objAutoit = new AutoItX3Lib.AutoItX3();
                     //Setting AutoIt Title match to Exact match.
-                    objAutoit.AutoItSetOption("WinTitleMatchMode", 4);
-                    parentProcessId = args[2].ToString();
+                    _objAutoit.AutoItSetOption("WinTitleMatchMode", 4);
+                    _parentProcessId = args[2];
                 }
                 catch (Exception e)
                 {
-                    Common.KryptonException.writeexception(e);
+                    KryptonException.Writeexception(e);
                 }
 
                 //Starting Infinite loop.
                 //loop should run as long as parent process is running
-                while (isParentProcessRunning)
+                while (_isParentProcessRunning)
                 {
                     //Getting all windows beforehand.
-                    windowsList = objAutoit.WinList("[REGEXPTITLE:^.*$]");
+                    dynamic windowsList = _objAutoit.WinList("[REGEXPTITLE:^.*$]");
                     int winListCount = (int)windowsList[0, 0]; // List[0,0] give the count of windows.
 
-                    windowTitleList = new List<string>(); // Declaring list that would contain titles of all window.
+                    var windowTitleList = new List<string>();
                     //Populating non empty titles to windowTitleList.
                     for (int j = 1; j <= winListCount; j++)
                     {
@@ -95,12 +86,12 @@ namespace KRYPTONParallelRecovery
                             //If parent process (Krypton.exe) is not running, exits from here
                             try
                             {
-                                parentProcess = Process.GetProcessById(int.Parse(parentProcessId));
+                                Process.GetProcessById(int.Parse(_parentProcessId));
                             }
                             catch (Exception e)
                             {
                                 //Exception will occur only when parent process is not running
-                                isParentProcessRunning = false;
+                                _isParentProcessRunning = false;
                                 return;
                             }
 
@@ -111,26 +102,25 @@ namespace KRYPTONParallelRecovery
                             //Get the action need to be done.
                             string action = dataset.Tables[0].Rows[i]["Action"].ToString().Trim();
 
-                            string data = string.Empty;
-                             //Populate data if provided.
-                            data = dataset.Tables[0].Rows[i]["Data"].ToString().Trim();
+                            //Populate data if provided.
+                            var data = dataset.Tables[0].Rows[i]["Data"].ToString().Trim();
                             if (windowTitleList.Contains(popupName))
                             {
                                 //Switching control based on action given.
                                 switch (action.ToLower())
                                 {
                                     case "click":
-                                        btnClick(popupName, buttonName);
+                                        BtnClick(popupName, buttonName);
                                         break;
                                     case "keypress":
-                                        keyPress(popupName, data);
+                                        KeyPress(popupName, data);
                                         break;
                                     case "close":
-                                        objAutoit.WinClose(popupName);
+                                        _objAutoit.WinClose(popupName);
                                         break;
                                     case "run":
                                     case "execute":
-                                        if (!File.Exists(applicationPath + data))
+                                        if (!File.Exists(_applicationPath + data))
                                         {
                                             data = data + ".exe";
                                         }
@@ -141,14 +131,12 @@ namespace KRYPTONParallelRecovery
                                             specialScriptProcess.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
                                             specialScriptProcess.StartInfo.UseShellExecute = false;
                                             specialScriptProcess.StartInfo.FileName = data;
-                                            specialScriptProcess.StartInfo.WorkingDirectory = WorkingDirectory;
+                                            specialScriptProcess.StartInfo.WorkingDirectory = workingDirectory;
                                             specialScriptProcess.StartInfo.ErrorDialog = false;
                                             // Start the process
                                             specialScriptProcess.Start();
                                             specialScriptProcess.WaitForExit(10000);
                                         }
-                                        break;
-                                    default:
                                         break;
                                 }
                             }
@@ -160,15 +148,15 @@ namespace KRYPTONParallelRecovery
             }
             catch (System.Runtime.InteropServices.COMException)
             {
-                Console.WriteLine("Please register AutoIt dll");
+                Console.WriteLine(ConsoleMessages.REGISTER_AUTOIT);
             }
-            catch (System.IndexOutOfRangeException)
+            catch (IndexOutOfRangeException)
             {
-                Console.WriteLine("KRYPTONPrallelRecovery : invalid arguments");
+                Console.WriteLine(ConsoleMessages.INVALID_ARGUMNETS);
             }
             catch (Exception e)
             {
-                Console.WriteLine("KRYPTONPrallelRecovery : " + e.Message + e.StackTrace);
+                Console.WriteLine(ConsoleMessages.PARALLEL_rECOVERY + e.Message + e.StackTrace);
             }
 
         }
@@ -179,32 +167,32 @@ namespace KRYPTONParallelRecovery
         /// </summary>
         /// <param name="popUpName">string : Name of popup to recover.</param>
         /// <param name="key"> string : Key to send.</param>
-        private static void keyPress(string popUpName, string key)
+        private static void KeyPress(string popUpName, string key)
         {
             try
             {
-                objAutoit.WinActivate(popUpName, string.Empty); //Activate window.
+                _objAutoit.WinActivate(popUpName, string.Empty); //Activate window.
 
                 switch (key.ToLower())//Send Specified Key.
                 {
                     case "tab":
-                        objAutoit.Send("{TAB}");
+                        _objAutoit.Send("{TAB}");
                         break;
                     case "space":
-                        objAutoit.Send("{SPACE}");
+                        _objAutoit.Send("{SPACE}");
                         break;
                     case "enter":
-                        objAutoit.Send("{ENTER}");
+                        _objAutoit.Send("{ENTER}");
                         break;
                     default:
-                        objAutoit.Send(key, 1);
+                        _objAutoit.Send(key, 1);
                         break;
                 }
 
             }
             catch (Exception e) 
             {
-                Common.KryptonException.writeexception(e.InnerException);
+                KryptonException.Writeexception(e.InnerException);
             }
         }
 
@@ -213,23 +201,23 @@ namespace KRYPTONParallelRecovery
         /// </summary>
         /// <param name="popUpName">string : name of popup to recover.</param>
         /// <param name="btnTitle"></param>
-        private static void btnClick(string popUpName, string btnTitle = "")
+        private static void BtnClick(string popUpName, string btnTitle = "")
         {
             try
             {
-                objAutoit.WinActivate(popUpName);
+                _objAutoit.WinActivate(popUpName);
 
                 //Click on control, close dialog if unsuccessful
                 if (!(btnTitle.Equals("") || btnTitle.Equals(string.Empty)))
                 {
-                    if (objAutoit.ControlClick(popUpName, "", "[TEXT:" + btnTitle + "]") == 0)
+                    if (_objAutoit.ControlClick(popUpName, "", "[TEXT:" + btnTitle + "]") == 0)
                     {
                     }
                 }
             }
             catch (Exception e)
             {
-                Common.KryptonException.writeexception(e.InnerException);
+                KryptonException.Writeexception(e.InnerException);
             }
         }
 
@@ -249,11 +237,11 @@ namespace KRYPTONParallelRecovery
             try
             {
                 tmpFileName = GetTemporaryFile(fileExtension, filePath);
-                if (fileExtension.ToLower().Equals(".csv"))
+                if (fileExtension != null && fileExtension.ToLower().Equals(".csv"))
                 {
                     if (!File.Exists(tmpFileName))
                     {
-                        Console.WriteLine("File Not Found:  " + filePath);
+                        Console.WriteLine(ConsoleMessages.FOD + filePath);
                     }
                     using (GenericParsing.GenericParserAdapter gp = new GenericParsing.GenericParserAdapter(tmpFileName, Encoding.UTF7))
                     {
@@ -269,7 +257,7 @@ namespace KRYPTONParallelRecovery
             }
             catch (Exception ex) 
             {
-                Common.KryptonException.writeexception(ex);
+                KryptonException.Writeexception(ex);
             }
             finally
             {
@@ -279,46 +267,38 @@ namespace KRYPTONParallelRecovery
         }
 
 
-        private static DataSet GetExcelDataSet(string ExcelFilePath)
+        private static DataSet GetExcelDataSet(string excelFilePath)
         {
             string tempFilePath = Path.GetTempFileName();
             IExcelDataReader excelReader = null;
             DataSet oResultSet = null;
-            FileInfo oFileInfo = new FileInfo(ExcelFilePath);
+            FileInfo oFileInfo = new FileInfo(excelFilePath);
             File.Copy(oFileInfo.FullName, tempFilePath, true);
             FileStream stream = File.OpenRead(tempFilePath);
             try
             {
-                if (oFileInfo.Extension.ToLower() == ".xls")
-                    excelReader = ExcelReaderFactory.CreateBinaryReader(stream);
-                else
-                    excelReader = ExcelReaderFactory.CreateOpenXmlReader(stream);
+                excelReader = oFileInfo.Extension.ToLower() == ".xls" ? ExcelReaderFactory.CreateBinaryReader(stream) : ExcelReaderFactory.CreateOpenXmlReader(stream);
                 excelReader.IsFirstRowAsColumnNames = true;
                 oResultSet = excelReader.AsDataSet();
 
                 File.Delete(tempFilePath);
             }
-            catch
-            {
-                oResultSet = null;
-                throw;
-            }
             finally
             {
-
                 if (excelReader != null)
                     excelReader.Close();
-                if (stream != null)
-                    stream.Close();
+                stream.Close();
             }
             return oResultSet;
         }
 
-        /// <summary>
-        ///Get Temp file specified.
-        /// </summary>
-        /// <param name="filePath" file extension>string : fileExtension.</param>
-        /// /// <param name="filePath" >string : Filepath.</param>
+        ///  <summary>
+        /// Get Temp file specified.
+        ///  </summary>
+        ///  <param name="filePath" file extension>string : fileExtension.</param>
+        ///  /// <param name="filePath" >string : Filepath.</param>
+        /// <param name="fileExtension"></param>
+        /// <param name="origPath"></param>
         /// <returns>Temp file.</returns>
         private static string GetTemporaryFile(string fileExtension, string origPath)
         {
@@ -327,12 +307,12 @@ namespace KRYPTONParallelRecovery
             {
                 if (!fileExtension.StartsWith("."))
                     fileExtension = "." + fileExtension;
-                response = System.IO.Path.GetTempPath() + Guid.NewGuid().ToString() + fileExtension;
+                response = Path.GetTempPath() + Guid.NewGuid().ToString() + fileExtension;
                 File.Copy(origPath, response);
             }
-            catch
+            catch (Exception)
             {
-
+                // ignored
             }
             return response;
         }

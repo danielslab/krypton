@@ -1,0 +1,12 @@
+D:\TFS Krypton Product\KryptonOpenSource\SourceCode\Output\chromedriver.exe
+D:\TFS Krypton Product\KryptonOpenSource\SourceCode\Output\SeleniumDriver.dll
+D:\TFS Krypton Product\KryptonOpenSource\SourceCode\Output\SeleniumDriver.pdb
+D:\TFS Krypton Product\KryptonOpenSource\SourceCode\SeleniumDriver\obj\Debug\SeleniumDriver.csprojResolveAssemblyReference.cache
+D:\TFS Krypton Product\KryptonOpenSource\SourceCode\SeleniumDriver\obj\Debug\SeleniumDriver.dll
+D:\TFS Krypton Product\KryptonOpenSource\SourceCode\SeleniumDriver\obj\Debug\SeleniumDriver.pdb
+D:\Krypton Product\KryptonOpenSource\SourceCode\Output\chromedriver.exe
+D:\Krypton Product\KryptonOpenSource\SourceCode\Output\SeleniumDriver.dll
+D:\Krypton Product\KryptonOpenSource\SourceCode\Output\SeleniumDriver.pdb
+D:\Krypton Product\KryptonOpenSource\SourceCode\SeleniumDriver\obj\Debug\SeleniumDriver.csprojResolveAssemblyReference.cache
+D:\Krypton Product\KryptonOpenSource\SourceCode\SeleniumDriver\obj\Debug\SeleniumDriver.dll
+D:\Krypton Product\KryptonOpenSource\SourceCode\SeleniumDriver\obj\Debug\SeleniumDriver.pdb

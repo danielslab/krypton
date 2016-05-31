@@ -1,0 +1,9 @@
+D:\TFS Krypton Product\KryptonOpenSource\SourceCode\Output\TestManager.dll
+D:\TFS Krypton Product\KryptonOpenSource\SourceCode\Output\TestManager.pdb
+D:\TFS Krypton Product\KryptonOpenSource\SourceCode\TMQC\obj\Debug\TestManager.dll
+D:\TFS Krypton Product\KryptonOpenSource\SourceCode\TMQC\obj\Debug\TestManager.pdb
+D:\Krypton Product\KryptonOpenSource\SourceCode\Output\TestManager.dll
+D:\Krypton Product\KryptonOpenSource\SourceCode\Output\TestManager.pdb
+D:\Krypton Product\KryptonOpenSource\SourceCode\TMQC\obj\Debug\TMQC.csprojResolveAssemblyReference.cache
+D:\Krypton Product\KryptonOpenSource\SourceCode\TMQC\obj\Debug\TestManager.dll
+D:\Krypton Product\KryptonOpenSource\SourceCode\TMQC\obj\Debug\TestManager.pdb

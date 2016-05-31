@@ -1,0 +1,66 @@
+﻿KRYPTONERRCODE0001|Error in validating the installation of Internet Explorer on your machine
+KRYPTONERRCODE0002|Error in validating the installation of Mozilla Firefox on your machine
+KRYPTONERRCODE0003|Error in validating the installation of Google Chrome on your machine
+KRYPTONERRCODE0004|Exception into Java Software Validation: {MSG}
+KRYPTONERRCODE0005|Exception into Java Version Validation: {MSG}
+KRYPTONERRCODE0006|Error in writing HTML Report file
+KRYPTONERRCODE0007|
+KRYPTONERRCODE0008|No value found in Object Repository
+KRYPTONERRCODE0009|Error in loading firefox addons: {MSG}
+KRYPTONERRCODE0010|KRYPTONERRCODE0010
+KRYPTONERRCODE0011|Unable to dismiss alert. Please verify if an alert is present.
+KRYPTONERRCODE0012|Firefox profile directory does not exist
+KRYPTONERRCODE0013|Please close previously running instances of firefox to continue using current firefox profile
+KRYPTONERRCODE0014|Firefox addons directory does not exist
+KRYPTONERRCODE0015|Multiple versions of firebug found in addons directory
+KRYPTONERRCODE0016|FirefoxDriver connect error
+KRYPTONERRCODE0017|Invalid action for Popups
+KRYPTONERRCODE0018|Popup_Text: {MSG}
+KRYPTONERRCODE0019| Unable to locate element "{MSG3}" on page "{MSG4}" with property: {method: "{MSG1}", selector: "{MSG2}"}
+KRYPTONERRCODE0020|Verification Failed: "element is displayed"
+KRYPTONERRCODE0021|No entry found for columns in Object Repository file
+KRYPTONERRCODE0022|Given item "{MSG}" is not available in list of options.
+KRYPTONERRCODE0022A|Given item number "{MSG1}" is not available in list of options. Only "{MSG2}" items are available.
+KRYPTONERRCODE0023|Property: "{MSG1}" is not supported for given test object {MSG2}
+KRYPTONERRCODE0024|Unable to perform operation
+KRYPTONERRCODE0025|No Such Action
+KRYPTONERRCODE0026|SQL File Error: {MSG}
+KRYPTONERRCODE0027|Database Read Error: {MSG}
+KRYPTONERRCODE0028|Database Write Error: {MSG}
+KRYPTONERRCODE0029|No entry in Object Repository file
+KRYPTONERRCODE0030|Unable to locate dialog element
+KRYPTONERRCODE0031|Exception into Test Case Columns Validation {MSG}
+KRYPTONERRCODE0032|Exception into Test Data Columns Validation {MSG}
+KRYPTONERRCODE0033|Exception into Object Repository Columns Validation {MSG}
+KRYPTONERRCODE0034|Exception into DB Test Data Columns Validation {MSG}
+KRYPTONERRCODE0035|Exception into PopUp Recovery Sheet Column Validation {MSG}
+KRYPTONERRCODE0036|Exception into Browser Recovery Sheet Column Validation {MSG}
+KRYPTONERRCODE0037|File missing: {MSG}
+KRYPTONERRCODE0038|Invalid column name: {MSG}
+KRYPTONERRCODE0039|Exception into GetOSVersion(): {MSG}
+KRYPTONERRCODE0040|Given Parameter: {MSG1} doesn't exist: {MSG2}
+KRYPTONERRCODE0041|Check the .ini filename mentioned in 'Environment'
+KRYPTONERRCODE0042|Check the ReportSettings.ini
+KRYPTONERRCODE0043|Check the EmailNotification.ini
+KRYPTONERRCODE0044|Error reading Parameter.ini
+KRYPTONERRCODE0045|Parameter: "{MSG}" is missing from Parameters.ini file
+KRYPTONERRCODE0046|Parameter: "{MSG}" cannot have empty value
+KRYPTONERRCODE0047|Parameters: "TestCaseId" and "TestSuite" both cannot have empty values
+KRYPTONERRCODE0048|Unable to delete temporary files!
+KRYPTONERRCODE0049|No test flow could be located for Krypton Id
+KRYPTONERRCODE0050|Test Data Error
+KRYPTONERRCODE0051|Error in Test Case Step: {MSG}
+KRYPTONERRCODE0052|Please check OR data for parent: {MSG1} and object: {MSG2}
+KRYPTONERRCODE0053|Email sending failure
+KRYPTONERRCODE0054|Execution Timed Out
+KRYPTONERRCODE0055|Specified locator is not compatible with Chrome Driver, this is expected to be fixed in rc3 release of webdriver.Probable Solution would be to use X-PATH.
+KRYPTONERRCODE0056|None contents populated to verify sort order.Please verify property specified.
+KRYPTONERRCODE0057|Firefox instance is using default profile, hence it couldn't be cleaned. 
+KRYPTONERRCODE0058|Timeout occurs while reading database. Actual Error : {MSG}. 
+KRYPTONERRCODE0063|File: "{MSG}" does not exist
+KRYPTONERRCODE0064|Driver must support javascript execution
+KRYPTONERRCODE0065|Unable to get browser
+KRYPTONERRCODE0066|Unable to connect
+KRYPTONERRCODE0067|Could not Click object  "{MSG3}" on page "{MSG4}" with property: {method: "{MSG1}", selector: "{MSG2}"}.Actual Error : "{ErrorMsg}"
+KRYPTONERRCODE0068|Unable to Execute Script on "{MSG3}" on page "{MSG4}" with property: {method: "{MSG1}", selector: "{MSG2}"}
+KRYPTONERRCODE0069|Could not enter data on object "{MSG3}" on page "{MSG4}" with property: {method: "{MSG1}", selector: "{MSG2}"}.

@@ -5,7 +5,7 @@ using System.Text;
 
 namespace Krypton
 {
-    interface IKryptonLogger
+    public interface IKryptonLogger
     {
         void WriteLog(string message);
     }
